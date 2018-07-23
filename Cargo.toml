@@ -1,0 +1,6 @@
+[package]
+name = "quantum-simulator"
+version = "0.1.0"
+authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
+
+[dependencies]
