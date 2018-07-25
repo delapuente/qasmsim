@@ -1,0 +1,27 @@
+use std::str::FromStr;
+use super::ast;
+
+grammar;
+
+pub OpenQasmProgram: Box<ast::OpenQasmProgram> = {
+  "OPENQASM" <version:Version> ";" <program:Program> => Box::new(
+    ast::OpenQasmProgram{ version, program }
+  )
+};
+
+Program: Vec<ast::Statement> = {
+  Statement => vec![<>],
+  <program:Program> <s:Statement> => {
+    let mut program = program; program.push(s); program }
+};
+
+Statement: ast::Statement = {
+  "qreg" <id:Id> "[" <size:Nninteger> "]" ";" => ast::Statement::QRegDecl(id, size),
+  "creg" <id:Id> "[" <size:Nninteger> "]" ";" => ast::Statement::CRegDecl(id, size)
+};
+
+Version: String = r"[0-9]+\.[0-9]+" => String::from_str(<>).unwrap();
+
+Id: String = r"[a-z][A-Za-z0-9_]*" => String::from_str(<>).unwrap();
+
+Nninteger: usize = r"[1-9]+[0-9]*|0" => usize::from_str(<>).unwrap();

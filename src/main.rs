@@ -1,5 +1,19 @@
+mod grammar;
+
+use grammar::open_qasm2::open_qasm2;
 
 fn main() {
+}
+
+#[test]
+fn test_parse_open_qasm() {
+  let source = "
+OPENQASM 2.0;
+qreg q[2];
+creg c[2];
+";
+  let parser = open_qasm2::OpenQasmProgramParser::new();
+  assert!(parser.parse(source).is_ok());
 }
 
 mod gates {

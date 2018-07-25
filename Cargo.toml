@@ -2,5 +2,11 @@
 name = "quantum-simulator"
 version = "0.1.0"
 authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
+build = "build.rs"
 
 [dependencies]
+lalrpop-util = "0.15.2"
+regex = "0.2.0"
+
+[build-dependencies]
+lalrpop = "0.15.2"
