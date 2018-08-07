@@ -4,8 +4,8 @@ use super::ast;
 grammar;
 
 pub OpenQasmProgram: Box<ast::OpenQasmProgram> = {
-  "OPENQASM" <version:Version> ";" <program:Program> => Box::new(
-    ast::OpenQasmProgram{ version, program }
+  <version:Version> ";" <program:Program> => Box::new(
+    ast::OpenQasmProgram{<>}
   )
 };
 
@@ -15,13 +15,62 @@ Program: Vec<ast::Statement> = {
     let mut program = program; program.push(s); program }
 };
 
-Statement: ast::Statement = {
-  "qreg" <id:Id> "[" <size:Nninteger> "]" ";" => ast::Statement::QRegDecl(id, size),
-  "creg" <id:Id> "[" <size:Nninteger> "]" ";" => ast::Statement::CRegDecl(id, size)
+pub Statement: ast::Statement = {
+  RegisterDeclaration,
+  <GateDeclaration> "}" => ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
+  <decl:GateDeclaration> <ops:GateOperationList> "}" => {
+    ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops) }
 };
 
-Version: String = r"[0-9]+\.[0-9]+" => String::from_str(<>).unwrap();
+RegisterDeclaration: ast::Statement = {
+  "qreg" <Id> "[" <Nninteger> "]" ";" => ast::Statement::QRegDecl(<>),
+  "creg" <Id> "[" <Nninteger> "]" ";" => ast::Statement::CRegDecl(<>)
+};
+
+GateDeclaration: (String, Vec<String>,  Vec<String>) = {
+  "gate" <id:Id> <args:IdList> "{" => (id, vec![], args),
+  "gate" <id:Id> "(" ")" <args:IdList> "{" => (id, vec![], args),
+  "gate" <Id> "(" <IdList> ")" <IdList> "{" => (<>)
+};
+
+GateOperationList: Vec<ast::GateOperation> = {
+  GateOperation => vec![<>],
+  <list:GateOperationList> <op:GateOperation> => {
+    let mut list = list; list.push(op); list }
+};
+
+GateOperation: ast::GateOperation = {
+  UnitaryOperation => ast::GateOperation::Unitary(<>),
+  "barrier" <IdList> ";" => ast::GateOperation::Barrier(<>)
+};
+
+UnitaryOperation: ast::UnitaryOperation = {
+  "U" "(" <Expr> "," <Expr> "," <Expr> ")" <Argument> ";" => ast::UnitaryOperation::U(<>),
+  "CX" <Argument> "," <Argument> ";" => ast::UnitaryOperation::CX(<>)
+};
+
+IdList: Vec<String> = {
+  Id => vec![<>],
+  <list:IdList> "," <id:Id> => { let mut list = list; list.push(id); list }
+};
+
+Expr: ast::Expression = {
+  Id => ast::Expression::Id(<>),
+  Real => ast::Expression::Real(<>)
+};
+
+Argument: ast::Argument = {
+  Id => ast::Argument::Id(<>),
+  <Id> "[" <Nninteger> "]" => ast::Argument::Item(<>)
+};
+
+Version: String = r"OPENQASM\s+([0-9]+\.[0-9]+)" => {
+  let version_tokens: Vec<&str> = <>.split_whitespace().collect();
+  String::from_str(version_tokens.last().unwrap()).unwrap()
+};
 
 Id: String = r"[a-z][A-Za-z0-9_]*" => String::from_str(<>).unwrap();
 
 Nninteger: usize = r"[1-9]+[0-9]*|0" => usize::from_str(<>).unwrap();
+
+Real: f64 = r"([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?" => f64::from_str(<>).unwrap();
