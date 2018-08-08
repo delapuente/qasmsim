@@ -114,6 +114,59 @@ gate rz (phi) a {
   ));
 }
 
+#[test]
+fn test_parse_program_without_version_string() {
+  let source = "
+qreg q[1];
+creg c[1];
+h q;
+";
+  let parser = open_qasm2::ProgramParser::new();
+  let tree = parser.parse(source).unwrap();
+  assert_eq!(tree, vec![
+    ast::Statement::QRegDecl("q".to_string(), 1),
+    ast::Statement::CRegDecl("c".to_string(), 1),
+    ast::Statement::QuantumOperation(
+      ast::QuantumOperation::Unitary(
+        ast::UnitaryOperation::GateExpansion(
+          "h".to_string(), vec![], vec![ast::Argument::Id("q".to_string())])
+      )
+    )
+  ]);
+}
+
+#[test]
+fn test_program_with_measure_and_reset() {
+  let source = "
+qreg q[1];
+creg c[1];
+h q;
+measure q -> c;
+reset q;
+";
+  let parser = open_qasm2::ProgramParser::new();
+  let tree = parser.parse(source).unwrap();
+  assert_eq!(tree, vec![
+    ast::Statement::QRegDecl("q".to_string(), 1),
+    ast::Statement::CRegDecl("c".to_string(), 1),
+    ast::Statement::QuantumOperation(
+      ast::QuantumOperation::Unitary(
+        ast::UnitaryOperation::GateExpansion(
+          "h".to_string(), vec![], vec![ast::Argument::Id("q".to_string())])
+      )
+    ),
+    ast::Statement::QuantumOperation(
+      ast::QuantumOperation::Measure(
+        ast::Argument::Id("q".to_string()),
+        ast::Argument::Id("c".to_string())
+      )
+    ),
+    ast::Statement::QuantumOperation(
+      ast::QuantumOperation::Reset(ast::Argument::Id("q".to_string()))
+    )
+  ]);
+}
+
 mod gates {
   use std::{f64};
   use std::ops::{Mul, Add, Neg};

@@ -9,7 +9,9 @@ pub struct OpenQasmProgram {
 pub enum Statement {
   QRegDecl(String, usize),
   CRegDecl(String, usize),
-  GateDecl(String, Vec<String>,  Vec<String>, Vec<GateOperation>)
+  GateDecl(String, Vec<String>,  Vec<String>, Vec<GateOperation>),
+  OpaqueGateDecl(String, Vec<String>, Vec<String>),
+  QuantumOperation(QuantumOperation)
 }
 
 #[derive(Debug, PartialEq)]
@@ -19,12 +21,17 @@ pub enum GateOperation {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum QuantumOperation {
+  Unitary(UnitaryOperation),
+  Measure(Argument, Argument),
+  Reset(Argument)
+}
+
+#[derive(Debug, PartialEq)]
 pub enum UnitaryOperation {
   U(Expression, Expression, Expression, Argument),
   CX(Argument, Argument),
-  GateExpansion(String, Vec<Expression>, Vec<Argument>),
-  Measure(Argument, Argument),
-  Reset(Argument)
+  GateExpansion(String, Vec<Expression>, Vec<Argument>)
 }
 
 #[derive(Debug, PartialEq)]

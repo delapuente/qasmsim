@@ -17,9 +17,12 @@ pub Program: Vec<ast::Statement> = {
 
 pub Statement: ast::Statement = {
   RegisterDeclaration,
-  <GateDeclaration> "}" => ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
-  <decl:GateDeclaration> <ops:GateOperationList> "}" => {
-    ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops) }
+  <GateDeclaration> "{" "}" => ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
+  <decl:GateDeclaration> "{" <ops:GateOperationList> "}" => {
+    ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops) },
+  "opaque" <GateDeclaration> ";" =>
+    ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2),
+  QuantumOperation => ast::Statement::QuantumOperation(<>)
 };
 
 RegisterDeclaration: ast::Statement = {
@@ -27,10 +30,17 @@ RegisterDeclaration: ast::Statement = {
   "creg" <Id> "[" <Nninteger> "]" ";" => ast::Statement::CRegDecl(<>)
 };
 
+QuantumOperation: ast::QuantumOperation = {
+  "measure" <Argument> "->" <Argument> ";" =>
+    ast::QuantumOperation::Measure(<>),
+  "reset" <Argument> ";" => ast::QuantumOperation::Reset(<>),
+  UnitaryOperation => ast::QuantumOperation::Unitary(<>)
+};
+
 GateDeclaration: (String, Vec<String>,  Vec<String>) = {
-  "gate" <id:Id> <args:IdList> "{" => (id, vec![], args),
-  "gate" <id:Id> "(" ")" <args:IdList> "{" => (id, vec![], args),
-  "gate" <Id> "(" <IdList> ")" <IdList> "{" => (<>)
+  "gate" <id:Id> <args:IdList> => (id, vec![], args),
+  "gate" <id:Id> "(" ")" <args:IdList> => (id, vec![], args),
+  "gate" <Id> "(" <IdList> ")" <IdList> => (<>)
 };
 
 GateOperationList: Vec<ast::GateOperation> = {
