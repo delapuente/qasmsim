@@ -22,7 +22,7 @@ pub enum GateOperation {
 pub enum UnitaryOperation {
   U(Expression, Expression, Expression, Argument),
   CX(Argument, Argument),
-  GateExpansion(String, Vec<f64>, Vec<Argument>),
+  GateExpansion(String, Vec<Expression>, Vec<Argument>),
   Measure(Argument, Argument),
   Reset(Argument)
 }

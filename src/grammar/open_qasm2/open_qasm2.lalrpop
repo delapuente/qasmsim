@@ -9,7 +9,7 @@ pub OpenQasmProgram: Box<ast::OpenQasmProgram> = {
   )
 };
 
-Program: Vec<ast::Statement> = {
+pub Program: Vec<ast::Statement> = {
   Statement => vec![<>],
   <program:Program> <s:Statement> => {
     let mut program = program; program.push(s); program }
@@ -46,18 +46,24 @@ GateOperation: ast::GateOperation = {
 
 UnitaryOperation: ast::UnitaryOperation = {
   "U" "(" <Expr> "," <Expr> "," <Expr> ")" <Argument> ";" => ast::UnitaryOperation::U(<>),
-  "CX" <Argument> "," <Argument> ";" => ast::UnitaryOperation::CX(<>)
+  "CX" <Argument> "," <Argument> ";" => ast::UnitaryOperation::CX(<>),
+  GateExpansion => ast::UnitaryOperation::GateExpansion(<>.0, <>.1, <>.2)
 };
 
-IdList: Vec<String> = {
-  Id => vec![<>],
-  <list:IdList> "," <id:Id> => { let mut list = list; list.push(id); list }
+GateExpansion: (String, Vec<ast::Expression>, Vec<ast::Argument>) = {
+  <id:Id> <args:ArgumentList> ";" => (id, vec![], args),
+  <id:Id> "(" ")" <args:ArgumentList> ";" => (id, vec![], args),
+  <Id> "(" <ExpressionList> ")" <ArgumentList> ";" => (<>)
 };
+
+ExpressionList = List<Expr>;
 
 Expr: ast::Expression = {
   Id => ast::Expression::Id(<>),
   Real => ast::Expression::Real(<>)
 };
+
+ArgumentList = List<Argument>;
 
 Argument: ast::Argument = {
   Id => ast::Argument::Id(<>),
@@ -69,8 +75,15 @@ Version: String = r"OPENQASM\s+([0-9]+\.[0-9]+)" => {
   String::from_str(version_tokens.last().unwrap()).unwrap()
 };
 
+IdList = List<Id>;
+
 Id: String = r"[a-z][A-Za-z0-9_]*" => String::from_str(<>).unwrap();
 
 Nninteger: usize = r"[1-9]+[0-9]*|0" => usize::from_str(<>).unwrap();
 
 Real: f64 = r"([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?" => f64::from_str(<>).unwrap();
+
+List<T>: Vec<T> = {
+  T => vec![<>],
+  <list:List<T>> "," <item:T> => { let mut list = list; list.push(item); list }
+}

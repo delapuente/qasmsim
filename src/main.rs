@@ -37,6 +37,18 @@ gate id q {}
 }
 
 #[test]
+fn test_parse_id_gate_macro_with_parenthesis() {
+  let source = "
+gate id () q {}
+";
+  let parser = open_qasm2::StatementParser::new();
+  let tree = parser.parse(source).unwrap();
+  assert_eq!(tree, ast::Statement::GateDecl(
+    "id".to_string(), vec![], vec!["q".to_string()], vec![]
+  ));
+}
+
+#[test]
 fn test_parse_cx_gate_macro() {
   let source = "
 gate cx c, t {
@@ -74,6 +86,29 @@ gate u (theta, phi, lambda) q {
         ast::Expression::Id("phi".to_string()),
         ast::Expression::Id("lambda".to_string()),
         ast::Argument::Id("q".to_string())
+      ))
+    ]
+  ));
+}
+
+#[test]
+fn test_parse_gate_macro_with_gate_expansion() {
+  let source = "
+gate rz (phi) a {
+  u1 (phi) a;
+}
+";
+  let parser = open_qasm2::StatementParser::new();
+  let tree = parser.parse(source).unwrap();
+  assert_eq!(tree, ast::Statement::GateDecl(
+    "rz".to_string(),
+    vec!["phi".to_string()],
+    vec!["a".to_string()],
+    vec![
+      ast::GateOperation::Unitary(ast::UnitaryOperation::GateExpansion(
+        "u1".to_string(),
+        vec![ast::Expression::Id("phi".to_string())],
+        vec![ast::Argument::Id("a".to_string())]
       ))
     ]
   ));
