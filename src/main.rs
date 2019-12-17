@@ -2,8 +2,96 @@ mod grammar;
 
 use grammar::open_qasm2::open_qasm2;
 use grammar::open_qasm2::ast;
+use std::io::{self, Read};
+use gates::{StateVector, Cx};
 
-fn main() {
+fn main() -> io::Result<()> {
+  let mut input = String::new();
+  io::stdin().read_to_string(&mut input)?;
+  let parser = open_qasm2::OpenQasmProgramParser::new();
+  let tree = parser.parse(&input).unwrap();
+  let state_vector = execute(&tree);
+  print!("{:?}", state_vector);
+  Ok(())
+}
+
+fn execute(program: &ast::OpenQasmProgram) -> StateVector {
+  let size = extract_size(program).unwrap();
+  let mut state_vector = Vec::with_capacity(10);
+  for i in 0..2_u32.pow(size as u32) {
+    state_vector.push(Cx(0.0,0.0))
+  }
+  state_vector[0].0 = 1.0;
+  apply_gates(&program, state_vector)
+}
+
+fn extract_size(program: &ast::OpenQasmProgram) -> Result<usize, io::Error> {
+  for statement in &program.program {
+    match statement {
+      ast::Statement::QRegDecl(_, v) => { return Ok(*v); }
+      _ => ()
+    };
+  }
+  panic!("There is no quantum register.")
+}
+
+fn apply_gates(program: &ast::OpenQasmProgram, mut state_vector: StateVector)
+-> StateVector {
+  for statement in &program.program {
+    match statement {
+      ast::Statement::QuantumOperation(operation) => {
+        state_vector = apply_quantum_operation(operation, state_vector);
+      }
+      _ => ()
+    };
+  }
+  state_vector
+}
+
+fn apply_quantum_operation(operation: &ast::QuantumOperation, mut state_vector: StateVector)
+-> StateVector {
+  match operation {
+    ast::QuantumOperation::Unitary(unitary) => {
+      state_vector = apply_unitary(unitary, state_vector)
+    }
+    _ => ()
+  };
+  state_vector
+}
+
+fn apply_unitary(unitary: &ast::UnitaryOperation, mut state_vector: StateVector)
+-> StateVector {
+  match unitary {
+    ast::UnitaryOperation::GateExpansion(name, real_args, args) => {
+      state_vector = apply_one_gate(name, real_args, args, state_vector)
+    }
+    _ => ()
+  }
+  state_vector
+}
+
+fn apply_one_gate(name: &str, real_args: &Vec<ast::Expression>, args: &Vec<ast::Argument>, mut state_vector: StateVector)
+-> StateVector {
+  match name {
+    "h" => {
+      let index = get_bit_index(&args[0]);
+      state_vector = gates::qelib1::h(index, state_vector);
+    }
+    "cx" => {
+      let control = get_bit_index(&args[0]);
+      let target = get_bit_index(&args[1]);
+      state_vector = gates::qelib1::cx(control, target, state_vector);
+    }
+    _ => ()
+  }
+  state_vector
+}
+
+fn get_bit_index(argument: &ast::Argument) -> usize {
+  match argument {
+    ast::Argument::Id(_) => 0,
+    ast::Argument::Item(_, index) => *index
+  }
 }
 
 #[test]
@@ -172,7 +260,7 @@ mod gates {
   use std::ops::{Mul, Add, Neg};
 
   #[derive(Default, Debug, Clone, Copy)]
-  pub struct Cx(f64, f64);
+  pub struct Cx(pub f64, pub f64);
 
   impl PartialEq for Cx {
     fn eq(&self, other: &Cx) -> bool {
@@ -239,18 +327,19 @@ mod gates {
   }
 
   /// Apply a 3 degree rotation to the target bit.
-  pub fn u(theta: f64, phi: f64, lambda: f64, t: usize, mut v: StateVector)
+  pub fn u(theta: f64, phi: f64, lambda: f64, t: usize, v: StateVector)
   -> StateVector {
     let bit_width = (v.len() as f64).log2() as usize;
     let target_rows = find_target_rows(bit_width, t);
     let u_matrix = build_u(theta, phi, lambda);
+    let mut out = vec![Cx(0.0, 0.0); v.len()];
     for (index_0, index_1) in target_rows {
       let result_0 = u_matrix.0 * v[index_0] + u_matrix.1 * v[index_1];
       let result_1 = u_matrix.2 * v[index_0] + u_matrix.3 * v[index_1];
-      v[index_0] = result_0;
-      v[index_1] = result_1;
+      out[index_0] = result_0;
+      out[index_1] = result_1;
     }
-    v
+    out
   }
 
   fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
@@ -318,7 +407,7 @@ mod gates {
     Cx(x.cos(), x.sin())
   }
 
-  mod qelib1 {
+  pub mod qelib1 {
     use super::*;
     use std::f64::consts::PI;
 
@@ -336,6 +425,10 @@ mod gates {
 
     pub fn z(t: usize, v: StateVector) -> StateVector {
       u(0.0, 0.0, PI, t, v)
+    }
+
+    pub fn cx(c: usize, t: usize, v: StateVector) -> StateVector {
+      cnot(c, t, v)
     }
 
     #[cfg(test)]
