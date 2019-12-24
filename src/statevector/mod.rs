@@ -51,24 +51,24 @@ impl StateVector {
 fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
 -> Vec<(usize, usize)>
 {
-  let max = 2_usize.pow(bit_width as u32 - 2);
-  let mut out = Vec::with_capacity(max);
-  for n in 0..max {
+  let context_bit_width = exp2(bit_width - 2);
+  let mut out = Vec::with_capacity(context_bit_width);
+  for n in 0..context_bit_width {
     let mut mask = 1;
     let mut histogram_index_10 = 0;
     let mut histogram_index_11 = 0;
     for i in 0..bit_width {
       if i == t {
-        histogram_index_11 += 2_usize.pow(t as u32);
+        histogram_index_11 += exp2(t);
       }
       else if i == c {
-        histogram_index_10 += 2_usize.pow(c as u32);
-        histogram_index_11 += 2_usize.pow(c as u32);
+        histogram_index_10 += exp2(c);
+        histogram_index_11 += exp2(c);
       }
       else {
         let bit = ((n & mask) != 0) as usize;
-        histogram_index_10 += bit * 2_usize.pow(i as u32);
-        histogram_index_11 += bit * 2_usize.pow(i as u32);
+        histogram_index_10 += bit * exp2(i);
+        histogram_index_11 += bit * exp2(i);
         mask <<= 1;
       };
     }
@@ -77,8 +77,13 @@ fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
   out
 }
 
+#[inline]
+fn exp2(power: usize) -> usize {
+  1_usize << power
+}
+
 fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
-  let max = 2_usize.pow(bit_width as u32 - 1);
+  let max = exp2(bit_width - 1);
   let mut out = Vec::with_capacity(max);
   for n in 0..max {
     let mut mask = 1;
@@ -86,12 +91,12 @@ fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
     let mut histogram_index_1 = 0;
     for i in 0..bit_width {
       if i == t {
-        histogram_index_1 += 2_usize.pow(t as u32);
+        histogram_index_1 += exp2(t);
       }
       else {
         let bit = ((n & mask) != 0) as usize;
-        histogram_index_0 += bit * 2_usize.pow(i as u32);
-        histogram_index_1 += bit * 2_usize.pow(i as u32);
+        histogram_index_0 += bit * exp2(i);
+        histogram_index_1 += bit * exp2(i);
         mask <<= 1;
       };
     }
