@@ -1,38 +1,62 @@
 use complex::Complex;
 use std::f64;
 
-pub type StateVector = Vec<Complex>;
-
-/// Apply a controlled not
-pub fn cnot(c: usize, t: usize, mut v: StateVector) -> StateVector {
-  let bit_width = (v.len() as f64).log2() as usize;
-  let exchangable_rows = find_exchangeable_rows(bit_width, c, t);
-  for (index_a, index_b) in exchangable_rows {
-    v.swap(index_a, index_b);
-  }
-  v
+#[derive(Clone, Debug, PartialEq)]
+pub struct StateVector {
+  bases: Vec<Complex>
 }
 
-/// Apply a 3 degree rotation to the target bit.
-pub fn u(theta: f64, phi: f64, lambda: f64, t: usize, v: StateVector)
--> StateVector {
-  let bit_width = (v.len() as f64).log2() as usize;
-  let target_rows = find_target_rows(bit_width, t);
-  let u_matrix = build_u(theta, phi, lambda);
-  let mut out = vec![Complex(0.0, 0.0); v.len()];
-  for (index_0, index_1) in target_rows {
-    let result_0 = u_matrix.0 * v[index_0] + u_matrix.1 * v[index_1];
-    let result_1 = u_matrix.2 * v[index_0] + u_matrix.3 * v[index_1];
-    out[index_0] = result_0;
-    out[index_1] = result_1;
+impl StateVector {
+
+  pub fn new(bitsize: usize) -> Self {
+    let mut bases = vec![Complex(0.0, 0.0); 2_usize.pow(bitsize as u32)];
+    bases[0].0 = 1.0;
+    StateVector { bases }
   }
-  out
+
+  pub fn from_bases(bases: Vec<Complex>) -> Self {
+    StateVector { bases }
+  }
+
+  pub fn len(&self) -> usize {
+    self.bases.len()
+  }
+
+  pub fn bit_width(&self) -> usize {
+    (self.len() as f64).log2() as usize
+  }
+
+  /// Apply a controlled not
+  pub fn cnot(mut self, c: usize, t: usize) -> Self {
+    let bit_width = self.bit_width();
+    let exchangable_rows = find_exchangeable_rows(bit_width, c, t);
+    for (index_a, index_b) in exchangable_rows {
+      self.bases.swap(index_a, index_b);
+    }
+    self
+  }
+
+  /// Apply a 3 degree rotation to the target bit.
+  pub fn u(mut self, theta: f64, phi: f64, lambda: f64, target: usize)
+  -> Self {
+    let bit_width = self.bit_width();
+    let target_rows = find_target_rows(bit_width, target);
+    let u_matrix = build_u(theta, phi, lambda);
+    for (index_0, index_1) in target_rows {
+      let selected = (self.bases[index_0], self.bases[index_1]);
+      self.bases[index_0] = u_matrix.0 * selected.0 + u_matrix.1 * selected.1;
+      self.bases[index_1] = u_matrix.2 * selected.0 + u_matrix.3 * selected.1;
+    }
+    self
+  }
 }
+
 
 fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
 -> Vec<(usize, usize)>
 {
   let max = 2_usize.pow(bit_width as u32 - 2);
+  println!("max: {:?}", max);
   let mut out = Vec::with_capacity(max);
   for n in 0..max {
     let mut mask = 1;
@@ -50,7 +74,7 @@ fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
         let bit = ((n & mask) != 0) as usize;
         histogram_index_10 += bit * 2_usize.pow(i as u32);
         histogram_index_11 += bit * 2_usize.pow(i as u32);
-        mask <<= mask;
+        mask <<= 1;
       };
     }
     out.push((histogram_index_10, histogram_index_11))
@@ -60,6 +84,7 @@ fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
 
 fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
   let max = 2_usize.pow(bit_width as u32 - 1);
+  println!("max: {:?}", max);
   let mut out = Vec::with_capacity(max);
   for n in 0..max {
     let mut mask = 1;
@@ -73,7 +98,7 @@ fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
         let bit = ((n & mask) != 0) as usize;
         histogram_index_0 += bit * 2_usize.pow(i as u32);
         histogram_index_1 += bit * 2_usize.pow(i as u32);
-        mask <<= mask;
+        mask <<= 1;
       };
     }
     out.push((histogram_index_0, histogram_index_1))
@@ -104,9 +129,9 @@ mod tests {
     let p = Default::default();
     let a = Complex(1.0, 0.0);
     let b = Complex(0.0, 1.0);
-    let mut v = vec!(p, a, p, b);
-    v = cnot(0, 1, v);
-    assert_eq!(v, vec!(p, b, p, a));
+    let v = StateVector::from_bases(vec!(p, a, p, b))
+      .cnot(0, 1);
+    assert_eq!(v, StateVector::from_bases(vec!(p, b, p, a)));
   }
 
   #[test]
@@ -114,9 +139,9 @@ mod tests {
     let p = Default::default();
     let a = Complex(1.0, 0.0);
     let b = Complex(0.0, 1.0);
-    let mut v = vec!(p, p, a, b);
-    v = cnot(1, 0, v);
-    assert_eq!(v, vec!(p, p, b, a));
+    let v = StateVector::from_bases(vec!(p, p, a, b))
+      .cnot(1, 0);
+    assert_eq!(v, StateVector::from_bases(vec!(p, p, b, a)));
   }
 
   #[test]
@@ -124,9 +149,9 @@ mod tests {
     let p = Default::default();
     let a = Complex(1.0, 0.0);
     let b = Complex(0.0, 1.0);
-    let mut v = vec!(p, p, p, p, a, b, a, b);
-    v = cnot(2, 0, v);
-    assert_eq!(v, vec!(p, p, p, p, b, a, b, a));
+    let v = StateVector::from_bases(vec!(p, p, p, p, a, b, a, b))
+      .cnot(2, 0);
+    assert_eq!(v, StateVector::from_bases(vec!(p, p, p, p, b, a, b, a)));
   }
 
   #[test]
@@ -134,9 +159,9 @@ mod tests {
     let p = Default::default();
     let a = Complex(1.0, 0.0);
     let b = Complex(0.0, 1.0);
-    let mut v = vec!(p, a, p, a, p, b, p, b);
-    v = cnot(0, 2, v);
-    assert_eq!(v, vec!(p, b, p, b, p, a, p, a));
+    let v = StateVector::from_bases(vec!(p, a, p, a, p, b, p, b))
+      .cnot(0, 2);
+    assert_eq!(v, StateVector::from_bases(vec!(p, b, p, b, p, a, p, a)));
   }
 
   #[test]
@@ -144,10 +169,10 @@ mod tests {
     let p = Default::default();
     let a = Complex(1.0, 0.0);
     let b = Complex(0.0, 1.0);
-    let mut v = vec!(p, a, p, b);
-    v = cnot(0, 1, v);
-    v = cnot(0, 1, v);
-    assert_eq!(v, vec!(p, a, p, b));
+    let v = StateVector::from_bases(vec!(p, a, p, b))
+      .cnot(0, 1)
+      .cnot(0, 1);
+    assert_eq!(v, StateVector::from_bases(vec!(p, a, p, b)));
   }
 
   #[test]

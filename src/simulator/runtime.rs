@@ -1,16 +1,11 @@
 use statevector::StateVector;
 use grammar::open_qasm2::ast;
-use complex::Complex;
 use std::io;
 use gatelib;
 
 pub fn execute(program: &ast::OpenQasmProgram) -> StateVector {
   let size = extract_size(program).unwrap();
-  let mut state_vector = Vec::with_capacity(10);
-  for _ in 0..2_u32.pow(size as u32) {
-    state_vector.push(Complex(0.0,0.0))
-  }
-  state_vector[0].0 = 1.0;
+  let state_vector = StateVector::new(size);
   apply_gates(&program, state_vector)
 }
 
