@@ -1,3 +1,7 @@
+#[macro_use(lalrpop_mod)]
+extern crate lalrpop_util;
+lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
+
 mod grammar;
 mod complex;
 mod statevector;
@@ -7,7 +11,6 @@ mod simulator;
 use std::error::Error;
 
 use statevector::StateVector;
-use grammar::open_qasm2::open_qasm2;
 
 pub fn run(input: &str) -> Result<StateVector, Box<dyn Error>> {
   let parser = open_qasm2::OpenQasmProgramParser::new();

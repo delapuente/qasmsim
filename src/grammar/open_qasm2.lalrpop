@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use super::ast;
+use grammar::ast;
 
 grammar;
 

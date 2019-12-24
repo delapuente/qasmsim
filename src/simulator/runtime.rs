@@ -2,7 +2,7 @@ use std::io;
 use std::error::Error;
 
 use statevector::StateVector;
-use grammar::open_qasm2::ast;
+use grammar::ast;
 use gatelib;
 
 struct Runtime {
