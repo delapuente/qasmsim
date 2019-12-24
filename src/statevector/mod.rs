@@ -51,9 +51,9 @@ impl StateVector {
 fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
 -> Vec<(usize, usize)>
 {
-  let context_bit_width = exp2(bit_width - 2);
-  let mut out = Vec::with_capacity(context_bit_width);
-  for n in 0..context_bit_width {
+  let context_range = exp2(bit_width - 2);
+  let mut out = Vec::with_capacity(context_range);
+  for n in 0..context_range {
     let mut mask = 1;
     let mut histogram_index_10 = 0;
     let mut histogram_index_11 = 0;
@@ -83,9 +83,9 @@ fn exp2(power: usize) -> usize {
 }
 
 fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
-  let max = exp2(bit_width - 1);
-  let mut out = Vec::with_capacity(max);
-  for n in 0..max {
+  let context_range = exp2(bit_width - 1);
+  let mut out = Vec::with_capacity(context_range);
+  for n in 0..context_range {
     let mut mask = 1;
     let mut histogram_index_0 = 0;
     let mut histogram_index_1 = 0;

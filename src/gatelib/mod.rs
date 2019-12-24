@@ -1,5 +1,5 @@
 use statevector::*;
-use std::f64::consts::{PI, SQRT_2};
+use std::f64::consts::PI;
 
 pub fn u2(phi: f64, lambda: f64, t: usize, v: StateVector) -> StateVector {
   v.u(PI/2.0, phi, lambda, t)
@@ -25,6 +25,7 @@ pub fn cx(c: usize, t: usize, v: StateVector) -> StateVector {
 mod tests {
   use super::*;
   use complex::Complex;
+  use std::f64::consts::SQRT_2;
 
   #[test]
   fn test_bit_flip() {
