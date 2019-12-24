@@ -1,5 +1,5 @@
 [package]
-name = "quantum-simulator"
+name = "qasmsim"
 version = "0.1.0"
 authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
 build = "build.rs"
