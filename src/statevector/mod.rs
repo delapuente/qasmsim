@@ -3,33 +3,30 @@ use std::f64;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StateVector {
-  bases: Vec<Complex>
+  bases: Vec<Complex>,
+  pub bit_width: usize
 }
 
 impl StateVector {
 
-  pub fn new(bitsize: usize) -> Self {
-    let mut bases = vec![Complex(0.0, 0.0); 2_usize.pow(bitsize as u32)];
+  pub fn new(bit_width: usize) -> Self {
+    let mut bases = vec![Complex(0.0, 0.0); 2_usize.pow(bit_width as u32)];
     bases[0].0 = 1.0;
-    StateVector { bases }
+    StateVector { bases, bit_width }
   }
 
   pub fn from_bases(bases: Vec<Complex>) -> Self {
-    StateVector { bases }
+    let bit_width = (bases.len() as f64).log2() as usize;
+    StateVector { bases, bit_width }
   }
 
   pub fn len(&self) -> usize {
     self.bases.len()
   }
 
-  pub fn bit_width(&self) -> usize {
-    (self.len() as f64).log2() as usize
-  }
-
   /// Apply a controlled not
   pub fn cnot(mut self, c: usize, t: usize) -> Self {
-    let bit_width = self.bit_width();
-    let exchangable_rows = find_exchangeable_rows(bit_width, c, t);
+    let exchangable_rows = find_exchangeable_rows(self.bit_width, c, t);
     for (index_a, index_b) in exchangable_rows {
       self.bases.swap(index_a, index_b);
     }
@@ -39,8 +36,7 @@ impl StateVector {
   /// Apply a 3 degree rotation to the target bit.
   pub fn u(mut self, theta: f64, phi: f64, lambda: f64, target: usize)
   -> Self {
-    let bit_width = self.bit_width();
-    let target_rows = find_target_rows(bit_width, target);
+    let target_rows = find_target_rows(self.bit_width, target);
     let u_matrix = build_u(theta, phi, lambda);
     for (index_0, index_1) in target_rows {
       let selected = (self.bases[index_0], self.bases[index_1]);
