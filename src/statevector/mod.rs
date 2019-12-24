@@ -56,7 +56,6 @@ fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
 -> Vec<(usize, usize)>
 {
   let max = 2_usize.pow(bit_width as u32 - 2);
-  println!("max: {:?}", max);
   let mut out = Vec::with_capacity(max);
   for n in 0..max {
     let mut mask = 1;
@@ -84,7 +83,6 @@ fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
 
 fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
   let max = 2_usize.pow(bit_width as u32 - 1);
-  println!("max: {:?}", max);
   let mut out = Vec::with_capacity(max);
   for n in 0..max {
     let mut mask = 1;
