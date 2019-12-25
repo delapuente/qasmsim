@@ -133,14 +133,29 @@ cached! {
   }
 }
 
-fn build_u(theta: f64, phi: f64, lambda: f64) -> (Complex, Complex, Complex, Complex) {
-  (
-    Complex::new((theta/2.0).cos(), 0.0),
-    -e_power_to(lambda) * (theta/2.0).sin(),
-    e_power_to(phi) * (theta/2.0).sin(),
-    e_power_to(phi+lambda) * (theta/2.0).cos()
-  )
+type DecodedFloat = (u64, i16, i8);
+type BuildUKey = (DecodedFloat, DecodedFloat, DecodedFloat);
+type UMatrix = (Complex, Complex, Complex, Complex);
+
+cached_key! {
+  BUILD_U: SizedCache<BuildUKey, UMatrix> = SizedCache::with_size(20);
+  Key = {
+    (
+      Float::integer_decode(theta),
+      Float::integer_decode(phi),
+      Float::integer_decode(lambda)
+    )
+  };
+  fn build_u(theta: f64, phi: f64, lambda: f64) -> UMatrix = {
+    (
+      Complex::new((theta/2.0).cos(), 0.0),
+      -e_power_to(lambda) * (theta/2.0).sin(),
+      e_power_to(phi) * (theta/2.0).sin(),
+      e_power_to(phi+lambda) * (theta/2.0).cos()
+    )
+  }
 }
+
 
 fn e_power_to(x: f64) -> Complex {
   Complex::new(0.0, x).exp()
