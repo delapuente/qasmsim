@@ -107,27 +107,30 @@ fn exp2(power: usize) -> usize {
   1_usize << power
 }
 
-fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
-  let context_range = exp2(bit_width - 1);
-  let mut out = Vec::with_capacity(context_range);
-  for n in 0..context_range {
-    let mut mask = 1;
-    let mut histogram_index_0 = 0;
-    let mut histogram_index_1 = 0;
-    for i in 0..bit_width {
-      if i == t {
-        histogram_index_1 += exp2(t);
+cached! {
+  FIND_TARGET_ROWS;
+  fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> = {
+    let context_range = exp2(bit_width - 1);
+    let mut out = Vec::with_capacity(context_range);
+    for n in 0..context_range {
+      let mut mask = 1;
+      let mut histogram_index_0 = 0;
+      let mut histogram_index_1 = 0;
+      for i in 0..bit_width {
+        if i == t {
+          histogram_index_1 += exp2(t);
+        }
+        else {
+          let bit = ((n & mask) != 0) as usize;
+          histogram_index_0 += bit * exp2(i);
+          histogram_index_1 += bit * exp2(i);
+          mask <<= 1;
+        };
       }
-      else {
-        let bit = ((n & mask) != 0) as usize;
-        histogram_index_0 += bit * exp2(i);
-        histogram_index_1 += bit * exp2(i);
-        mask <<= 1;
-      };
+      out.push((histogram_index_0, histogram_index_1))
     }
-    out.push((histogram_index_0, histogram_index_1))
+    out
   }
-  out
 }
 
 fn build_u(theta: f64, phi: f64, lambda: f64) -> (Complex, Complex, Complex, Complex) {
