@@ -2,6 +2,8 @@
 extern crate lalrpop_util;
 extern crate num;
 extern crate float_cmp;
+#[macro_use(cached, cached_key)]
+extern crate cached;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
 mod grammar;

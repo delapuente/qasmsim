@@ -1,4 +1,6 @@
 use float_cmp::ApproxEq;
+use cached::SizedCache;
+use num::Float;
 
 use complex::{ self, Complex, ComplexMargin };
 use std::f64;
@@ -69,33 +71,35 @@ pub fn assert_approx_eq(v1: &StateVector, v2: &StateVector) {
   }
 }
 
-fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
--> Vec<(usize, usize)>
-{
-  let context_range = exp2(bit_width - 2);
-  let mut out = Vec::with_capacity(context_range);
-  for n in 0..context_range {
-    let mut mask = 1;
-    let mut histogram_index_10 = 0;
-    let mut histogram_index_11 = 0;
-    for i in 0..bit_width {
-      if i == t {
-        histogram_index_11 += exp2(t);
+cached! {
+  FIND_EXCHANGEABLE_ROWS;
+  fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
+  -> Vec<(usize, usize)> = {
+    let context_range = exp2(bit_width - 2);
+    let mut out = Vec::with_capacity(context_range);
+    for n in 0..context_range {
+      let mut mask = 1;
+      let mut histogram_index_10 = 0;
+      let mut histogram_index_11 = 0;
+      for i in 0..bit_width {
+        if i == t {
+          histogram_index_11 += exp2(t);
+        }
+        else if i == c {
+          histogram_index_10 += exp2(c);
+          histogram_index_11 += exp2(c);
+        }
+        else {
+          let bit = ((n & mask) != 0) as usize;
+          histogram_index_10 += bit * exp2(i);
+          histogram_index_11 += bit * exp2(i);
+          mask <<= 1;
+        };
       }
-      else if i == c {
-        histogram_index_10 += exp2(c);
-        histogram_index_11 += exp2(c);
-      }
-      else {
-        let bit = ((n & mask) != 0) as usize;
-        histogram_index_10 += bit * exp2(i);
-        histogram_index_11 += bit * exp2(i);
-        mask <<= 1;
-      };
+      out.push((histogram_index_10, histogram_index_11))
     }
-    out.push((histogram_index_10, histogram_index_11))
+    out
   }
-  out
 }
 
 #[inline]
