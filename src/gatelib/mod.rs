@@ -1,4 +1,4 @@
-use statevector::*;
+use statevector::StateVector;
 use std::f64::consts::PI;
 
 pub fn u2(phi: f64, lambda: f64, t: usize, v: StateVector) -> StateVector {
@@ -26,102 +26,103 @@ mod tests {
   use super::*;
   use complex::Complex;
   use std::f64::consts::SQRT_2;
+  use statevector::assert_approx_eq;
 
   #[test]
   fn test_bit_flip() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
+    let whole = Complex::new(1.0, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero));
     v = x(0, v);
-    assert_eq!(v, StateVector::from_bases(vec!(zero, whole)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(zero, whole)));
   }
 
   #[test]
   fn test_bit_flip_is_reversible() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
+    let whole = Complex::new(1.0, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero));
     v = x(0, v);
     v = x(0, v);
-    assert_eq!(v, StateVector::from_bases(vec!(whole, zero)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(whole, zero)));
   }
 
   #[test]
   fn test_bit_flip_x1_on_3_bits() {
     let z = Default::default();
-    let w = Complex(1.0, 0.0);
+    let w = Complex::new(1.0, 0.0);
     let mut v = StateVector::from_bases(vec!(w, z, z, z, z, z, z, z));
     v = x(1, v);
-    assert_eq!(v, StateVector::from_bases(vec!(z, z, w, z, z, z, z, z)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(z, z, w, z, z, z, z, z)));
   }
 
   #[test]
   fn test_phase_flip_for_bit_set_to_0() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
+    let whole = Complex::new(1.0, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero));
     v = z(0, v);
-    assert_eq!(v, StateVector::from_bases(vec!(whole, zero)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(whole, zero)));
   }
 
   #[test]
   fn test_phase_flip_for_bit_set_to_1() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
+    let whole = Complex::new(1.0, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero));
     v = x(0, v);
     v = z(0, v);
-    assert_eq!(v, StateVector::from_bases(vec!(zero, -whole)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(zero, -whole)));
   }
 
   #[test]
   fn test_hadamard() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
-    let half = Complex(1.0/SQRT_2, 0.0);
+    let whole = Complex::new(1.0, 0.0);
+    let half = Complex::new(1.0/SQRT_2, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero));
     v = h(0, v);
-    assert_eq!(v, StateVector::from_bases(vec!(half, half)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(half, half)));
   }
 
   #[test]
   fn test_hadamard_on_bit_0() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
-    let half = Complex(1.0/SQRT_2, 0.0);
+    let whole = Complex::new(1.0, 0.0);
+    let half = Complex::new(1.0/SQRT_2, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero, zero, zero));
     v = h(0, v);
-    assert_eq!(v, StateVector::from_bases(vec!(half, half, zero, zero)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(half, half, zero, zero)));
   }
 
   #[test]
   fn test_hadamard_on_bit_1() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
-    let half = Complex(1.0/SQRT_2, 0.0);
+    let whole = Complex::new(1.0, 0.0);
+    let half = Complex::new(1.0/SQRT_2, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero, zero, zero));
     v = h(1, v);
-    assert_eq!(v, StateVector::from_bases(vec!(half, zero, half, zero)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(half, zero, half, zero)));
   }
 
   #[test]
   fn test_total_superposition_of_2_bits() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
-    let quarter = Complex(0.5, 0.0);
+    let whole = Complex::new(1.0, 0.0);
+    let quarter = Complex::new(0.5, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero, zero, zero));
     v = h(0, v);
     v = h(1, v);
-    assert_eq!(v, StateVector::from_bases(vec!(quarter, quarter, quarter, quarter)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(quarter, quarter, quarter, quarter)));
   }
 
   #[test]
   fn test_hadamard_is_reversible() {
     let zero = Default::default();
-    let whole = Complex(1.0, 0.0);
+    let whole = Complex::new(1.0, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero));
     v = h(0, v);
     v = h(0, v);
-    assert_eq!(v, StateVector::from_bases(vec!(whole, zero)));
+    assert_approx_eq(&v, &StateVector::from_bases(vec!(whole, zero)));
   }
 }

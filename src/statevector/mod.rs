@@ -1,4 +1,6 @@
-use complex::Complex;
+use float_cmp::ApproxEq;
+
+use complex::{ self, Complex, ComplexMargin };
 use std::f64;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -10,8 +12,8 @@ pub struct StateVector {
 impl StateVector {
 
   pub fn new(bit_width: usize) -> Self {
-    let mut bases = vec![Complex(0.0, 0.0); 2_usize.pow(bit_width as u32)];
-    bases[0].0 = 1.0;
+    let mut bases = vec![Complex::new(0.0, 0.0); 2_usize.pow(bit_width as u32)];
+    bases[0].re = 1.0;
     StateVector { bases, bit_width }
   }
 
@@ -47,6 +49,25 @@ impl StateVector {
   }
 }
 
+impl<'a> ApproxEq for &'a StateVector {
+  type Margin = ComplexMargin;
+
+  fn approx_eq<T: Into<Self::Margin>>(self, other: Self, margin: T) -> bool {
+    let margin = margin.into();
+    for (c1, c2) in self.bases.iter().zip(&other.bases) {
+      if c1.re.approx_ne(c2.re, margin) || c1.im.approx_ne(c2.im, margin) {
+        return false
+      }
+    }
+    true
+  }
+}
+
+pub fn assert_approx_eq(v1: &StateVector, v2: &StateVector) {
+  if !v1.approx_eq(v2, (complex::EPSILON, 0)) {
+    assert!(false, "assertion failed `(left ~= right)`\n  left: `{:?}`\n right: `{:?}`", v1, v2);
+  }
+}
 
 fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
 -> Vec<(usize, usize)>
@@ -107,7 +128,7 @@ fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> {
 
 fn build_u(theta: f64, phi: f64, lambda: f64) -> (Complex, Complex, Complex, Complex) {
   (
-    Complex((theta/2.0).cos(), 0.0),
+    Complex::new((theta/2.0).cos(), 0.0),
     -e_power_to(lambda) * (theta/2.0).sin(),
     e_power_to(phi) * (theta/2.0).sin(),
     e_power_to(phi+lambda) * (theta/2.0).cos()
@@ -115,19 +136,18 @@ fn build_u(theta: f64, phi: f64, lambda: f64) -> (Complex, Complex, Complex, Com
 }
 
 fn e_power_to(x: f64) -> Complex {
-  Complex(x.cos(), x.sin())
+  Complex::new(0.0, x).exp()
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use std::f64::consts::PI;
 
   #[test]
   fn test_cnot_c0t1() {
     let p = Default::default();
-    let a = Complex(1.0, 0.0);
-    let b = Complex(0.0, 1.0);
+    let a = Complex::new(1.0, 0.0);
+    let b = Complex::new(0.0, 1.0);
     let v = StateVector::from_bases(vec!(p, a, p, b))
       .cnot(0, 1);
     assert_eq!(v, StateVector::from_bases(vec!(p, b, p, a)));
@@ -136,8 +156,8 @@ mod tests {
   #[test]
   fn test_cnot_c1t0_of_2_bits() {
     let p = Default::default();
-    let a = Complex(1.0, 0.0);
-    let b = Complex(0.0, 1.0);
+    let a = Complex::new(1.0, 0.0);
+    let b = Complex::new(0.0, 1.0);
     let v = StateVector::from_bases(vec!(p, p, a, b))
       .cnot(1, 0);
     assert_eq!(v, StateVector::from_bases(vec!(p, p, b, a)));
@@ -146,8 +166,8 @@ mod tests {
   #[test]
   fn test_cnot_c2t0_of_3_bits() {
     let p = Default::default();
-    let a = Complex(1.0, 0.0);
-    let b = Complex(0.0, 1.0);
+    let a = Complex::new(1.0, 0.0);
+    let b = Complex::new(0.0, 1.0);
     let v = StateVector::from_bases(vec!(p, p, p, p, a, b, a, b))
       .cnot(2, 0);
     assert_eq!(v, StateVector::from_bases(vec!(p, p, p, p, b, a, b, a)));
@@ -156,8 +176,8 @@ mod tests {
   #[test]
   fn test_cnot_c0t2_of_3_bits() {
     let p = Default::default();
-    let a = Complex(1.0, 0.0);
-    let b = Complex(0.0, 1.0);
+    let a = Complex::new(1.0, 0.0);
+    let b = Complex::new(0.0, 1.0);
     let v = StateVector::from_bases(vec!(p, a, p, a, p, b, p, b))
       .cnot(0, 2);
     assert_eq!(v, StateVector::from_bases(vec!(p, b, p, b, p, a, p, a)));
@@ -166,23 +186,11 @@ mod tests {
   #[test]
   fn test_cnot_is_reversible() {
     let p = Default::default();
-    let a = Complex(1.0, 0.0);
-    let b = Complex(0.0, 1.0);
+    let a = Complex::new(1.0, 0.0);
+    let b = Complex::new(0.0, 1.0);
     let v = StateVector::from_bases(vec!(p, a, p, b))
       .cnot(0, 1)
       .cnot(0, 1);
     assert_eq!(v, StateVector::from_bases(vec!(p, a, p, b)));
-  }
-
-  #[test]
-  fn test_e_power_to() {
-    assert_eq!(e_power_to(0.0), Complex(1.0, 0.0));
-    assert_eq!(e_power_to(PI/2.0), Complex(0.0, 1.0));
-    assert_eq!(e_power_to(PI/4.0), Complex((PI/4.0).cos(), (PI/4.0).sin()));
-  }
-
-  #[test]
-  fn test_euler_identity() {
-    assert_eq!(e_power_to(PI) + 1, Default::default())
   }
 }

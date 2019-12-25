@@ -1,4 +1,3 @@
-use std::io;
 use std::error::Error;
 
 use statevector::StateVector;

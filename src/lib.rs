@@ -1,5 +1,7 @@
 #[macro_use(lalrpop_mod)]
 extern crate lalrpop_util;
+extern crate num;
+extern crate float_cmp;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
 mod grammar;
