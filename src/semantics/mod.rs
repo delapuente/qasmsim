@@ -53,18 +53,18 @@ impl SemanticsBuilder {
 
   pub fn new_quantum_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
-    let result = self.new_register(name.clone(), RegisterType::Q, size);
+    let no_error = self.new_register(name.clone(), RegisterType::Q, size)?;
     self.semantics.quantum_memory_size += size;
     self.last_quantum_register = Some(name);
-    result
+    Ok(no_error)
   }
 
   pub fn new_classical_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
-    let result = self.new_register(name.clone(), RegisterType::C, size);
+    let no_error = self.new_register(name.clone(), RegisterType::C, size)?;
     self.semantics.classical_memory_size += size;
     self.last_classical_register = Some(name);
-    result
+    Ok(no_error)
   }
 
   fn new_register(&mut self, name: String, kind: RegisterType, size: usize)
