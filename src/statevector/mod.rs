@@ -14,7 +14,7 @@ pub struct StateVector {
 impl StateVector {
 
   pub fn new(bit_width: usize) -> Self {
-    let mut bases = vec![Complex::new(0.0, 0.0); 2_usize.pow(bit_width as u32)];
+    let mut bases = vec![Complex::new(0.0, 0.0); exp2(bit_width)];
     bases[0].re = 1.0;
     StateVector { bases, bit_width }
   }

@@ -7,6 +7,7 @@ extern crate cached;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
 mod grammar;
+mod semantics;
 mod complex;
 mod statevector;
 mod gatelib;
