@@ -2,18 +2,18 @@ use std::collections::HashMap;
 use grammar::ast;
 
 #[derive(Debug, PartialEq)]
-enum RegisterType {
+pub enum RegisterType {
   Q,
   C
 }
 
 /// Register name, type and size.
 #[derive(Debug, PartialEq)]
-pub struct RegisterEntry(String, RegisterType, usize);
+pub struct RegisterEntry(pub String, pub RegisterType, pub usize);
 
 /// Register name, start index, end index.
 #[derive(Debug, PartialEq)]
-pub struct MemoryMapEntry(String, usize, usize);
+pub struct MemoryMapEntry(pub String, pub usize, pub usize);
 
 #[derive(Debug, PartialEq)]
 pub struct Semantics {

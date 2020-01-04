@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use semantics::{ Semantics, RegisterType, extract_semantics};
 use statevector::StateVector;
 use grammar::ast;
 use gatelib;
@@ -17,28 +18,19 @@ impl Runtime {
 
 pub fn execute(program: &ast::OpenQasmProgram)
 -> Result<StateVector, Box<dyn Error>> {
-  let size = extract_size(program)?;
+  let semantics = extract_semantics(program)?;
+  let size = semantics.quantum_memory_size;
   let mut runtime = Runtime::new(size);
-  runtime = apply_gates(&program, runtime);
+  runtime = apply_gates(&semantics, &program, runtime);
   Ok(runtime.statevector)
 }
 
-fn extract_size(program: &ast::OpenQasmProgram) -> Result<usize, &'static str> {
-  for statement in &program.program {
-    match statement {
-      ast::Statement::QRegDecl(_, v) => { return Ok(*v); }
-      _ => ()
-    };
-  }
-  Err("No quantum register declaration found.")
-}
-
-fn apply_gates(program: &ast::OpenQasmProgram, mut runtime: Runtime)
+fn apply_gates(semantics: &Semantics, program: &ast::OpenQasmProgram, mut runtime: Runtime)
 -> Runtime {
   for statement in &program.program {
     match statement {
       ast::Statement::QuantumOperation(operation) => {
-        runtime = apply_quantum_operation(operation, runtime);
+        runtime = apply_quantum_operation(semantics, operation, runtime);
       }
       _ => ()
     };
@@ -46,48 +38,76 @@ fn apply_gates(program: &ast::OpenQasmProgram, mut runtime: Runtime)
   runtime
 }
 
-fn apply_quantum_operation(operation: &ast::QuantumOperation, mut runtime: Runtime)
+fn apply_quantum_operation(semantics: &Semantics, operation: &ast::QuantumOperation, mut runtime: Runtime)
 -> Runtime {
   match operation {
     ast::QuantumOperation::Unitary(unitary) => {
-      runtime = apply_unitary(unitary, runtime)
+      runtime = apply_unitary(semantics, unitary, runtime)
     }
     _ => ()
   };
   runtime
 }
 
-fn apply_unitary(unitary: &ast::UnitaryOperation, mut runtime: Runtime)
+fn apply_unitary(semantics: &Semantics, unitary: &ast::UnitaryOperation, mut runtime: Runtime)
 -> Runtime {
   match unitary {
     ast::UnitaryOperation::GateExpansion(name, real_args, args) => {
-      runtime = apply_one_gate(name, real_args, args, runtime)
+      runtime = apply_one_gate(semantics, name, real_args, args, runtime)
     }
     _ => ()
   }
   runtime
 }
 
-fn apply_one_gate(name: &str, real_args: &Vec<ast::Expression>, args: &Vec<ast::Argument>, mut runtime: Runtime)
+fn apply_one_gate(semantics: &Semantics, name: &str, real_args: &Vec<ast::Expression>, args: &Vec<ast::Argument>, mut runtime: Runtime)
 -> Runtime {
   match name {
     "h" => {
-      let index = get_bit_index(&args[0]);
-      runtime.statevector = gatelib::h(index, runtime.statevector);
+      let indices = get_bit_indices(semantics, &args[0]);
+      for index in indices {
+        runtime.statevector = gatelib::h(index, runtime.statevector);
+      }
     }
     "cx" => {
-      let control = get_bit_index(&args[0]);
-      let target = get_bit_index(&args[1]);
-      runtime.statevector = gatelib::cx(control, target, runtime.statevector);
+      let controls = get_bit_indices(semantics, &args[0]);
+      let targets = get_bit_indices(semantics, &args[1]);
+      for (control, target) in controls.iter().zip(targets) {
+        runtime.statevector = gatelib::cx(*control, target, runtime.statevector);
+      }
     }
     _ => ()
   }
   runtime
 }
 
-fn get_bit_index(argument: &ast::Argument) -> usize {
+fn get_bit_indices(semantics: &Semantics, argument: &ast::Argument) -> Vec<usize> {
   match argument {
-    ast::Argument::Id(_) => 0,
-    ast::Argument::Item(_, index) => *index
+    ast::Argument::Id(name) => {
+      let kind = &semantics.register_table.get(name).unwrap().1;
+      match kind {
+        RegisterType::Q => {
+          let mapping = semantics.quantum_memory_map.get(name).unwrap();
+          (mapping.1..mapping.2 + 1).collect()
+        },
+        RegisterType::C => {
+          let mapping = semantics.classical_memory_map.get(name).unwrap();
+          (mapping.1..mapping.2 + 1).collect()
+        }
+      }
+    },
+    ast::Argument::Item(name, index) => {
+      let kind = &semantics.register_table.get(name).unwrap().1;
+      match kind {
+        RegisterType::Q => {
+          let mapping = semantics.quantum_memory_map.get(name).unwrap();
+          vec!(mapping.1 + *index)
+        },
+        RegisterType::C => {
+          let mapping = semantics.classical_memory_map.get(name).unwrap();
+          vec!(mapping.1 + *index)
+        }
+      }
+    }
   }
 }

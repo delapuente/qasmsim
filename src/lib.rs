@@ -8,8 +8,8 @@ lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
 mod grammar;
 mod semantics;
-mod complex;
-mod statevector;
+pub mod complex;
+pub mod statevector;
 mod gatelib;
 mod simulator;
 
