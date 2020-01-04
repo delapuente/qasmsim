@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use grammar::ast;
 
 #[derive(Debug, PartialEq)]
-pub enum RegisterType {
+enum RegisterType {
   Q,
   C
 }
@@ -53,18 +53,20 @@ impl SemanticsBuilder {
 
   pub fn new_quantum_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
-    let no_error = self.new_register(name.clone(), RegisterType::Q, size)?;
+    self.new_register(name.clone(), RegisterType::Q, size)?;
+    self.map_quantum_register(name.clone(), size)?;
     self.semantics.quantum_memory_size += size;
     self.last_quantum_register = Some(name);
-    Ok(no_error)
+    Ok(())
   }
 
   pub fn new_classical_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
-    let no_error = self.new_register(name.clone(), RegisterType::C, size)?;
+    self.new_register(name.clone(), RegisterType::C, size)?;
+    self.map_classical_register(name.clone(), size)?;
     self.semantics.classical_memory_size += size;
     self.last_classical_register = Some(name);
-    Ok(no_error)
+    Ok(())
   }
 
   fn new_register(&mut self, name: String, kind: RegisterType, size: usize)
@@ -73,6 +75,34 @@ impl SemanticsBuilder {
       return Err(format!("Register '{}' is already declared.", name))
     }
     self.semantics.register_table.insert(name.clone(), RegisterEntry(name, kind, size));
+    Ok(())
+  }
+
+  fn map_quantum_register(&mut self, name: String, size: usize)
+  -> Result<(), String> {
+    let new_entry;
+    match &self.last_quantum_register {
+      None => new_entry = MemoryMapEntry(name.clone(), 0, size - 1),
+      Some(register_name) => {
+        let last_index = self.semantics.quantum_memory_map.get(register_name).unwrap().2;
+        new_entry = MemoryMapEntry(name.clone(), last_index + 1, last_index + size);
+      }
+    }
+    self.semantics.quantum_memory_map.insert(name.clone(), new_entry);
+    Ok(())
+  }
+
+  fn map_classical_register(&mut self, name: String, size: usize)
+  -> Result<(), String> {
+    let new_entry;
+    match &self.last_classical_register {
+      None => new_entry = MemoryMapEntry(name.clone(), 0, size - 1),
+      Some(register_name) => {
+        let last_index = self.semantics.classical_memory_map.get(register_name).unwrap().2;
+        new_entry = MemoryMapEntry(name.clone(), last_index + 1, last_index + size);
+      }
+    }
+    self.semantics.classical_memory_map.insert(name.clone(), new_entry);
     Ok(())
   }
 }
