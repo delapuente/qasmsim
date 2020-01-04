@@ -84,30 +84,12 @@ fn apply_one_gate(semantics: &Semantics, name: &str, real_args: &Vec<ast::Expres
 fn get_bit_indices(semantics: &Semantics, argument: &ast::Argument) -> Vec<usize> {
   match argument {
     ast::Argument::Id(name) => {
-      let kind = &semantics.register_table.get(name).unwrap().1;
-      match kind {
-        RegisterType::Q => {
-          let mapping = semantics.quantum_memory_map.get(name).unwrap();
-          (mapping.1..mapping.2 + 1).collect()
-        },
-        RegisterType::C => {
-          let mapping = semantics.classical_memory_map.get(name).unwrap();
-          (mapping.1..mapping.2 + 1).collect()
-        }
-      }
+      let mapping = semantics.memory_map.get(name).unwrap();
+      (mapping.1..mapping.2 + 1).collect()
     },
     ast::Argument::Item(name, index) => {
-      let kind = &semantics.register_table.get(name).unwrap().1;
-      match kind {
-        RegisterType::Q => {
-          let mapping = semantics.quantum_memory_map.get(name).unwrap();
-          vec!(mapping.1 + *index)
-        },
-        RegisterType::C => {
-          let mapping = semantics.classical_memory_map.get(name).unwrap();
-          vec!(mapping.1 + *index)
-        }
-      }
+      let mapping = semantics.memory_map.get(name).unwrap();
+      vec!(mapping.1 + *index)
     }
   }
 }

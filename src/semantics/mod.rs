@@ -18,8 +18,7 @@ pub struct MemoryMapEntry(pub String, pub usize, pub usize);
 #[derive(Debug, PartialEq)]
 pub struct Semantics {
   pub register_table: HashMap<String, RegisterEntry>,
-  pub quantum_memory_map: HashMap<String, MemoryMapEntry>,
-  pub classical_memory_map: HashMap<String, MemoryMapEntry>,
+  pub memory_map: HashMap<String, MemoryMapEntry>,
   pub quantum_memory_size: usize,
   pub classical_memory_size: usize
 }
@@ -28,8 +27,7 @@ impl Semantics {
   pub fn new() -> Self {
     Semantics {
       register_table: HashMap::new(),
-      quantum_memory_map: HashMap::new(),
-      classical_memory_map: HashMap::new(),
+      memory_map: HashMap::new(),
       quantum_memory_size: 0,
       classical_memory_size: 0
     }
@@ -54,7 +52,7 @@ impl SemanticsBuilder {
   pub fn new_quantum_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
     self.new_register(name.clone(), RegisterType::Q, size)?;
-    self.map_quantum_register(name.clone(), size)?;
+    self.map_register(name.clone(), RegisterType::Q, size)?;
     self.semantics.quantum_memory_size += size;
     self.last_quantum_register = Some(name);
     Ok(())
@@ -63,7 +61,7 @@ impl SemanticsBuilder {
   pub fn new_classical_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
     self.new_register(name.clone(), RegisterType::C, size)?;
-    self.map_classical_register(name.clone(), size)?;
+    self.map_register(name.clone(), RegisterType::C, size)?;
     self.semantics.classical_memory_size += size;
     self.last_classical_register = Some(name);
     Ok(())
@@ -78,29 +76,20 @@ impl SemanticsBuilder {
     Ok(())
   }
 
-  fn map_quantum_register(&mut self, name: String, size: usize)
+  fn map_register(&mut self, name: String, kind: RegisterType, size: usize)
   -> Result<(), String> {
-    let new_entry = match &self.last_quantum_register {
+    let last_register = match &kind {
+      RegisterType::Q => &self.last_quantum_register,
+      RegisterType::C => &self.last_classical_register
+    };
+    let new_entry = match last_register {
       None => MemoryMapEntry(name.clone(), 0, size - 1),
       Some(register_name) => {
-        let last_index = self.semantics.quantum_memory_map.get(register_name).unwrap().2;
+        let last_index = self.semantics.memory_map.get(register_name).unwrap().2;
         MemoryMapEntry(name.clone(), last_index + 1, last_index + size)
       }
     };
-    self.semantics.quantum_memory_map.insert(name.clone(), new_entry);
-    Ok(())
-  }
-
-  fn map_classical_register(&mut self, name: String, size: usize)
-  -> Result<(), String> {
-    let new_entry = match &self.last_classical_register {
-      None => MemoryMapEntry(name.clone(), 0, size - 1),
-      Some(register_name) => {
-        let last_index = self.semantics.classical_memory_map.get(register_name).unwrap().2;
-        MemoryMapEntry(name.clone(), last_index + 1, last_index + size)
-      }
-    };
-    self.semantics.classical_memory_map.insert(name.clone(), new_entry);
+    self.semantics.memory_map.insert(name.clone(), new_entry);
     Ok(())
   }
 }
@@ -241,33 +230,14 @@ mod test {
     let tree = open_qasm2::OpenQasmProgramParser::new().parse(source).unwrap();
     let semantics_result = extract_semantics(&tree);
     assert!(semantics_result.is_ok());
-    let expected_quantum_memory_map = HashMap::from_iter(vec![
+    let expected_memory_map = HashMap::from_iter(vec![
       ("q".to_owned(), MemoryMapEntry("q".to_owned(), 0, 1)),
-      ("r".to_owned(), MemoryMapEntry("r".to_owned(), 2, 11))
-    ]);
-    if let Ok(semantics) = semantics_result {
-      assert_eq!(semantics.quantum_memory_map, expected_quantum_memory_map);
-    }
-  }
-
-  #[test]
-  fn test_classical_memory_map() {
-    let source = "
-    OPENQASM 2.0;
-    qreg q[2];
-    creg c[2];
-    qreg r[10];
-    creg d[10];
-    ";
-    let tree = open_qasm2::OpenQasmProgramParser::new().parse(source).unwrap();
-    let semantics_result = extract_semantics(&tree);
-    assert!(semantics_result.is_ok());
-    let expected_classical_memory_map = HashMap::from_iter(vec![
+      ("r".to_owned(), MemoryMapEntry("r".to_owned(), 2, 11)),
       ("c".to_owned(), MemoryMapEntry("c".to_owned(), 0, 1)),
       ("d".to_owned(), MemoryMapEntry("d".to_owned(), 2, 11))
     ]);
     if let Ok(semantics) = semantics_result {
-      assert_eq!(semantics.classical_memory_map, expected_classical_memory_map);
+      assert_eq!(semantics.memory_map, expected_memory_map);
     }
   }
 }
