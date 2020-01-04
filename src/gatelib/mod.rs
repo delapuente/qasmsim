@@ -25,7 +25,7 @@ pub fn cx(c: usize, t: usize, v: StateVector) -> StateVector {
 mod tests {
   use super::*;
   use complex::Complex;
-  use std::f64::consts::SQRT_2;
+  use std::f64::consts::FRAC_1_SQRT_2;
   use statevector::assert_approx_eq;
 
   #[test]
@@ -79,7 +79,7 @@ mod tests {
   fn test_hadamard() {
     let zero = Default::default();
     let whole = Complex::new(1.0, 0.0);
-    let half = Complex::new(1.0/SQRT_2, 0.0);
+    let half = Complex::new(FRAC_1_SQRT_2, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero));
     v = h(0, v);
     assert_approx_eq(&v, &StateVector::from_bases(vec!(half, half)));
@@ -89,7 +89,7 @@ mod tests {
   fn test_hadamard_on_bit_0() {
     let zero = Default::default();
     let whole = Complex::new(1.0, 0.0);
-    let half = Complex::new(1.0/SQRT_2, 0.0);
+    let half = Complex::new(FRAC_1_SQRT_2, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero, zero, zero));
     v = h(0, v);
     assert_approx_eq(&v, &StateVector::from_bases(vec!(half, half, zero, zero)));
@@ -99,7 +99,7 @@ mod tests {
   fn test_hadamard_on_bit_1() {
     let zero = Default::default();
     let whole = Complex::new(1.0, 0.0);
-    let half = Complex::new(1.0/SQRT_2, 0.0);
+    let half = Complex::new(FRAC_1_SQRT_2, 0.0);
     let mut v = StateVector::from_bases(vec!(whole, zero, zero, zero));
     v = h(1, v);
     assert_approx_eq(&v, &StateVector::from_bases(vec!(half, zero, half, zero)));
