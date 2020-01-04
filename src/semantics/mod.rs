@@ -80,28 +80,26 @@ impl SemanticsBuilder {
 
   fn map_quantum_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
-    let new_entry;
-    match &self.last_quantum_register {
-      None => new_entry = MemoryMapEntry(name.clone(), 0, size - 1),
+    let new_entry = match &self.last_quantum_register {
+      None => MemoryMapEntry(name.clone(), 0, size - 1),
       Some(register_name) => {
         let last_index = self.semantics.quantum_memory_map.get(register_name).unwrap().2;
-        new_entry = MemoryMapEntry(name.clone(), last_index + 1, last_index + size);
+        MemoryMapEntry(name.clone(), last_index + 1, last_index + size)
       }
-    }
+    };
     self.semantics.quantum_memory_map.insert(name.clone(), new_entry);
     Ok(())
   }
 
   fn map_classical_register(&mut self, name: String, size: usize)
   -> Result<(), String> {
-    let new_entry;
-    match &self.last_classical_register {
-      None => new_entry = MemoryMapEntry(name.clone(), 0, size - 1),
+    let new_entry = match &self.last_classical_register {
+      None => MemoryMapEntry(name.clone(), 0, size - 1),
       Some(register_name) => {
         let last_index = self.semantics.classical_memory_map.get(register_name).unwrap().2;
-        new_entry = MemoryMapEntry(name.clone(), last_index + 1, last_index + size);
+        MemoryMapEntry(name.clone(), last_index + 1, last_index + size)
       }
-    }
+    };
     self.semantics.classical_memory_map.insert(name.clone(), new_entry);
     Ok(())
   }
