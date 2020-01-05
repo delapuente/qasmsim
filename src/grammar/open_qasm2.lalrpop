@@ -69,8 +69,31 @@ GateExpansion: (String, Vec<ast::Expression>, Vec<ast::Argument>) = {
 ExpressionList = List<Expr>;
 
 Expr: ast::Expression = {
+  <l:Expr> <op:ExprOp> <r:Factor> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
+  Factor
+}
+
+ExprOp: ast::Opcode = {
+  "+" => ast::Opcode::Add,
+  "-" => ast::Opcode::Sub
+}
+
+Factor: ast::Expression = {
+  <l:Factor> <op:FactorOp> <r:Term> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
+  Term
+}
+
+FactorOp: ast::Opcode = {
+  "*" => ast::Opcode::Mul,
+  "/" => ast::Opcode::Div
+}
+
+Term: ast::Expression = {
+  "pi" => ast::Expression::Pi,
   Id => ast::Expression::Id(<>),
-  Real => ast::Expression::Real(<>)
+  Real => ast::Expression::Real(<>),
+  Nninteger => ast::Expression::Real(<> as f64),
+  "(" <Expr> ")"
 };
 
 ArgumentList = List<Argument>;

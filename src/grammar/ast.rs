@@ -35,9 +35,20 @@ pub enum UnitaryOperation {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Opcode {
+  Add,
+  Sub,
+  Mul,
+  Div
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Expression {
+  Pi,
   Id(String),
-  Real(f64)
+  Real(f64),
+  Op(Opcode, Box<Expression>, Box<Expression>),
+  Minus(Box<Expression>)
 }
 
 #[derive(Debug, PartialEq)]

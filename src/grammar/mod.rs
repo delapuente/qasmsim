@@ -2,7 +2,7 @@ pub mod ast;
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+  use grammar::ast::*;
   use open_qasm2;
 
   #[test]
@@ -14,11 +14,11 @@ mod tests {
   ";
     let parser = open_qasm2::OpenQasmProgramParser::new();
     let tree = parser.parse(source).unwrap();
-    assert_eq!(tree, Box::new(ast::OpenQasmProgram{
+    assert_eq!(tree, Box::new(OpenQasmProgram{
       version: "2.0".to_string(),
       program: vec![
-        ast::Statement::QRegDecl("q".to_string(), 2),
-        ast::Statement::CRegDecl("c".to_string(), 2)
+        Statement::QRegDecl("q".to_string(), 2),
+        Statement::CRegDecl("c".to_string(), 2)
       ]
     }));
   }
@@ -30,7 +30,7 @@ mod tests {
   ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
-    assert_eq!(tree, ast::Statement::GateDecl(
+    assert_eq!(tree, Statement::GateDecl(
       "id".to_string(), vec![], vec!["q".to_string()], vec![]
     ));
   }
@@ -42,7 +42,7 @@ mod tests {
   ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
-    assert_eq!(tree, ast::Statement::GateDecl(
+    assert_eq!(tree, Statement::GateDecl(
       "id".to_string(), vec![], vec!["q".to_string()], vec![]
     ));
   }
@@ -56,11 +56,11 @@ mod tests {
   ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
-    assert_eq!(tree, ast::Statement::GateDecl(
+    assert_eq!(tree, Statement::GateDecl(
       "cx".to_string(), vec![], vec!["c".to_string(), "t".to_string()], vec![
-        ast::GateOperation::Unitary(ast::UnitaryOperation::CX(
-          ast::Argument::Id("c".to_string()),
-          ast::Argument::Id("t".to_string())
+        GateOperation::Unitary(UnitaryOperation::CX(
+          Argument::Id("c".to_string()),
+          Argument::Id("t".to_string())
         ))
       ]
     ));
@@ -75,16 +75,16 @@ mod tests {
   ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
-    assert_eq!(tree, ast::Statement::GateDecl(
+    assert_eq!(tree, Statement::GateDecl(
       "u".to_string(),
       vec!["theta".to_string(), "phi".to_string(), "lambda".to_string()],
       vec!["q".to_string()],
       vec![
-        ast::GateOperation::Unitary(ast::UnitaryOperation::U(
-          ast::Expression::Id("theta".to_string()),
-          ast::Expression::Id("phi".to_string()),
-          ast::Expression::Id("lambda".to_string()),
-          ast::Argument::Id("q".to_string())
+        GateOperation::Unitary(UnitaryOperation::U(
+          Expression::Id("theta".to_string()),
+          Expression::Id("phi".to_string()),
+          Expression::Id("lambda".to_string()),
+          Argument::Id("q".to_string())
         ))
       ]
     ));
@@ -99,17 +99,40 @@ mod tests {
   ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
-    assert_eq!(tree, ast::Statement::GateDecl(
+    assert_eq!(tree, Statement::GateDecl(
       "rz".to_string(),
       vec!["phi".to_string()],
       vec!["a".to_string()],
       vec![
-        ast::GateOperation::Unitary(ast::UnitaryOperation::GateExpansion(
+        GateOperation::Unitary(UnitaryOperation::GateExpansion(
           "u1".to_string(),
-          vec![ast::Expression::Id("phi".to_string())],
-          vec![ast::Argument::Id("a".to_string())]
+          vec![Expression::Id("phi".to_string())],
+          vec![Argument::Id("a".to_string())]
         ))
       ]
+    ));
+  }
+
+  #[test]
+  fn test_parse_expressions_in_arguments() {
+    let source = "
+    U(pi/2, 0, pi) q;
+    ";
+    let parser = open_qasm2::StatementParser::new();
+    let tree = parser.parse(source).unwrap();
+    assert_eq!(tree, Statement::QuantumOperation(
+      QuantumOperation::Unitary(
+        UnitaryOperation::U(
+          Expression::Op(
+            Opcode::Div,
+            Box::new(Expression::Pi),
+            Box::new(Expression::Real(2.0))
+          ),
+          Expression::Real(0.0),
+          Expression::Pi,
+          Argument::Id(String::from("q"))
+        )
+      )
     ));
   }
 
@@ -123,12 +146,12 @@ mod tests {
     let parser = open_qasm2::ProgramParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, vec![
-      ast::Statement::QRegDecl("q".to_string(), 1),
-      ast::Statement::CRegDecl("c".to_string(), 1),
-      ast::Statement::QuantumOperation(
-        ast::QuantumOperation::Unitary(
-          ast::UnitaryOperation::GateExpansion(
-            "h".to_string(), vec![], vec![ast::Argument::Id("q".to_string())])
+      Statement::QRegDecl("q".to_string(), 1),
+      Statement::CRegDecl("c".to_string(), 1),
+      Statement::QuantumOperation(
+        QuantumOperation::Unitary(
+          UnitaryOperation::GateExpansion(
+            "h".to_string(), vec![], vec![Argument::Id("q".to_string())])
         )
       )
     ]);
@@ -146,22 +169,22 @@ mod tests {
     let parser = open_qasm2::ProgramParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, vec![
-      ast::Statement::QRegDecl("q".to_string(), 1),
-      ast::Statement::CRegDecl("c".to_string(), 1),
-      ast::Statement::QuantumOperation(
-        ast::QuantumOperation::Unitary(
-          ast::UnitaryOperation::GateExpansion(
-            "h".to_string(), vec![], vec![ast::Argument::Id("q".to_string())])
+      Statement::QRegDecl("q".to_string(), 1),
+      Statement::CRegDecl("c".to_string(), 1),
+      Statement::QuantumOperation(
+        QuantumOperation::Unitary(
+          UnitaryOperation::GateExpansion(
+            "h".to_string(), vec![], vec![Argument::Id("q".to_string())])
         )
       ),
-      ast::Statement::QuantumOperation(
-        ast::QuantumOperation::Measure(
-          ast::Argument::Id("q".to_string()),
-          ast::Argument::Id("c".to_string())
+      Statement::QuantumOperation(
+        QuantumOperation::Measure(
+          Argument::Id("q".to_string()),
+          Argument::Id("c".to_string())
         )
       ),
-      ast::Statement::QuantumOperation(
-        ast::QuantumOperation::Reset(ast::Argument::Id("q".to_string()))
+      Statement::QuantumOperation(
+        QuantumOperation::Reset(Argument::Id("q".to_string()))
       )
     ]);
   }

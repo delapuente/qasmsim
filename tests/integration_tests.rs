@@ -24,6 +24,25 @@ fn endianess() {
 }
 
 #[test]
+fn call_custom_gate() {
+    let source = "
+    OPENQASM 2.0;
+    gate h q {
+        U(pi/2, 0, pi);
+    }
+    qreg q[1];
+    h q[0];
+    ";
+    assert_approx_eq(
+        &qasmsim::run(source).unwrap(),
+        &StateVector::from_bases(vec!(
+            Complex::from(FRAC_1_SQRT_2),
+            Complex::from(FRAC_1_SQRT_2)
+        ))
+    )
+}
+
+#[test]
 fn test_one_register_bell_circuit() {
     let source = "
     OPENQASM 2.0;
