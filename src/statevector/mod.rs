@@ -31,17 +31,15 @@ impl StateVector {
   }
 
   /// Apply a controlled not
-  pub fn cnot(mut self, c: usize, t: usize) -> Self {
+  pub fn cnot(&mut self, c: usize, t: usize) {
     let exchangable_rows = find_exchangeable_rows(self.bit_width, c, t);
     for (index_a, index_b) in exchangable_rows {
       self.bases.swap(index_a, index_b);
     }
-    self
   }
 
   /// Apply a 3 degree rotation to the target bit.
-  pub fn u(mut self, theta: f64, phi: f64, lambda: f64, target: usize)
-  -> Self {
+  pub fn u(&mut self, theta: f64, phi: f64, lambda: f64, target: usize) {
     let target_rows = find_target_rows(self.bit_width, target);
     let u_matrix = build_u(theta, phi, lambda);
     for (index_0, index_1) in target_rows {
@@ -49,7 +47,6 @@ impl StateVector {
       self.bases[index_0] = u_matrix.0 * selected.0 + u_matrix.1 * selected.1;
       self.bases[index_1] = u_matrix.2 * selected.0 + u_matrix.3 * selected.1;
     }
-    self
   }
 }
 
@@ -172,8 +169,8 @@ mod tests {
     let p = Default::default();
     let a = Complex::new(1.0, 0.0);
     let b = Complex::new(0.0, 1.0);
-    let v = StateVector::from_bases(vec!(p, a, p, b))
-      .cnot(0, 1);
+    let mut v = StateVector::from_bases(vec!(p, a, p, b));
+    v.cnot(0, 1);
     assert_eq!(v, StateVector::from_bases(vec!(p, b, p, a)));
   }
 
@@ -182,8 +179,8 @@ mod tests {
     let p = Default::default();
     let a = Complex::new(1.0, 0.0);
     let b = Complex::new(0.0, 1.0);
-    let v = StateVector::from_bases(vec!(p, p, a, b))
-      .cnot(1, 0);
+    let mut v = StateVector::from_bases(vec!(p, p, a, b));
+    v.cnot(1, 0);
     assert_eq!(v, StateVector::from_bases(vec!(p, p, b, a)));
   }
 
@@ -192,8 +189,8 @@ mod tests {
     let p = Default::default();
     let a = Complex::new(1.0, 0.0);
     let b = Complex::new(0.0, 1.0);
-    let v = StateVector::from_bases(vec!(p, p, p, p, a, b, a, b))
-      .cnot(2, 0);
+    let mut v = StateVector::from_bases(vec!(p, p, p, p, a, b, a, b));
+    v.cnot(2, 0);
     assert_eq!(v, StateVector::from_bases(vec!(p, p, p, p, b, a, b, a)));
   }
 
@@ -202,8 +199,8 @@ mod tests {
     let p = Default::default();
     let a = Complex::new(1.0, 0.0);
     let b = Complex::new(0.0, 1.0);
-    let v = StateVector::from_bases(vec!(p, a, p, a, p, b, p, b))
-      .cnot(0, 2);
+    let mut v = StateVector::from_bases(vec!(p, a, p, a, p, b, p, b));
+    v.cnot(0, 2);
     assert_eq!(v, StateVector::from_bases(vec!(p, b, p, b, p, a, p, a)));
   }
 
@@ -212,9 +209,9 @@ mod tests {
     let p = Default::default();
     let a = Complex::new(1.0, 0.0);
     let b = Complex::new(0.0, 1.0);
-    let v = StateVector::from_bases(vec!(p, a, p, b))
-      .cnot(0, 1)
-      .cnot(0, 1);
+    let mut v = StateVector::from_bases(vec!(p, a, p, b));
+    v.cnot(0, 1);
+    v.cnot(0, 1);
     assert_eq!(v, StateVector::from_bases(vec!(p, a, p, b)));
   }
 }
