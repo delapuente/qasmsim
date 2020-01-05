@@ -3,12 +3,25 @@ name = "qasmsim"
 version = "0.1.0"
 authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+wasm = ["wasm-bindgen", "console_error_panic_hook", "wee_alloc"]
+
 [dependencies]
 num = "0.2.0"
 lalrpop-util = "0.17.2"
 regex = "1.3.1"
 cached = "0.11.0"
 float-cmp = "0.6.0"
+wasm-bindgen = { version = "0.2", optional = true }
+console_error_panic_hook = { version = "0.1.6", optional = true }
+wee_alloc = { version = "0.4.5", optional = true }
+cfg-if = "0.1.10"
 
 [build-dependencies]
 lalrpop = "0.17.2"
+
+[profile.release]
+opt-level = "s"

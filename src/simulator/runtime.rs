@@ -17,7 +17,7 @@ impl Runtime {
 }
 
 pub fn execute(program: &ast::OpenQasmProgram)
--> Result<StateVector, Box<dyn Error>> {
+-> Result<StateVector, String> {
   let semantics = extract_semantics(program)?;
   let size = semantics.quantum_memory_size;
   let mut runtime = Runtime::new(size);

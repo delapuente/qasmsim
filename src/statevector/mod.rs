@@ -1,9 +1,11 @@
+use std::f64;
+
 use float_cmp::ApproxEq;
 use cached::SizedCache;
 use num::Float;
-
 use complex::{ self, Complex, ComplexMargin };
-use std::f64;
+
+pub mod wasm;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StateVector {
