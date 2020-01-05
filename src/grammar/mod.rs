@@ -137,6 +137,32 @@ mod tests {
   }
 
   #[test]
+  fn test_operator_precedence() {
+    let source = "
+    -pi + (1 - 2) * 3 / 4
+    ";
+    let parser = open_qasm2::ExprParser::new();
+    let tree = parser.parse(source).unwrap();
+    assert_eq!(tree, Expression::Op(
+      Opcode::Add,
+      Box::new(Expression::Minus(Box::new(Expression::Pi))),
+      Box::new(Expression::Op(
+        Opcode::Div,
+        Box::new(Expression::Op(
+          Opcode::Mul,
+          Box::new(Expression::Op(
+            Opcode::Sub,
+            Box::new(Expression::Real(1.0)),
+            Box::new(Expression::Real(2.0))
+          )),
+          Box::new(Expression::Real(3.0))
+        )),
+        Box::new(Expression::Real(4.0))
+      ))
+    ));
+  }
+
+  #[test]
   fn test_parse_program_without_version_string() {
     let source = "
   qreg q[1];
