@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use semantics::{ Semantics, extract_semantics};
 use statevector::StateVector;
 use grammar::ast;
 use gatelib;
+use simulator::expression_solver::ExpressionSolver;
 
 struct Runtime {
   semantics: Semantics,
@@ -61,11 +64,18 @@ impl Runtime {
         gatelib::cx(control, target, &mut self.statevector);
       }
       macro_name => {
-        // let solved_real_args = solve(real_args);
+        let solver = ExpressionSolver::new(HashMap::new());
+        let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
         // let binding = bind(semantics, macro_name, solved_real_args, args);
         // runtime = apply_gates(semantics, binding.program, runtime);
       }
     };
+  }
+
+  fn expand_arguments(&self, args: &Vec<ast::Argument>)
+  -> Vec<Vec<ast::Argument>> {
+    let range = self.get_range(args);
+    range.map(|index| Runtime::specify(args, index)).collect()
   }
 
   fn get_bit_mapping(&self, argument: &ast::Argument) -> usize {
@@ -76,12 +86,6 @@ impl Runtime {
       }
       _ => unreachable!()
     }
-  }
-
-  fn expand_arguments(&self, args: &Vec<ast::Argument>)
-  -> Vec<Vec<ast::Argument>> {
-    let range = self.get_range(args);
-    range.map(|index| Runtime::specify(args, index)).collect()
   }
 
   fn get_range(&self, args: &Vec<ast::Argument>) -> std::ops::Range<usize> {
