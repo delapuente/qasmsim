@@ -18,8 +18,8 @@ pub Program: Vec<ast::Statement> = {
 pub Statement: ast::Statement = {
   RegisterDeclaration,
   <GateDeclaration> "{" "}" => ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
-  <decl:GateDeclaration> "{" <ops:GateOperationList> "}" => {
-    ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops) },
+  <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
+    ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops),
   "opaque" <GateDeclaration> ";" =>
     ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2),
   QuantumOperation => ast::Statement::QuantumOperation(<>)
