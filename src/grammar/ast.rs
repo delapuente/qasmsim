@@ -51,7 +51,7 @@ pub enum Expression {
   Minus(Box<Expression>)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Argument {
   Id(String),
   Item(String, usize)
