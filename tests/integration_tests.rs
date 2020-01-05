@@ -27,11 +27,11 @@ fn endianess() {
 fn call_custom_gate() {
     let source = "
     OPENQASM 2.0;
-    gate h q {
-        U(pi/2, 0, pi);
+    gate hadamard q {
+        U(pi/2, 0, pi) q;
     }
     qreg q[1];
-    h q[0];
+    hadamard q[0];
     ";
     assert_approx_eq(
         &qasmsim::run(source).unwrap(),
