@@ -15,8 +15,13 @@ pub struct RegisterEntry(pub String, pub RegisterType, pub usize);
 #[derive(Debug, PartialEq)]
 pub struct MemoryMapEntry(pub String, pub usize, pub usize);
 
+/// Macro name, real arguments, register arguments, list of statements.
+#[derive(Debug, PartialEq)]
+pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec<ast::Statement>);
+
 #[derive(Debug, PartialEq)]
 pub struct Semantics {
+  pub macro_definitions: HashMap<String, MacroDefinition>,
   pub register_table: HashMap<String, RegisterEntry>,
   pub memory_map: HashMap<String, MemoryMapEntry>,
   pub quantum_memory_size: usize,
@@ -26,6 +31,7 @@ pub struct Semantics {
 impl Semantics {
   pub fn new() -> Self {
     Semantics {
+      macro_definitions: HashMap::new(),
       register_table: HashMap::new(),
       memory_map: HashMap::new(),
       quantum_memory_size: 0,
@@ -240,4 +246,70 @@ mod test {
       assert_eq!(semantics.memory_map, expected_memory_map);
     }
   }
+
+  #[test]
+  fn test_macro_definitions() {
+    let source = "
+    OPENQASM 2.0;
+    gate only_qubits q {
+      h q;
+    }
+    qreg q[2];
+    U(0, 0, 0) q;
+    gate reals_and_qubits (a, b) q, r {
+      U(a/b, 0, 0) q;
+    }
+    ";
+    let tree = open_qasm2::OpenQasmProgramParser::new().parse(source).unwrap();
+    let semantics_result = extract_semantics(&tree);
+    assert!(semantics_result.is_ok());
+    let expected_definitions = HashMap::from_iter(vec![
+      (
+        "only_qubits".to_owned(),
+        MacroDefinition(
+          "only_qubits".to_owned(),
+          vec![],
+          vec!["q".to_owned()],
+          vec![ast::Statement::QuantumOperation(
+            ast::QuantumOperation::Unitary(
+              ast::UnitaryOperation::GateExpansion(
+                "h".to_owned(),
+                vec![],
+                vec![ast::Argument::Id("q".to_owned())]
+              )
+            )
+          )]
+        )
+      ),
+      (
+        "reals_and_qubits".to_owned(),
+        MacroDefinition(
+          "reals_and_qubits".to_owned(),
+          vec!["a".to_owned(), "b".to_owned()],
+          vec!["q".to_owned()],
+          vec![ast::Statement::QuantumOperation(
+            ast::QuantumOperation::Unitary(
+              ast::UnitaryOperation::GateExpansion(
+                "h".to_owned(),
+                vec![
+                  ast::Expression::Op(
+                    ast::Opcode::Div,
+                    Box::new(ast::Expression::Id("a".to_owned())),
+                    Box::new(ast::Expression::Id("b".to_owned()))
+                  ),
+                  ast::Expression::Real(0.0),
+                  ast::Expression::Real(0.0)
+                ],
+                vec![ast::Argument::Id("q".to_owned())]
+              )
+            )
+          )]
+        )
+      )
+    ]);
+    if let Ok(semantics) = semantics_result {
+      assert_eq!(semantics.macro_definitions, expected_definitions);
+    }
+  }
+
 }
