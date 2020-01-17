@@ -14,7 +14,7 @@ pub enum Statement {
   QuantumOperation(QuantumOperation)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum GateOperation {
   Unitary(UnitaryOperation),
   Barrier(Vec<String>)
@@ -27,14 +27,14 @@ pub enum QuantumOperation {
   Reset(Argument)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UnitaryOperation {
   U(Expression, Expression, Expression, Argument),
   CX(Argument, Argument),
   GateExpansion(String, Vec<Expression>, Vec<Argument>)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Opcode {
   Add,
   Sub,
@@ -42,7 +42,7 @@ pub enum Opcode {
   Div
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
   Pi,
   Id(String),

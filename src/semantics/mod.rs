@@ -73,6 +73,18 @@ impl SemanticsBuilder {
     Ok(())
   }
 
+  pub fn new_gate(&mut self, name: String, real_args: Vec<String>, args: Vec<String>, body: Vec<ast::GateOperation>)
+  -> Result<(), String> {
+    if self.semantics.macro_definitions.contains_key(&name) {
+      return Err(format!("Gate '{}' is already declared.", name))
+    }
+    self.semantics.macro_definitions.insert(
+      name.clone(),
+      MacroDefinition(name, real_args, args, body)
+    );
+    Ok(())
+  }
+
   fn new_register(&mut self, name: String, kind: RegisterType, size: usize)
   -> Result<(), String> {
     if self.semantics.register_table.contains_key(&name) {
@@ -109,6 +121,13 @@ pub fn extract_semantics(tree: &ast::OpenQasmProgram)
         builder.new_quantum_register(name.clone(), *size)?,
       ast::Statement::CRegDecl(name, size) =>
         builder.new_classical_register(name.clone(), *size)?,
+      ast::Statement::GateDecl(name, real_args, args, operations) =>
+        builder.new_gate(
+          name.clone(),
+          real_args.to_vec(),
+          args.to_vec(),
+          operations.to_vec()
+        )?,
       _ => ()
     }
   }
@@ -284,20 +303,17 @@ mod test {
         MacroDefinition(
           "reals_and_qubits".to_owned(),
           vec!["a".to_owned(), "b".to_owned()],
-          vec!["q".to_owned()],
+          vec!["q".to_owned(), "r".to_owned()],
           vec![ast::GateOperation::Unitary(
-            ast::UnitaryOperation::GateExpansion(
-              "h".to_owned(),
-              vec![
-                ast::Expression::Op(
-                  ast::Opcode::Div,
-                  Box::new(ast::Expression::Id("a".to_owned())),
-                  Box::new(ast::Expression::Id("b".to_owned()))
-                ),
-                ast::Expression::Real(0.0),
-                ast::Expression::Real(0.0)
-              ],
-              vec![ast::Argument::Id("q".to_owned())]
+            ast::UnitaryOperation::U(
+              ast::Expression::Op(
+                ast::Opcode::Div,
+                Box::new(ast::Expression::Id("a".to_owned())),
+                Box::new(ast::Expression::Id("b".to_owned()))
+              ),
+              ast::Expression::Real(0.0),
+              ast::Expression::Real(0.0),
+              ast::Argument::Id("q".to_owned())
             )
           )]
         )

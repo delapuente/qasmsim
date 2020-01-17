@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{ HashMap, VecDeque };
 
-use semantics::{ Semantics, extract_semantics};
+use semantics::{ Semantics, extract_semantics };
 use statevector::StateVector;
 use grammar::ast;
 use gatelib;
@@ -66,7 +66,7 @@ impl Runtime {
       macro_name => {
         let solver = ExpressionSolver::new(HashMap::new());
         let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
-        // let binding = bind(semantics, macro_name, solved_real_args, args);
+        //let binding = bind(semantics, macro_name, solved_real_args, args);
         // runtime = apply_gates(semantics, binding.program, runtime);
       }
     };
