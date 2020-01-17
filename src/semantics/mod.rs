@@ -17,7 +17,7 @@ pub struct MemoryMapEntry(pub String, pub usize, pub usize);
 
 /// Macro name, real arguments, register arguments, list of statements.
 #[derive(Debug, PartialEq)]
-pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec<ast::Statement>);
+pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec<ast::GateOperation>);
 
 #[derive(Debug, PartialEq)]
 pub struct Semantics {
@@ -270,13 +270,11 @@ mod test {
           "only_qubits".to_owned(),
           vec![],
           vec!["q".to_owned()],
-          vec![ast::Statement::QuantumOperation(
-            ast::QuantumOperation::Unitary(
-              ast::UnitaryOperation::GateExpansion(
-                "h".to_owned(),
-                vec![],
-                vec![ast::Argument::Id("q".to_owned())]
-              )
+          vec![ast::GateOperation::Unitary(
+            ast::UnitaryOperation::GateExpansion(
+              "h".to_owned(),
+              vec![],
+              vec![ast::Argument::Id("q".to_owned())]
             )
           )]
         )
@@ -287,21 +285,19 @@ mod test {
           "reals_and_qubits".to_owned(),
           vec!["a".to_owned(), "b".to_owned()],
           vec!["q".to_owned()],
-          vec![ast::Statement::QuantumOperation(
-            ast::QuantumOperation::Unitary(
-              ast::UnitaryOperation::GateExpansion(
-                "h".to_owned(),
-                vec![
-                  ast::Expression::Op(
-                    ast::Opcode::Div,
-                    Box::new(ast::Expression::Id("a".to_owned())),
-                    Box::new(ast::Expression::Id("b".to_owned()))
-                  ),
-                  ast::Expression::Real(0.0),
-                  ast::Expression::Real(0.0)
-                ],
-                vec![ast::Argument::Id("q".to_owned())]
-              )
+          vec![ast::GateOperation::Unitary(
+            ast::UnitaryOperation::GateExpansion(
+              "h".to_owned(),
+              vec![
+                ast::Expression::Op(
+                  ast::Opcode::Div,
+                  Box::new(ast::Expression::Id("a".to_owned())),
+                  Box::new(ast::Expression::Id("b".to_owned()))
+                ),
+                ast::Expression::Real(0.0),
+                ast::Expression::Real(0.0)
+              ],
+              vec![ast::Argument::Id("q".to_owned())]
             )
           )]
         )
