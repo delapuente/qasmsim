@@ -1,4 +1,5 @@
 use std::collections::{ HashMap, VecDeque };
+use std::iter::FromIterator;
 
 use semantics::{ Semantics, extract_semantics };
 use statevector::StateVector;
@@ -66,7 +67,8 @@ impl Runtime {
       macro_name => {
         let solver = ExpressionSolver::new(HashMap::new());
         let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
-        //let binding = bind(semantics, macro_name, solved_real_args, args);
+        let binding_maps = self.bind(macro_name.to_owned(), solved_real_args, args);
+        println!("{:?}", binding_maps);
         // runtime = apply_gates(semantics, binding.program, runtime);
       }
     };
@@ -109,6 +111,22 @@ impl Runtime {
       }
     }
     result
+  }
+
+  fn bind(&mut self, macro_name: String, real_args: Vec<f64>, args: &Vec<ast::Argument>)
+  -> (HashMap<String, f64>, HashMap<String, ast::Argument>) {
+    let definition = self.semantics.macro_definitions.get(&macro_name).unwrap();
+    let real_args_mapping = HashMap::from_iter(
+      definition.1.iter()
+      .zip(real_args.iter()) // pair formal arguments with their float values
+      .map(|(s, f)| (s.to_owned(), *f)) // convert them into proper copies
+    );
+    let args_mapping = HashMap::from_iter(
+      definition.2.iter()
+      .zip(args.iter().map(|a| a.clone())) // pair formal arguments with their registers
+      .map(|(s, r)| (s.to_owned(), r.clone())) // convert them into proper copies
+    );
+    (real_args_mapping, args_mapping)
   }
 }
 
