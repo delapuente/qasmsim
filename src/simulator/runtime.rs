@@ -20,7 +20,7 @@ impl Runtime {
   pub fn new(semantics: Semantics) -> Self {
     let memory_size = semantics.quantum_memory_size;
     Runtime {
-      macro_stack: VecDeque::from_iter(vec![(HashMap::new(), HashMap::new())]),
+      macro_stack: VecDeque::new(),
       semantics,
       statevector: StateVector::new(memory_size)
     }
@@ -48,37 +48,50 @@ impl Runtime {
 
   fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) {
     match unitary {
-      ast::UnitaryOperation::U(theta, phi, lambda, target) => {
-        let arg_bindings = &self.macro_stack.get(0).unwrap().1;
-        let argument_solver = ArgumentSolver::new(arg_bindings);
-        let actual_arg = argument_solver.solve(target);
+      ast::UnitaryOperation::GateExpansion(name, real_args, args) => {
+        // In program execution, do not replace symbols
+        let actual_args: Vec<ast::Argument> = if self.macro_stack.len() == 0 {
+          args.iter().map(|arg| arg.clone()).collect()
+        }
+        // In macro execution, replace formal arguments with actual arguments
+        else {
+          let arg_bindings = &self.macro_stack.get(0).unwrap().1;
+          let argument_solver = ArgumentSolver::new(arg_bindings);
+          args.iter().map(|arg| argument_solver.solve(&arg)).collect()
+        };
 
-        let real_bindings = &self.macro_stack.get(0).unwrap().0;
-        let real_args = vec![theta, phi, lambda];
+        let empty = HashMap::new();
+        let real_bindings = if self.macro_stack.len() == 0 {
+          &empty
+        }
+        else {
+          &self.macro_stack.get(0).unwrap().0
+        };
         let solver = ExpressionSolver::new(real_bindings);
         let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
 
-        for argument_expansion in self.expand_arguments(&vec![actual_arg.clone()]) {
-          self.statevector.u(
-            solved_real_args[0],
-            solved_real_args[1],
-            solved_real_args[2],
-            self.get_bit_mapping(&argument_expansion[0])
-          );
-        }
-      },
-      ast::UnitaryOperation::GateExpansion(name, real_args, args) => {
-        for argument_expansion in self.expand_arguments(args) {
-          self.apply_one_gate(name, real_args, &argument_expansion)
+        for argument_expansion in self.expand_arguments(&actual_args) {
+          self.apply_one_gate(name, &solved_real_args, &argument_expansion)
         }
       }
-      _ => ()
     };
   }
 
-  fn apply_one_gate(&mut self, name: &str, real_args: &Vec<ast::Expression>,
+  fn apply_one_gate(&mut self, name: &str, real_args: &Vec<f64>,
   args: &Vec<ast::Argument>) {
     match name {
+      "U" => {
+        let theta = real_args[0];
+        let phi = real_args[1];
+        let lambda = real_args[2];
+        let target = self.get_bit_mapping(&args[0]);
+        self.statevector.u(theta, phi, lambda, target);
+      }
+      "CX" => {
+        let control = self.get_bit_mapping(&args[0]);
+        let target = self.get_bit_mapping(&args[1]);
+        self.statevector.cnot(control, target);
+      }
       "h" => {
         let index = self.get_bit_mapping(&args[0]);
         gatelib::h(index, &mut self.statevector);
@@ -91,8 +104,7 @@ impl Runtime {
       macro_name => {
         let empty = HashMap::new();
         let solver = ExpressionSolver::new(&empty);
-        let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
-        let binding_mappings = self.bind(macro_name.to_owned(), solved_real_args, args);
+        let binding_mappings = self.bind(macro_name.to_owned(), real_args, args);
         self.call(macro_name.to_owned(), binding_mappings).unwrap();
       }
     };
@@ -148,7 +160,7 @@ impl Runtime {
     result
   }
 
-  fn bind(&mut self, macro_name: String, real_args: Vec<f64>, args: &Vec<ast::Argument>)
+  fn bind(&mut self, macro_name: String, real_args: &Vec<f64>, args: &Vec<ast::Argument>)
   -> BindingMappings {
     let definition = self.semantics.macro_definitions.get(&macro_name).unwrap();
     let real_args_mapping = HashMap::from_iter(

@@ -29,8 +29,6 @@ pub enum QuantumOperation {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum UnitaryOperation {
-  U(Expression, Expression, Expression, Argument),
-  CX(Argument, Argument),
   GateExpansion(String, Vec<Expression>, Vec<Argument>)
 }
 

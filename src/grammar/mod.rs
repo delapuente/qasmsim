@@ -58,9 +58,13 @@ mod tests {
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::GateDecl(
       "cx".to_string(), vec![], vec!["c".to_string(), "t".to_string()], vec![
-        GateOperation::Unitary(UnitaryOperation::CX(
-          Argument::Id("c".to_string()),
-          Argument::Id("t".to_string())
+        GateOperation::Unitary(UnitaryOperation::GateExpansion(
+          "CX".to_owned(),
+          vec![],
+          vec![
+            Argument::Id("c".to_owned()),
+            Argument::Id("t".to_owned())
+          ]
         ))
       ]
     ));
@@ -80,11 +84,14 @@ mod tests {
       vec!["theta".to_string(), "phi".to_string(), "lambda".to_string()],
       vec!["q".to_string()],
       vec![
-        GateOperation::Unitary(UnitaryOperation::U(
-          Expression::Id("theta".to_string()),
-          Expression::Id("phi".to_string()),
-          Expression::Id("lambda".to_string()),
-          Argument::Id("q".to_string())
+        GateOperation::Unitary(UnitaryOperation::GateExpansion(
+          "U".to_owned(),
+          vec![
+            Expression::Id("theta".to_owned()),
+            Expression::Id("phi".to_owned()),
+            Expression::Id("lambda".to_owned()),
+          ],
+          vec![Argument::Id("q".to_owned())]
         ))
       ]
     ));
@@ -122,15 +129,18 @@ mod tests {
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::QuantumOperation(
       QuantumOperation::Unitary(
-        UnitaryOperation::U(
-          Expression::Op(
-            Opcode::Div,
-            Box::new(Expression::Pi),
-            Box::new(Expression::Real(2.0))
-          ),
-          Expression::Real(0.0),
-          Expression::Pi,
-          Argument::Id(String::from("q"))
+        UnitaryOperation::GateExpansion(
+          "U".to_owned(),
+          vec![
+            Expression::Op(
+              Opcode::Div,
+              Box::new(Expression::Pi),
+              Box::new(Expression::Real(2.0))
+            ),
+            Expression::Real(0.0),
+            Expression::Pi,
+          ],
+          vec![Argument::Id("q".to_owned())]
         )
       )
     ));

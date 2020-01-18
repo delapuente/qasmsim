@@ -305,15 +305,18 @@ mod test {
           vec!["a".to_owned(), "b".to_owned()],
           vec!["q".to_owned(), "r".to_owned()],
           vec![ast::GateOperation::Unitary(
-            ast::UnitaryOperation::U(
-              ast::Expression::Op(
-                ast::Opcode::Div,
-                Box::new(ast::Expression::Id("a".to_owned())),
-                Box::new(ast::Expression::Id("b".to_owned()))
-              ),
-              ast::Expression::Real(0.0),
-              ast::Expression::Real(0.0),
-              ast::Argument::Id("q".to_owned())
+            ast::UnitaryOperation::GateExpansion(
+              "U".to_owned(),
+              vec![
+                ast::Expression::Op(
+                  ast::Opcode::Div,
+                  Box::new(ast::Expression::Id("a".to_owned())),
+                  Box::new(ast::Expression::Id("b".to_owned()))
+                ),
+                ast::Expression::Real(0.0),
+                ast::Expression::Real(0.0),
+              ],
+              vec![ast::Argument::Id("q".to_owned())]
             )
           )]
         )
