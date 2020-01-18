@@ -9,16 +9,23 @@ also installed.
 
 ## What is currently done?
 
-Current version of `qasmsim` is very limited and only two gates, Hadamard `h` and Controlled Not `cx` can be used.
+Except for including external gate definition libraries, the interpreter has basic support of the quantum features of QASM. However, the interpreter does not support measurements yet, or conditions on classical registers. Fortunately, this is a simulator and you can do inspect the state of the system ;)
+
+There is still a lot of corner cases that need testing, but basic functionality is there.
 
 A sample QASM program can be found here:
 
 ```qasm
 OPENQASM 2.0;
 qreg q[2];
-U (pi/2, 0, pi) q[0];
+gate h q {
+  U (pi/2, 0, pi) q;
+}
+h q[0];
 CX q[0], q[1];
 ```
+
+The complete specification can be found under the [QASM repository](https://github.com/Qiskit/openqasm/blob/master/spec-human/).
 
 ## Building from sources
 
@@ -63,7 +70,10 @@ and try running a small test:
 qasmsim.run(`
 OPENQASM 2.0;
 qreg q[2];
-U (pi/2, 0, pi) q[0];
+gate h q {
+  U (pi/2, 0, pi) q;
+}
+h q;
 CX q[0], q[1];
 `);
 ```
