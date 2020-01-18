@@ -14,13 +14,13 @@ mod tests {
   ";
     let parser = open_qasm2::OpenQasmProgramParser::new();
     let tree = parser.parse(source).unwrap();
-    assert_eq!(tree, Box::new(OpenQasmProgram{
+    assert_eq!(tree, OpenQasmProgram{
       version: "2.0".to_string(),
       program: vec![
         Statement::QRegDecl("q".to_string(), 2),
         Statement::CRegDecl("c".to_string(), 2)
       ]
-    }));
+    });
   }
 
   #[test]

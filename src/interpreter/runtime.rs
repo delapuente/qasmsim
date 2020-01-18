@@ -4,9 +4,8 @@ use std::iter::FromIterator;
 use semantics::{ Semantics, extract_semantics };
 use statevector::StateVector;
 use grammar::ast;
-use gatelib;
-use simulator::expression_solver::ExpressionSolver;
-use simulator::argument_solver::ArgumentSolver;
+use interpreter::expression_solver::ExpressionSolver;
+use interpreter::argument_solver::ArgumentSolver;
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 

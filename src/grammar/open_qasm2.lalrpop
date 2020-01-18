@@ -3,10 +3,8 @@ use grammar::ast;
 
 grammar;
 
-pub OpenQasmProgram: Box<ast::OpenQasmProgram> = {
-  <version:Version> ";" <program:Program> => Box::new(
-    ast::OpenQasmProgram{<>}
-  )
+pub OpenQasmProgram: ast::OpenQasmProgram = {
+  <version:Version> ";" <program:Program> => ast::OpenQasmProgram{<>}
 };
 
 pub Program: Vec<ast::Statement> = {
