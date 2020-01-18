@@ -6,8 +6,12 @@ use statevector::StateVector;
 use grammar::ast;
 use gatelib;
 use simulator::expression_solver::ExpressionSolver;
+use simulator::argument_solver::ArgumentSolver;
+
+type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 
 struct Runtime {
+  macro_stack: VecDeque<BindingMappings>,
   semantics: Semantics,
   statevector: StateVector
 }
@@ -16,6 +20,7 @@ impl Runtime {
   pub fn new(semantics: Semantics) -> Self {
     let memory_size = semantics.quantum_memory_size;
     Runtime {
+      macro_stack: VecDeque::from_iter(vec![(HashMap::new(), HashMap::new())]),
       semantics,
       statevector: StateVector::new(memory_size)
     }
@@ -43,6 +48,25 @@ impl Runtime {
 
   fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) {
     match unitary {
+      ast::UnitaryOperation::U(theta, phi, lambda, target) => {
+        let arg_bindings = &self.macro_stack.get(0).unwrap().1;
+        let argument_solver = ArgumentSolver::new(arg_bindings);
+        let actual_arg = argument_solver.solve(target);
+
+        let real_bindings = &self.macro_stack.get(0).unwrap().0;
+        let real_args = vec![theta, phi, lambda];
+        let solver = ExpressionSolver::new(real_bindings);
+        let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
+
+        for argument_expansion in self.expand_arguments(&vec![actual_arg.clone()]) {
+          self.statevector.u(
+            solved_real_args[0],
+            solved_real_args[1],
+            solved_real_args[2],
+            self.get_bit_mapping(&argument_expansion[0])
+          );
+        }
+      },
       ast::UnitaryOperation::GateExpansion(name, real_args, args) => {
         for argument_expansion in self.expand_arguments(args) {
           self.apply_one_gate(name, real_args, &argument_expansion)
@@ -65,13 +89,24 @@ impl Runtime {
         gatelib::cx(control, target, &mut self.statevector);
       }
       macro_name => {
-        let solver = ExpressionSolver::new(HashMap::new());
+        let empty = HashMap::new();
+        let solver = ExpressionSolver::new(&empty);
         let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
-        let binding_maps = self.bind(macro_name.to_owned(), solved_real_args, args);
-        println!("{:?}", binding_maps);
-        // runtime = apply_gates(semantics, binding.program, runtime);
+        let binding_mappings = self.bind(macro_name.to_owned(), solved_real_args, args);
+        self.call(macro_name.to_owned(), binding_mappings).unwrap();
       }
     };
+  }
+
+  fn apply_gate_operations(&mut self, operations: &Vec<ast::GateOperation>)
+  -> Result<(), String> {
+    for one_operation in operations {
+      match one_operation {
+        ast::GateOperation::Unitary(unitary) => self.apply_unitary(unitary),
+        _ => ()
+      };
+    }
+    Ok(())
   }
 
   fn expand_arguments(&self, args: &Vec<ast::Argument>)
@@ -114,7 +149,7 @@ impl Runtime {
   }
 
   fn bind(&mut self, macro_name: String, real_args: Vec<f64>, args: &Vec<ast::Argument>)
-  -> (HashMap<String, f64>, HashMap<String, ast::Argument>) {
+  -> BindingMappings {
     let definition = self.semantics.macro_definitions.get(&macro_name).unwrap();
     let real_args_mapping = HashMap::from_iter(
       definition.1.iter()
@@ -127,6 +162,16 @@ impl Runtime {
       .map(|(s, r)| (s.to_owned(), r.clone())) // convert them into proper copies
     );
     (real_args_mapping, args_mapping)
+  }
+
+  fn call(&mut self, macro_name: String, bindings: BindingMappings)
+  -> Result<(), String> {
+    // XXX: Why clonning is necessary??
+    let definition = (*self.semantics.macro_definitions.get(&macro_name).unwrap()).clone();
+    self.macro_stack.push_front(bindings);
+    self.apply_gate_operations(&definition.3)?;
+    self.macro_stack.pop_front();
+    Ok(())
   }
 }
 

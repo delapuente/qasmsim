@@ -16,7 +16,7 @@ pub struct RegisterEntry(pub String, pub RegisterType, pub usize);
 pub struct MemoryMapEntry(pub String, pub usize, pub usize);
 
 /// Macro name, real arguments, register arguments, list of statements.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec<ast::GateOperation>);
 
 #[derive(Debug, PartialEq)]

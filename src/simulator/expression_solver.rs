@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use grammar::ast;
 
-pub struct ExpressionSolver(HashMap<String, f64>);
+pub struct ExpressionSolver<'a>(&'a HashMap<String, f64>);
 
-impl ExpressionSolver {
-  pub fn new(symbol_table: HashMap<String, f64>) -> Self {
-    ExpressionSolver(symbol_table)
+impl<'a> ExpressionSolver<'a> {
+  pub fn new(symbol_table: &'a HashMap<String, f64>) -> Self {
+    ExpressionSolver::<'a>(symbol_table)
   }
 
   pub fn solve(&self, expression: &ast::Expression) -> f64 {
@@ -50,7 +50,8 @@ mod test {
         Box::new(Expression::Real(4.0))
       ))
     );
-    let solver = ExpressionSolver::new(HashMap::new());
+    let empty = HashMap::new();
+    let solver = ExpressionSolver::new(&empty);
     assert_eq!(solver.solve(&expression), - PI + (1.0 - 2.0) * 3.0 / 4.0);
   }
 
