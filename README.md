@@ -16,8 +16,8 @@ A sample QASM program can be found here:
 ```qasm
 OPENQASM 2.0;
 qreg q[2];
-h q[0];
-cx q[0], q[1];
+U (pi/2, 0, pi) q[0];
+CX q[0], q[1];
 ```
 
 ## Building from sources
@@ -63,8 +63,8 @@ and try running a small test:
 qasmsim.run(`
 OPENQASM 2.0;
 qreg q[2];
-h q[0];
-cx q[0], q[1];
+U (pi/2, 0, pi) q[0];
+CX q[0], q[1];
 `);
 ```
 

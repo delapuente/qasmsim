@@ -92,15 +92,6 @@ impl Runtime {
         let target = self.get_bit_mapping(&args[1]);
         self.statevector.cnot(control, target);
       }
-      "h" => {
-        let index = self.get_bit_mapping(&args[0]);
-        gatelib::h(index, &mut self.statevector);
-      }
-      "cx" => {
-        let control = self.get_bit_mapping(&args[0]);
-        let target = self.get_bit_mapping(&args[1]);
-        gatelib::cx(control, target, &mut self.statevector);
-      }
       macro_name => {
         let binding_mappings = self.bind(macro_name.to_owned(), real_args, args);
         self.call(macro_name.to_owned(), binding_mappings).unwrap();
