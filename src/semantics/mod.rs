@@ -290,7 +290,7 @@ mod test {
           vec![],
           vec!["q".to_owned()],
           vec![ast::GateOperation::Unitary(
-            ast::UnitaryOperation::GateExpansion(
+            ast::UnitaryOperation(
               "h".to_owned(),
               vec![],
               vec![ast::Argument::Id("q".to_owned())]
@@ -305,7 +305,7 @@ mod test {
           vec!["a".to_owned(), "b".to_owned()],
           vec!["q".to_owned(), "r".to_owned()],
           vec![ast::GateOperation::Unitary(
-            ast::UnitaryOperation::GateExpansion(
+            ast::UnitaryOperation(
               "U".to_owned(),
               vec![
                 ast::Expression::Op(

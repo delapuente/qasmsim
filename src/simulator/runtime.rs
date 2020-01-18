@@ -47,34 +47,34 @@ impl Runtime {
   }
 
   fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) {
-    match unitary {
-      ast::UnitaryOperation::GateExpansion(name, real_args, args) => {
-        // In program execution, do not replace symbols
-        let actual_args: Vec<ast::Argument> = if self.macro_stack.len() == 0 {
-          args.iter().map(|arg| arg.clone()).collect()
-        }
-        // In macro execution, replace formal arguments with actual arguments
-        else {
-          let arg_bindings = &self.macro_stack.get(0).unwrap().1;
-          let argument_solver = ArgumentSolver::new(arg_bindings);
-          args.iter().map(|arg| argument_solver.solve(&arg)).collect()
-        };
+    let name = &unitary.0;
+    let real_args = &unitary.1;
+    let args = &unitary.2;
 
-        let empty = HashMap::new();
-        let real_bindings = if self.macro_stack.len() == 0 {
-          &empty
-        }
-        else {
-          &self.macro_stack.get(0).unwrap().0
-        };
-        let solver = ExpressionSolver::new(real_bindings);
-        let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
-
-        for argument_expansion in self.expand_arguments(&actual_args) {
-          self.apply_one_gate(name, &solved_real_args, &argument_expansion)
-        }
-      }
+    // In program execution, do not replace symbols
+    let actual_args: Vec<ast::Argument> = if self.macro_stack.len() == 0 {
+      args.iter().map(|arg| arg.clone()).collect()
+    }
+    // In macro execution, replace formal arguments with actual arguments
+    else {
+      let arg_bindings = &self.macro_stack.get(0).unwrap().1;
+      let argument_solver = ArgumentSolver::new(arg_bindings);
+      args.iter().map(|arg| argument_solver.solve(&arg)).collect()
     };
+
+    let empty = HashMap::new();
+    let real_bindings = if self.macro_stack.len() == 0 {
+      &empty
+    }
+    else {
+      &self.macro_stack.get(0).unwrap().0
+    };
+    let solver = ExpressionSolver::new(real_bindings);
+    let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
+
+    for argument_expansion in self.expand_arguments(&actual_args) {
+      self.apply_one_gate(name, &solved_real_args, &argument_expansion)
+    }
   }
 
   fn apply_one_gate(&mut self, name: &str, real_args: &Vec<f64>,
@@ -102,8 +102,6 @@ impl Runtime {
         gatelib::cx(control, target, &mut self.statevector);
       }
       macro_name => {
-        let empty = HashMap::new();
-        let solver = ExpressionSolver::new(&empty);
         let binding_mappings = self.bind(macro_name.to_owned(), real_args, args);
         self.call(macro_name.to_owned(), binding_mappings).unwrap();
       }

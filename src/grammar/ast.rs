@@ -28,9 +28,7 @@ pub enum QuantumOperation {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum UnitaryOperation {
-  GateExpansion(String, Vec<Expression>, Vec<Argument>)
-}
+pub struct UnitaryOperation(pub String, pub Vec<Expression>, pub Vec<Argument>);
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Opcode {

@@ -58,7 +58,7 @@ mod tests {
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::GateDecl(
       "cx".to_string(), vec![], vec!["c".to_string(), "t".to_string()], vec![
-        GateOperation::Unitary(UnitaryOperation::GateExpansion(
+        GateOperation::Unitary(UnitaryOperation(
           "CX".to_owned(),
           vec![],
           vec![
@@ -84,7 +84,7 @@ mod tests {
       vec!["theta".to_string(), "phi".to_string(), "lambda".to_string()],
       vec!["q".to_string()],
       vec![
-        GateOperation::Unitary(UnitaryOperation::GateExpansion(
+        GateOperation::Unitary(UnitaryOperation(
           "U".to_owned(),
           vec![
             Expression::Id("theta".to_owned()),
@@ -111,7 +111,7 @@ mod tests {
       vec!["phi".to_string()],
       vec!["a".to_string()],
       vec![
-        GateOperation::Unitary(UnitaryOperation::GateExpansion(
+        GateOperation::Unitary(UnitaryOperation(
           "u1".to_string(),
           vec![Expression::Id("phi".to_string())],
           vec![Argument::Id("a".to_string())]
@@ -129,7 +129,7 @@ mod tests {
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::QuantumOperation(
       QuantumOperation::Unitary(
-        UnitaryOperation::GateExpansion(
+        UnitaryOperation(
           "U".to_owned(),
           vec![
             Expression::Op(
@@ -186,7 +186,7 @@ mod tests {
       Statement::CRegDecl("c".to_string(), 1),
       Statement::QuantumOperation(
         QuantumOperation::Unitary(
-          UnitaryOperation::GateExpansion(
+          UnitaryOperation(
             "h".to_string(), vec![], vec![Argument::Id("q".to_string())])
         )
       )
@@ -209,7 +209,7 @@ mod tests {
       Statement::CRegDecl("c".to_string(), 1),
       Statement::QuantumOperation(
         QuantumOperation::Unitary(
-          UnitaryOperation::GateExpansion(
+          UnitaryOperation(
             "h".to_string(), vec![], vec![Argument::Id("q".to_string())])
         )
       ),

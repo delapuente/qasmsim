@@ -56,10 +56,10 @@ GateOperation: ast::GateOperation = {
 
 UnitaryOperation: ast::UnitaryOperation = {
   "U" "(" <theta:Expr> "," <phi:Expr> "," <lambda:Expr> ")" <target:Argument> ";" =>
-    ast::UnitaryOperation::GateExpansion("U".to_owned(), vec![theta, phi, lambda], vec![target]),
+    ast::UnitaryOperation("U".to_owned(), vec![theta, phi, lambda], vec![target]),
   "CX" <Argument> "," <Argument> ";" =>
-    ast::UnitaryOperation::GateExpansion("CX".to_owned(), vec![], vec![<>]),
-  GateExpansion => ast::UnitaryOperation::GateExpansion(<>.0, <>.1, <>.2)
+    ast::UnitaryOperation("CX".to_owned(), vec![], vec![<>]),
+  GateExpansion => ast::UnitaryOperation(<>.0, <>.1, <>.2)
 };
 
 GateExpansion: (String, Vec<ast::Expression>, Vec<ast::Argument>) = {
