@@ -64,6 +64,30 @@ fn call_custom_gate_on_register() {
 }
 
 #[test]
+fn call_custom_gate_inside_custom_gate() {
+    let source = "
+    OPENQASM 2.0;
+    gate u2(phi, lambda) q {
+        U(pi/2, phi, lambda) q;
+    }
+    gate h q {
+        u2(0, pi) q;
+    }
+    qreg q[2];
+    h q;
+    ";
+    assert_approx_eq(
+        &qasmsim::run(source).unwrap(),
+        &StateVector::from_bases(vec!(
+            Complex::from(0.5),
+            Complex::from(0.5),
+            Complex::from(0.5),
+            Complex::from(0.5)
+        ))
+    )
+}
+
+#[test]
 fn test_one_register_bell_circuit() {
     let source = "
     OPENQASM 2.0;
