@@ -1,5 +1,5 @@
 # qasmsim
-A QASM interpreter and quantum simulator in Rust
+> A QASM interpreter and quantum simulator in Rust.
 
 ## Prerequisites
 
@@ -9,7 +9,14 @@ also installed.
 
 ## What is currently done?
 
-Except for including external gate definition libraries, the interpreter has basic support of the quantum features of QASM. However, the interpreter does not support measurements yet, or conditions on classical registers. Fortunately, this is a simulator and you can do inspect the state of the system ;)
+The interpreter has basic support of the quantum features of QASM. However, it does not support barriers, measurements or conditions on classical registers yet. Fortunately, this is a simulator and you can do inspect the state of the system ;)
+
+Although there is still no support for including external gate definitions,
+[including `qelib1.inc`](https://github.com/Qiskit/openqasm/blob/master/examples/generic/qelib1.inc) via the `include` instruction will work:
+
+```
+include "qelib1.inc";
+```
 
 There is still a lot of corner cases that need testing, but basic functionality is there.
 
@@ -17,12 +24,10 @@ A sample QASM program can be found here:
 
 ```qasm
 OPENQASM 2.0;
+include "qelib1.inc";
 qreg q[2];
-gate h q {
-  U (pi/2, 0, pi) q;
-}
 h q[0];
-CX q[0], q[1];
+cx q[0], q[1];
 ```
 
 The complete specification can be found under the [QASM repository](https://github.com/Qiskit/openqasm/blob/master/spec-human/).
@@ -69,12 +74,10 @@ and try running a small test:
 ```js
 qasmsim.run(`
 OPENQASM 2.0;
+include "qelib1.inc"
 qreg q[2];
-gate h q {
-  U (pi/2, 0, pi) q;
-}
 h q[0];
-CX q[0], q[1];
+cx q[0], q[1];
 `);
 ```
 
