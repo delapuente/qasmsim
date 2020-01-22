@@ -7,6 +7,10 @@ pub OpenQasmProgram: ast::OpenQasmProgram = {
   <version:Version> ";" <program:Program> => ast::OpenQasmProgram{<>}
 };
 
+pub OpenQasmLibrary: ast::OpenQasmLibrary = {
+  <definitions:GateDefinitionList> => ast::OpenQasmLibrary{<>}
+}
+
 pub Program: Vec<ast::Statement> = {
   Statement => vec![<>],
   <program:Program> <s:Statement> => {
@@ -15,12 +19,30 @@ pub Program: Vec<ast::Statement> = {
 
 pub Statement: ast::Statement = {
   RegisterDeclaration,
+  GateDefinition,
+  Include,
+  QuantumOperation => ast::Statement::QuantumOperation(<>)
+};
+
+pub GateDefinition: ast::Statement = {
   <GateDeclaration> "{" "}" => ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
   <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
     ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops),
   "opaque" <GateDeclaration> ";" =>
-    ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2),
-  QuantumOperation => ast::Statement::QuantumOperation(<>)
+    ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2)
+};
+
+Include: ast::Statement = {
+  "include" <s:r#""[^"]*""#> ";" => ast::Statement::Include(s[1..s.len()-1].to_owned())
+}
+
+GateDefinitionList: Vec<ast::Statement> = {
+  GateDefinition => vec![<>],
+  <definitions:GateDefinitionList> <d:GateDefinition> => {
+    let mut definitions = definitions;
+    definitions.push(d);
+    definitions
+  }
 };
 
 RegisterDeclaration: ast::Statement = {

@@ -24,7 +24,7 @@ fn endianess() {
 }
 
 #[test]
-fn call_custom_gate_on_qubitt() {
+fn call_custom_gate_on_qubit() {
     let source = "
     OPENQASM 2.0;
     gate h q {
@@ -152,6 +152,20 @@ fn test_no_indices_superposition() {
     OPENQASM 2.0;
     qreg q[4];
     U (pi/2, 0, pi) q;
+    ";
+    assert_approx_eq(
+        &qasmsim::run(source).unwrap(),
+        &StateVector::from_bases(vec!(Complex::from(0.25); 16))
+    )
+}
+
+#[test]
+fn test_quantum_experience_header_is_included() {
+    let source = "
+    OPENQASM 2.0;
+    include \"qelib1.inc\";
+    qreg q[4];
+    h q;
     ";
     assert_approx_eq(
         &qasmsim::run(source).unwrap(),

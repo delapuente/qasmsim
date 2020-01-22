@@ -10,19 +10,29 @@ extern crate cached;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
 mod grammar;
+mod linker;
 mod semantics;
 pub mod complex;
 pub mod statevector;
 mod interpreter;
+mod qe;
+
+use std::collections::HashMap;
+use std::iter::FromIterator;
 
 use cfg_if::cfg_if;
 
+use linker::Linker;
 use statevector::StateVector;
 
 fn do_run(input: &str) -> Result<StateVector, String> {
+  let linker = Linker::with_embedded(HashMap::from_iter(vec![
+    ("qelib1.inc".to_owned(), qe::QELIB1.to_owned())
+  ]));
   let parser = open_qasm2::OpenQasmProgramParser::new();
   let program = parser.parse(&input).unwrap();
-  interpreter::runtime::execute(&program)
+  let linked = linker.link(program).unwrap();
+  interpreter::runtime::execute(&linked)
 }
 
 #[cfg(not(target_arch = "wasm32"))]

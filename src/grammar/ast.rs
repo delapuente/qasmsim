@@ -6,10 +6,16 @@ pub struct OpenQasmProgram {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct OpenQasmLibrary {
+  pub definitions: Vec<Statement>
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Statement {
   QRegDecl(String, usize),
   CRegDecl(String, usize),
   GateDecl(String, Vec<String>,  Vec<String>, Vec<GateOperation>),
+  Include(String),
   OpaqueGateDecl(String, Vec<String>, Vec<String>),
   QuantumOperation(QuantumOperation)
 }
