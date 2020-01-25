@@ -8,10 +8,10 @@ mod tests {
   #[test]
   fn test_parse_open_qasm() {
     let source = "
-  OPENQASM 2.0;
-  qreg q[2];
-  creg c[2];
-  ";
+    OPENQASM 2.0;
+    qreg q[2];
+    creg c[2];
+    ";
     let parser = open_qasm2::OpenQasmProgramParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, OpenQasmProgram{
@@ -26,8 +26,8 @@ mod tests {
   #[test]
   fn test_parse_id_gate_macro() {
     let source = "
-  gate id q {}
-  ";
+    gate id q {}
+    ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::GateDecl(
@@ -38,8 +38,8 @@ mod tests {
   #[test]
   fn test_parse_id_gate_macro_with_parenthesis() {
     let source = "
-  gate id () q {}
-  ";
+    gate id () q {}
+    ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::GateDecl(
@@ -50,10 +50,10 @@ mod tests {
   #[test]
   fn test_parse_cx_gate_macro() {
     let source = "
-  gate cx c, t {
-    CX c, t;
-  }
-  ";
+    gate cx c, t {
+      CX c, t;
+    }
+    ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::GateDecl(
@@ -73,10 +73,10 @@ mod tests {
   #[test]
   fn test_parse_u_gate_macro() {
     let source = "
-  gate u (theta, phi, lambda) q {
-    U (theta, phi, lambda) q;
-  }
-  ";
+    gate u (theta, phi, lambda) q {
+      U (theta, phi, lambda) q;
+    }
+    ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::GateDecl(
@@ -100,10 +100,10 @@ mod tests {
   #[test]
   fn test_parse_gate_macro_with_gate_expansion() {
     let source = "
-  gate rz (phi) a {
-    u1 (phi) a;
-  }
-  ";
+    gate rz (phi) a {
+      u1 (phi) a;
+    }
+    ";
     let parser = open_qasm2::StatementParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, Statement::GateDecl(
@@ -175,10 +175,10 @@ mod tests {
   #[test]
   fn test_parse_program_without_version_string() {
     let source = "
-  qreg q[1];
-  creg c[1];
-  h q;
-  ";
+    qreg q[1];
+    creg c[1];
+    h q;
+    ";
     let parser = open_qasm2::ProgramParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, vec![
@@ -196,12 +196,12 @@ mod tests {
   #[test]
   fn test_program_with_measure_and_reset() {
     let source = "
-  qreg q[1];
-  creg c[1];
-  h q;
-  measure q -> c;
-  reset q;
-  ";
+    qreg q[1];
+    creg c[1];
+    h q;
+    measure q -> c;
+    reset q;
+    ";
     let parser = open_qasm2::ProgramParser::new();
     let tree = parser.parse(source).unwrap();
     assert_eq!(tree, vec![
