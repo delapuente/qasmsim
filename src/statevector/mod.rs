@@ -14,6 +14,39 @@ pub struct StateVector {
   pub bit_width: usize
 }
 
+pub struct Measurement<'a> {
+  bases: &'a mut Vec<Complex>,
+  chances: [f64; 2],
+  target: usize
+}
+
+impl<'a> Measurement<'a> {
+  pub fn new(bases: &'a mut Vec<Complex>, target: usize) -> Self {
+    let mut chance_universe_0 = 0.0;
+    for (index, amplitude) in bases.iter().enumerate() {
+      if check_bit(index, target) == 0 {
+        chance_universe_0 += amplitude.norm();
+      }
+    }
+    let chances = [chance_universe_0, 1.0 - chance_universe_0];
+    Measurement{ bases, chances, target }
+  }
+
+  pub fn collapse(&mut self, fate: f64) -> bool {
+    assert!(0.0 <= fate && fate < 1.0, "Fate must be a f64 value in [0.0, 1.0)");
+    let value = (fate < self.chances[0]) as usize;
+    let normalization_factor = self.chances[value].sqrt();
+    for index in 0..self.bases.len() {
+      if check_bit(index, self.target) == value {
+        self.bases[index] /= normalization_factor;
+      } else {
+        self.bases[index] = Complex::from(0.0);
+      }
+    }
+    value != 0
+  }
+}
+
 impl StateVector {
 
   pub fn new(bit_width: usize) -> Self {
@@ -51,36 +84,8 @@ impl StateVector {
   }
 
   pub fn measure(&mut self, target: usize) -> bool {
-    let chance = self.count_probabilities(target);
-    let fate = random::<f64>();
-    let chosen_universe = (fate < chance[0]) as usize;
-    self.collapse(target, chosen_universe);
-    chosen_universe != 0
-  }
-
-  /// Return a vector with chances for measuring 0 and 1 in the target qubit.
-  fn count_probabilities(&self, target: usize) -> [f64; 2] {
-    let mut chance_universe_0 = 0.0;
-    for (index, amplitude) in self.bases.iter().enumerate() {
-      if check_bit(index, target) == 0 {
-        chance_universe_0 += amplitude.norm();
-      }
-    }
-    [chance_universe_0, 1.0 - chance_universe_0]
-  }
-
-  /// Nullify amplitudes for states not matching the selected qubit value
-  /// and renormalize the statevector.
-  fn collapse(&mut self, target: usize, value: usize) {
-    let chance = self.count_probabilities(target);
-    let normalization_factor = chance[value].sqrt();
-    for index in 0..self.bases.len() {
-      if check_bit(index, target) == value {
-        self.bases[index] /= normalization_factor;
-      } else {
-        self.bases[index] = Complex::from(0.0);
-      }
-    }
+    let mut measurement = Measurement::new(&mut self.bases, target);
+    measurement.collapse(random::<f64>())
   }
 }
 
@@ -268,5 +273,19 @@ mod tests {
       accum += if v.measure(0) { 1 } else { 0 };
     }
     approx_eq!(f64, (accum as f64)/(size as f64), 0.5, epsilon = std::f64::EPSILON);
+  }
+
+  #[test]
+  fn test_state_vector_renormalization() {
+    let mut v = StateVector::from_bases(vec![
+      Complex::from(FRAC_1_SQRT_2),
+      Complex::from(FRAC_1_SQRT_2)
+    ]);
+    let mut measurement = Measurement::new(&mut v.bases, 0);
+    measurement.collapse(0.0);
+    assert_approx_eq(&v, &StateVector::from_bases(vec![
+      Complex::from(1.0),
+      Complex::from(0.0)
+    ]));
   }
 }
