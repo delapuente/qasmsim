@@ -1,5 +1,6 @@
 use std::f64;
 
+use rand::random;
 use float_cmp::ApproxEq;
 use cached::SizedCache;
 use num::Float;
@@ -48,6 +49,39 @@ impl StateVector {
       self.bases[index_1] = u_matrix.2 * selected.0 + u_matrix.3 * selected.1;
     }
   }
+
+  pub fn measure(&mut self, target: usize) -> bool {
+    let chance = self.count_probabilities(target);
+    let fate = random::<f64>();
+    let chosen_universe = (fate < chance[0]) as usize;
+    self.collapse(target, chosen_universe);
+    chosen_universe != 0
+  }
+
+  /// Return a vector with chances for measuring 0 and 1 in the target qubit.
+  fn count_probabilities(&self, target: usize) -> [f64; 2] {
+    let mut chance_universe_0 = 0.0;
+    for (index, amplitude) in self.bases.iter().enumerate() {
+      if check_bit(index, target) == 0 {
+        chance_universe_0 += amplitude.norm();
+      }
+    }
+    [chance_universe_0, 1.0 - chance_universe_0]
+  }
+
+  /// Nullify amplitudes for states not matching the selected qubit value
+  /// and renormalize the statevector.
+  fn collapse(&mut self, target: usize, value: usize) {
+    let chance = self.count_probabilities(target);
+    let normalization_factor = chance[value].sqrt();
+    for index in 0..self.bases.len() {
+      if check_bit(index, target) == value {
+        self.bases[index] /= normalization_factor;
+      } else {
+        self.bases[index] = Complex::from(0.0);
+      }
+    }
+  }
 }
 
 impl<'a> ApproxEq for &'a StateVector {
@@ -68,6 +102,11 @@ pub fn assert_approx_eq(v1: &StateVector, v2: &StateVector) {
   if !v1.approx_eq(v2, (complex::EPSILON, 0)) {
     assert!(false, "assertion failed `(left ~= right)`\n  left: `{:?}`\n right: `{:?}`", v1, v2);
   }
+}
+
+#[inline]
+fn check_bit(value: usize, index: usize) -> usize {
+  (value & (1 << index)) >> index
 }
 
 cached! {
@@ -163,6 +202,7 @@ fn e_power_to(x: f64) -> Complex {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::f64::consts::{ FRAC_1_SQRT_2, PI };
 
   #[test]
   fn test_cnot_c0t1() {
@@ -213,5 +253,20 @@ mod tests {
     v.cnot(0, 1);
     v.cnot(0, 1);
     assert_eq!(v, StateVector::from_bases(vec!(p, a, p, b)));
+  }
+
+  #[test]
+  fn test_measurement() {
+    let size = 1000;
+    let mut accum = 0;
+    for _ in 0..size {
+      let mut v = StateVector::from_bases(vec![
+        Complex::from(FRAC_1_SQRT_2),
+        Complex::from(FRAC_1_SQRT_2)
+      ]);
+      v.u(PI/2.0, 0.0, PI, 0);
+      accum += if v.measure(0) { 1 } else { 0 };
+    }
+    approx_eq!(f64, (accum as f64)/(size as f64), 0.5, epsilon = std::f64::EPSILON);
   }
 }

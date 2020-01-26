@@ -244,7 +244,7 @@ mod test {
   }
 
   #[test]
-  fn test_quantum_memory_map() {
+  fn test_memory_map() {
     let source = "
     OPENQASM 2.0;
     qreg q[2];

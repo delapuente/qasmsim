@@ -4,9 +4,11 @@ extern crate cfg_if;
 #[cfg(feature = "wasm")]
 extern crate wasm_bindgen;
 extern crate num;
+#[macro_use(approx_eq)]
 extern crate float_cmp;
 #[macro_use(cached, cached_key)]
 extern crate cached;
+extern crate rand;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
 mod grammar;
