@@ -25,7 +25,7 @@ impl<'a> Measurement<'a> {
     let mut chance_universe_0 = 0.0;
     for (index, amplitude) in bases.iter().enumerate() {
       if check_bit(index, target) == 0 {
-        chance_universe_0 += amplitude.norm();
+        chance_universe_0 += amplitude.norm_sqr();
       }
     }
     let chances = [chance_universe_0, 1.0 - chance_universe_0];
@@ -34,7 +34,7 @@ impl<'a> Measurement<'a> {
 
   pub fn collapse(&mut self, fate: f64) -> bool {
     assert!(0.0 <= fate && fate < 1.0, "Fate must be a f64 value in [0.0, 1.0)");
-    let value = (fate < self.chances[0]) as usize;
+    let value = (fate >= self.chances[0]) as usize;
     let normalization_factor = self.chances[value].sqrt();
     for index in 0..self.bases.len() {
       if check_bit(index, self.target) == value {
