@@ -23,6 +23,8 @@ pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec
 pub struct Semantics {
   pub macro_definitions: HashMap<String, MacroDefinition>,
   pub register_table: HashMap<String, RegisterEntry>,
+  /// Map quantum registers to a unique unified register while classical
+  /// registers map to themselves.
   pub memory_map: HashMap<String, MemoryMapEntry>,
   pub quantum_memory_size: usize,
   pub classical_memory_size: usize
@@ -96,18 +98,31 @@ impl SemanticsBuilder {
 
   fn map_register(&mut self, name: String, kind: RegisterType, size: usize)
   -> Result<(), String> {
-    let last_register = match &kind {
-      RegisterType::Q => &self.last_quantum_register,
-      RegisterType::C => &self.last_classical_register
-    };
-    let new_entry = match last_register {
+    match &kind {
+      RegisterType::Q => self.map_quantum_register(name, size),
+      RegisterType::C => self.map_classical_register(name, size)
+    }
+  }
+
+  pub fn map_quantum_register(&mut self, name: String, size: usize)
+  -> Result<(), String> {
+    let new_entry = match &self.last_quantum_register {
       None => MemoryMapEntry(name.clone(), 0, size - 1),
       Some(register_name) => {
         let last_index = self.semantics.memory_map.get(register_name).unwrap().2;
         MemoryMapEntry(name.clone(), last_index + 1, last_index + size)
       }
     };
-    self.semantics.memory_map.insert(name.clone(), new_entry);
+    self.semantics.memory_map.insert(name, new_entry);
+    Ok(())
+  }
+
+  pub fn map_classical_register(&mut self, name: String, size: usize)
+  -> Result<(), String> {
+    self.semantics.memory_map.insert(
+      name.clone(),
+      MemoryMapEntry(name, 0, size - 1)
+    );
     Ok(())
   }
 }
@@ -259,7 +274,7 @@ mod test {
       ("q".to_owned(), MemoryMapEntry("q".to_owned(), 0, 1)),
       ("r".to_owned(), MemoryMapEntry("r".to_owned(), 2, 11)),
       ("c".to_owned(), MemoryMapEntry("c".to_owned(), 0, 1)),
-      ("d".to_owned(), MemoryMapEntry("d".to_owned(), 2, 11))
+      ("d".to_owned(), MemoryMapEntry("d".to_owned(), 0, 9))
     ]);
     if let Ok(semantics) = semantics_result {
       assert_eq!(semantics.memory_map, expected_memory_map);
