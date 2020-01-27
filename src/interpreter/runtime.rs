@@ -48,7 +48,10 @@ impl Runtime {
     match operation {
       ast::QuantumOperation::Unitary(unitary) => {
         self.apply_unitary(unitary)
-      }
+      },
+      ast::QuantumOperation::Measure(source, target) => {
+        self.apply_measurement(vec![(*source).clone(), (*target).clone()])
+      },
       _ => ()
     };
   }
@@ -82,6 +85,30 @@ impl Runtime {
     for argument_expansion in self.expand_arguments(&actual_args) {
       self.apply_one_gate(name, &solved_real_args, &argument_expansion)
     }
+  }
+
+  fn apply_measurement(&mut self, args: Vec<ast::Argument>) {
+    for argument_expansion in self.expand_arguments(&args) {
+      self.apply_one_measurement(argument_expansion)
+    }
+  }
+
+  fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) {
+    let classical_register_name = match &args[1] {
+      ast::Argument::Item(name, _) => name.clone(),
+      _ => unreachable!()
+    };
+    let source = self.get_bit_mapping(&args[0]);
+    let measurement = self.statevector.measure(source) as u64;
+
+    if !self.memory.contains_key(&classical_register_name) {
+      self.memory.insert(classical_register_name.clone(), 0);
+    }
+
+    let target = self.get_bit_mapping(&args[1]);
+    let value = measurement * (1 << target);
+    let prev_value = *(self.memory.get(&classical_register_name).unwrap());
+    self.memory.insert(classical_register_name, prev_value + value);
   }
 
   fn apply_one_gate(&mut self, name: &str, real_args: &Vec<f64>,

@@ -175,12 +175,42 @@ fn test_quantum_experience_header_is_included() {
 
 #[test]
 fn test_measurements() {
-  let source = "
-  OPENQASM 2.0;
-  qreg q[1];
-  creg c[1];
-  measure q -> c;
-  ";
-  let result = &qasmsim::run(source).unwrap();
-  assert_eq!(*result.memory.get("c").unwrap(), 0x0_u64);
+  let subtests = vec![
+    ("
+     OPENQASM 2.0;
+     include \"qelib1.inc\";
+     qreg q[2];
+     creg c[2];
+     measure q -> c;
+     ", 0b00_u64),
+    ("
+     OPENQASM 2.0;
+     include \"qelib1.inc\";
+     qreg q[2];
+     creg c[2];
+     x q[0];
+     measure q -> c;
+     ", 0b01_u64),
+     ("
+     OPENQASM 2.0;
+     include \"qelib1.inc\";
+     qreg q[2];
+     creg c[2];
+     x q[1];
+     measure q -> c;
+     ", 0b10_u64),
+     ("
+     OPENQASM 2.0;
+     include \"qelib1.inc\";
+     qreg q[2];
+     creg c[2];
+     x q;
+     measure q -> c;
+     ", 0b11_u64)
+  ];
+  for (index, (source, expected_result)) in subtests.iter().enumerate() {
+    let result = &qasmsim::run(source).unwrap();
+    println!("Using source sample #{}", index);
+    assert_eq!(*result.memory.get("c").unwrap(), *expected_result);
+  }
 }
