@@ -25,9 +25,9 @@ use std::iter::FromIterator;
 use cfg_if::cfg_if;
 
 use linker::Linker;
-use statevector::StateVector;
+use interpreter::runtime::ExecutionResult;
 
-fn do_run(input: &str) -> Result<StateVector, String> {
+fn do_run(input: &str) -> Result<ExecutionResult, String> {
   let linker = Linker::with_embedded(HashMap::from_iter(vec![
     ("qelib1.inc".to_owned(), qe::QELIB1.to_owned())
   ]));
@@ -38,7 +38,7 @@ fn do_run(input: &str) -> Result<StateVector, String> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub fn run(input: &str) -> Result<StateVector, String> {
+pub fn run(input: &str) -> Result<ExecutionResult, String> {
   do_run(input)
 }
 
@@ -58,5 +58,5 @@ cfg_if! {
 pub fn run(input: &str) -> Vec<f64> {
   use statevector::wasm::as_float_array;
   let result = do_run(input);
-  as_float_array(&result.unwrap())
+  as_float_array(&result.unwrap().statevector)
 }
