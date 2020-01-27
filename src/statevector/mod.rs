@@ -199,7 +199,7 @@ cached_key! {
   }
 }
 
-
+#[inline]
 fn e_power_to(x: f64) -> Complex {
   Complex::new(0.0, x).exp()
 }
