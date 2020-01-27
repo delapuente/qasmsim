@@ -276,15 +276,65 @@ mod tests {
   }
 
   #[test]
-  fn test_state_vector_renormalization() {
+  fn test_state_vector_measurement_superposition() {
     let mut v = StateVector::from_bases(vec![
       Complex::from(FRAC_1_SQRT_2),
       Complex::from(FRAC_1_SQRT_2)
     ]);
     let mut measurement = Measurement::new(&mut v.bases, 0);
-    measurement.collapse(0.0);
+    let faked_random_value = 0.0;
+    measurement.collapse(faked_random_value);
     assert_approx_eq(&v, &StateVector::from_bases(vec![
       Complex::from(1.0),
+      Complex::from(0.0)
+    ]));
+  }
+
+  #[test]
+  fn test_state_vector_measurement_0() {
+    let mut v = StateVector::from_bases(vec![
+      Complex::from(1.0),
+      Complex::from(0.0)
+    ]);
+    let mut measurement = Measurement::new(&mut v.bases, 0);
+    let faked_random_value = 0.0;
+    measurement.collapse(faked_random_value);
+    assert_approx_eq(&v, &StateVector::from_bases(vec![
+      Complex::from(1.0),
+      Complex::from(0.0)
+    ]));
+  }
+
+  #[test]
+  fn test_state_vector_measurement_1() {
+    let mut v = StateVector::from_bases(vec![
+      Complex::from(0.0),
+      Complex::from(1.0)
+    ]);
+    let mut measurement = Measurement::new(&mut v.bases, 0);
+    let faked_random_value = 0.0;
+    measurement.collapse(faked_random_value);
+    assert_approx_eq(&v, &StateVector::from_bases(vec![
+      Complex::from(0.0),
+      Complex::from(1.0)
+    ]));
+  }
+
+  #[test]
+  fn test_state_vector_measurement_2_qubit_superposition() {
+    let mut v = StateVector::from_bases(vec![
+      Complex::from(0.5),
+      Complex::from(0.5),
+      Complex::from(0.5),
+      Complex::from(0.5)
+    ]);
+    let mut measurement = Measurement::new(&mut v.bases, 0);
+    let faked_random_value = 0.0;
+    measurement.collapse(faked_random_value);
+    assert_approx_eq(&v, &StateVector::from_bases(vec![
+      Complex::from(FRAC_1_SQRT_2),
+      Complex::from(0.0),
+      Complex::from(FRAC_1_SQRT_2),
       Complex::from(0.0)
     ]));
   }
