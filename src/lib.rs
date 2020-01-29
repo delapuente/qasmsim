@@ -3,6 +3,10 @@ extern crate lalrpop_util;
 extern crate cfg_if;
 #[cfg(feature = "wasm")]
 extern crate wasm_bindgen;
+#[cfg(feature = "wasm")]
+extern crate js_sys;
+#[cfg(feature = "wasm")]
+extern crate console_error_panic_hook;
 extern crate num;
 #[macro_use(approx_eq)]
 extern crate float_cmp;
@@ -21,6 +25,9 @@ mod qe;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;
+
+#[cfg(feature = "wasm")]
+use interpreter::computation::{ Computation, new_computation };
 
 use cfg_if::cfg_if;
 
@@ -55,8 +62,13 @@ cfg_if! {
 
 #[cfg(target_arch = "wasm32")]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
-pub fn run(input: &str) -> Vec<f64> {
+pub fn run(input: &str) -> Computation {
   use statevector::wasm::as_float_array;
-  let result = do_run(input);
-  as_float_array(&result.unwrap().statevector)
+  use std::panic;
+  panic::set_hook(Box::new(console_error_panic_hook::hook));
+  let result = do_run(input).unwrap();
+  new_computation(
+    result.memory.iter().map(|(k, v)| (k.to_owned(), *v as f64)).collect(),
+    as_float_array(&result.statevector)
+  )
 }

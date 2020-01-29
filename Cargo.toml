@@ -10,7 +10,7 @@ authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
 crate-type = ["cdylib", "rlib"]
 
 [features]
-wasm = ["wasm-bindgen", "console_error_panic_hook", "wee_alloc"]
+wasm = ["wasm-bindgen", "console_error_panic_hook", "wee_alloc", "js-sys"]
 
 [dependencies]
 num = "0.2.0"
@@ -21,8 +21,12 @@ float-cmp = "0.6.0"
 wasm-bindgen = { version = "0.2", optional = true }
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
+js-sys = { version = "0.3.35", optional = true }
 cfg-if = "0.1.10"
-rand = "0.7.3"
+
+[dependencies.rand]
+version = "0.7.3"
+features = ["getrandom", "wasm-bindgen"]
 
 [build-dependencies]
 lalrpop = "0.17.2"
