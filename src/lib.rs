@@ -8,7 +8,7 @@ extern crate js_sys;
 #[cfg(feature = "wasm")]
 extern crate console_error_panic_hook;
 extern crate num;
-#[macro_use(approx_eq)]
+#[cfg_attr(test, macro_use(approx_eq))]
 extern crate float_cmp;
 #[macro_use(cached, cached_key)]
 extern crate cached;
