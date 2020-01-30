@@ -26,15 +26,12 @@ mod qe;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
-#[cfg(feature = "wasm")]
-use interpreter::computation::{ Computation, new_computation };
-
 use cfg_if::cfg_if;
 
 use linker::Linker;
-use interpreter::runtime::ExecutionResult;
+use interpreter::computation::Computation;
 
-fn do_run(input: &str) -> Result<ExecutionResult, String> {
+fn do_run(input: &str) -> Result<Computation, String> {
   let linker = Linker::with_embedded(HashMap::from_iter(vec![
     ("qelib1.inc".to_owned(), qe::QELIB1.to_owned())
   ]));
@@ -45,12 +42,14 @@ fn do_run(input: &str) -> Result<ExecutionResult, String> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub fn run(input: &str) -> Result<ExecutionResult, String> {
+pub fn run(input: &str) -> Result<Computation, String> {
   do_run(input)
 }
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::wasm_bindgen;
+#[cfg(target_arch = "wasm32")]
+use interpreter::computation::wasm::{ JsComputation, as_js_computation };
 
 cfg_if! {
   if #[cfg(feature = "wee_alloc")] {
@@ -62,13 +61,9 @@ cfg_if! {
 
 #[cfg(target_arch = "wasm32")]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
-pub fn run(input: &str) -> Computation {
-  use statevector::wasm::as_float_array;
+pub fn run(input: &str) -> JsComputation {
   use std::panic;
   panic::set_hook(Box::new(console_error_panic_hook::hook));
   let result = do_run(input).unwrap();
-  new_computation(
-    result.memory.iter().map(|(k, v)| (k.to_owned(), *v as f64)).collect(),
-    as_float_array(&result.statevector)
-  )
+  as_js_computation(result)
 }

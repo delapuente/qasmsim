@@ -10,7 +10,7 @@ pub mod wasm;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StateVector {
-  bases: Vec<Complex>,
+  pub bases: Vec<Complex>,
   pub bit_width: usize
 }
 

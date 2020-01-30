@@ -6,14 +6,9 @@ use statevector::StateVector;
 use grammar::ast;
 use interpreter::expression_solver::ExpressionSolver;
 use interpreter::argument_solver::ArgumentSolver;
+use interpreter::computation::Computation;
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
-
-#[derive(Debug)]
-pub struct ExecutionResult {
-  pub statevector: StateVector,
-  pub memory: HashMap<String, u64>
-}
 
 struct Runtime {
   macro_stack: VecDeque<BindingMappings>,
@@ -211,12 +206,9 @@ impl Runtime {
 }
 
 pub fn execute(program: &ast::OpenQasmProgram)
--> Result<ExecutionResult, String> {
+-> Result<Computation, String> {
   let semantics = extract_semantics(program)?;
   let mut runtime = Runtime::new(semantics);
   runtime.apply_gates(&program.program);
-  Ok(ExecutionResult{
-    statevector: runtime.statevector,
-    memory: runtime.memory
-  })
+  Ok(Computation::new(runtime.memory, runtime.statevector))
 }
