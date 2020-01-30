@@ -16,14 +16,14 @@ pub struct JsComputation {
 #[wasm_bindgen]
 impl JsComputation {
   pub fn get_memory(&self) -> js_sys::Array {
-    let a = js_sys::Array::new();
-    for (name, value) in &self.memory {
-      let pair = js_sys::Array::new();
-      pair.push(&JsValue::from_str(name));
-      pair.push(&JsValue::from_f64(*value));
-      a.push(&pair);
-    }
-    a
+    use std::iter::FromIterator;
+    js_sys::Array::from_iter(
+      self.memory.iter()
+      .map(|(k, v)| js_sys::Array::of2(
+        &JsValue::from_str(k),
+        &JsValue::from_f64(*v)
+      ))
+    )
   }
 
   pub fn get_statevector(&self) -> Vec<f64> {
@@ -39,5 +39,5 @@ pub fn as_js_computation(computation: Computation) -> JsComputation {
 }
 
 fn as_float_array(statevector: &StateVector) -> Vec<f64> {
-  statevector.bases.iter().flat_map(|a| vec!(a.re, a.im)).collect()
+  statevector.bases.iter().flat_map(|a| vec![a.re, a.im]).collect()
 }

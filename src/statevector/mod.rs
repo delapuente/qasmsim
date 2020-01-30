@@ -6,8 +6,6 @@ use cached::SizedCache;
 use num::Float;
 use complex::{ self, Complex, ComplexMargin };
 
-pub mod wasm;
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct StateVector {
   pub bases: Vec<Complex>,
