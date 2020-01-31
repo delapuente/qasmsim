@@ -1,8 +1,10 @@
 pub mod ast;
+pub mod lexer;
 
 #[cfg(test)]
 mod tests {
   use grammar::ast::*;
+  use grammar::lexer::Lexer;
   use open_qasm2;
 
   #[test]
@@ -12,8 +14,9 @@ mod tests {
     qreg q[2];
     creg c[2];
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::OpenQasmProgramParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, OpenQasmProgram{
       version: "2.0".to_string(),
       program: vec![
@@ -28,8 +31,9 @@ mod tests {
     let source = "
     gate id q {}
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::StatementParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Statement::GateDecl(
       "id".to_string(), vec![], vec!["q".to_string()], vec![]
     ));
@@ -40,8 +44,9 @@ mod tests {
     let source = "
     gate id () q {}
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::StatementParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Statement::GateDecl(
       "id".to_string(), vec![], vec!["q".to_string()], vec![]
     ));
@@ -54,8 +59,9 @@ mod tests {
       CX c, t;
     }
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::StatementParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Statement::GateDecl(
       "cx".to_string(), vec![], vec!["c".to_string(), "t".to_string()], vec![
         GateOperation::Unitary(UnitaryOperation(
@@ -77,8 +83,9 @@ mod tests {
       U (theta, phi, lambda) q;
     }
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::StatementParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Statement::GateDecl(
       "u".to_string(),
       vec!["theta".to_string(), "phi".to_string(), "lambda".to_string()],
@@ -104,8 +111,9 @@ mod tests {
       u1 (phi) a;
     }
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::StatementParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Statement::GateDecl(
       "rz".to_string(),
       vec!["phi".to_string()],
@@ -125,8 +133,9 @@ mod tests {
     let source = "
     U(pi/2, 0, pi) q;
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::StatementParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Statement::QuantumOperation(
       QuantumOperation::Unitary(
         UnitaryOperation(
@@ -151,8 +160,9 @@ mod tests {
     let source = "
     -pi + (1 - 2) * 3 / 4
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::ExprParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Expression::Op(
       Opcode::Add,
       Box::new(Expression::Minus(Box::new(Expression::Pi))),
@@ -179,8 +189,9 @@ mod tests {
     creg c[1];
     h q;
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::ProgramParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, vec![
       Statement::QRegDecl("q".to_string(), 1),
       Statement::CRegDecl("c".to_string(), 1),
@@ -202,8 +213,9 @@ mod tests {
     measure q -> c;
     reset q;
     ";
+    let lexer = Lexer::new(source);
     let parser = open_qasm2::ProgramParser::new();
-    let tree = parser.parse(source).unwrap();
+    let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, vec![
       Statement::QRegDecl("q".to_string(), 1),
       Statement::CRegDecl("c".to_string(), 1),
@@ -223,5 +235,27 @@ mod tests {
         QuantumOperation::Reset(Argument::Id("q".to_string()))
       )
     ]);
+  }
+
+  #[test]
+  fn test_semantics_comments() {
+    let source = "
+    // Comment 1
+    OPENQASM 2.0;
+    // Comment 2
+
+    // Comment 3
+    gate id q {} // Comment 4
+    // Comment 5
+    ";
+    let lexer = Lexer::new(source);
+    let parser = open_qasm2::OpenQasmProgramParser::new();
+    let tree = parser.parse(lexer).unwrap();
+    assert_eq!(tree, OpenQasmProgram{
+      version: "2.0".to_string(),
+      program: vec![
+        Statement::GateDecl(String::from("id"), vec![String::from("q")], vec![], vec![]),
+      ]
+    });
   }
 }

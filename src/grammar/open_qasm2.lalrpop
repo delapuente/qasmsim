@@ -1,10 +1,10 @@
-use std::str::FromStr;
 use grammar::ast;
+use grammar::lexer;
 
 grammar;
 
 pub OpenQasmProgram: ast::OpenQasmProgram = {
-  <version:Version> ";" <program:Program> => ast::OpenQasmProgram{<>}
+  <version:"version"> ";" <program:Program> => ast::OpenQasmProgram{<>}
 };
 
 pub OpenQasmLibrary: ast::OpenQasmLibrary = {
@@ -33,7 +33,7 @@ pub GateDefinition: ast::Statement = {
 };
 
 Include: ast::Statement = {
-  "include" <s:r#""[^"]*""#> ";" => ast::Statement::Include(s[1..s.len()-1].to_owned())
+  "include" <s:string> ";" => ast::Statement::Include(s)
 }
 
 GateDefinitionList: Vec<ast::Statement> = {
@@ -126,20 +126,56 @@ Argument: ast::Argument = {
   <Id> "[" <Nninteger> "]" => ast::Argument::Item(<>)
 };
 
-Version: String = r"OPENQASM\s+([0-9]+\.[0-9]+)" => {
-  let version_tokens: Vec<&str> = <>.split_whitespace().collect();
-  String::from_str(version_tokens.last().unwrap()).unwrap()
-};
-
 IdList = List<Id>;
 
-Id: String = r"[a-z][A-Za-z0-9_]*" => String::from_str(<>).unwrap();
+// Id: String = r"[a-z][A-Za-z0-9_]*" => String::from_str(<>).unwrap();
+Id: String = <s:id> => s;
 
-Nninteger: usize = r"[1-9]+[0-9]*|0" => usize::from_str(<>).unwrap();
+//Nninteger: usize = r"[1-9]+[0-9]*|0" => usize::from_str(<>).unwrap();
+Nninteger: usize = <v:int> => v;
 
-Real: f64 = r"([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?" => f64::from_str(<>).unwrap();
+// Real: f64 = r"([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?" => f64::from_str(<>).unwrap();
+Real: f64 = <v:real> => v;
 
 List<T>: Vec<T> = {
   T => vec![<>],
   <list:List<T>> "," <item:T> => { let mut list = list; list.push(item); list }
+}
+
+extern {
+  type Location = usize;
+  type Error = lexer::LexicalError;
+
+  enum lexer::Tok {
+    ";" => lexer::Tok::Semi,
+    "{" => lexer::Tok::LBrace,
+    "}" => lexer::Tok::RBrace,
+    "[" => lexer::Tok::LBracket,
+    "]" => lexer::Tok::RBracket,
+    "(" => lexer::Tok::LParent,
+    ")" => lexer::Tok::RParent,
+    "+" => lexer::Tok::Add,
+    "-" => lexer::Tok::Minus,
+    "*" => lexer::Tok::Mult,
+    "/" => lexer::Tok::Div,
+    "pi" => lexer::Tok::ConstPi,
+    "," => lexer::Tok::Comman,
+    "U" => lexer::Tok::U,
+    "CX" => lexer::Tok::CX,
+    "opaque" => lexer::Tok::Opaque,
+    "gate" => lexer::Tok::Gate,
+    "include" => lexer::Tok::Include,
+    "qreg" => lexer::Tok::QReg,
+    "creg" => lexer::Tok::CReg,
+    "measure" => lexer::Tok::Measure,
+    "reset" => lexer::Tok::Reset,
+    "barrier" => lexer::Tok::Barrier,
+    "->" => lexer::Tok::Arrow,
+    "OPENQASM" => lexer::Tok::QASMHeader,
+    "version" => lexer::Tok::Version { version: <String> },
+    id => lexer::Tok::Id { name: <String> },
+    int => lexer::Tok::Int { value: <usize> },
+    real => lexer::Tok::Float { value: <f64> },
+    string => lexer::Tok::Str { value: <String> }
+  }
 }
