@@ -1,10 +1,12 @@
+use std::str::FromStr;
+
 use grammar::ast;
 use grammar::lexer;
 
 grammar;
 
 pub OpenQasmProgram: ast::OpenQasmProgram = {
-  <version:"version"> ";" <program:Program> => ast::OpenQasmProgram{<>}
+  "OPENQASM" <version:"version"> ";" <program:Program> => ast::OpenQasmProgram{<>}
 };
 
 pub OpenQasmLibrary: ast::OpenQasmLibrary = {
@@ -132,10 +134,10 @@ IdList = List<Id>;
 Id: String = <s:id> => s;
 
 //Nninteger: usize = r"[1-9]+[0-9]*|0" => usize::from_str(<>).unwrap();
-Nninteger: usize = <v:int> => v;
+Nninteger: usize = <v:int> => usize::from_str(&v).unwrap();
 
 // Real: f64 = r"([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?" => f64::from_str(<>).unwrap();
-Real: f64 = <v:real> => v;
+Real: f64 = <v:real> => f64::from_str(&v).unwrap();
 
 List<T>: Vec<T> = {
   T => vec![<>],
@@ -172,10 +174,10 @@ extern {
     "barrier" => lexer::Tok::Barrier,
     "->" => lexer::Tok::Arrow,
     "OPENQASM" => lexer::Tok::QASMHeader,
-    "version" => lexer::Tok::Version { version: <String> },
-    id => lexer::Tok::Id { name: <String> },
-    int => lexer::Tok::Int { value: <usize> },
-    real => lexer::Tok::Float { value: <f64> },
-    string => lexer::Tok::Str { value: <String> }
+    "version" => lexer::Tok::Version { repr: <String> },
+    id => lexer::Tok::Id { repr: <String> },
+    int => lexer::Tok::Int { repr: <String> },
+    real => lexer::Tok::Float { repr: <String> },
+    string => lexer::Tok::Str { repr: <String> }
   }
 }
