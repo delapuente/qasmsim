@@ -254,7 +254,7 @@ mod tests {
     assert_eq!(tree, OpenQasmProgram{
       version: "2.0".to_string(),
       program: vec![
-        Statement::GateDecl(String::from("id"), vec![String::from("q")], vec![], vec![]),
+        Statement::GateDecl(String::from("id"), vec![], vec![String::from("q")], vec![]),
       ]
     });
   }

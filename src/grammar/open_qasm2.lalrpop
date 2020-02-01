@@ -6,7 +6,7 @@ use grammar::lexer;
 grammar;
 
 pub OpenQasmProgram: ast::OpenQasmProgram = {
-  "OPENQASM" <version:"version"> ";" <program:Program> => ast::OpenQasmProgram{<>}
+  "OPENQASM" <version:Version> ";" <program:Program> => ast::OpenQasmProgram{<>}
 };
 
 pub OpenQasmLibrary: ast::OpenQasmLibrary = {
@@ -48,8 +48,8 @@ GateDefinitionList: Vec<ast::Statement> = {
 };
 
 RegisterDeclaration: ast::Statement = {
-  "qreg" <Id> "[" <Nninteger> "]" ";" => ast::Statement::QRegDecl(<>),
-  "creg" <Id> "[" <Nninteger> "]" ";" => ast::Statement::CRegDecl(<>)
+  "qreg" <Id> "[" <Size> "]" ";" => ast::Statement::QRegDecl(<>),
+  "creg" <Id> "[" <Size> "]" ";" => ast::Statement::CRegDecl(<>)
 };
 
 QuantumOperation: ast::QuantumOperation = {
@@ -117,7 +117,7 @@ Term: ast::Expression = {
   "pi" => ast::Expression::Pi,
   Id => ast::Expression::Id(<>),
   Real => ast::Expression::Real(<>),
-  Nninteger => ast::Expression::Real(<> as f64),
+  Int => ast::Expression::Real(<>),
   "(" <Expr> ")"
 };
 
@@ -125,19 +125,20 @@ ArgumentList = List<Argument>;
 
 Argument: ast::Argument = {
   Id => ast::Argument::Id(<>),
-  <Id> "[" <Nninteger> "]" => ast::Argument::Item(<>)
+  <Id> "[" <Size> "]" => ast::Argument::Item(<>)
 };
 
 IdList = List<Id>;
 
-// Id: String = r"[a-z][A-Za-z0-9_]*" => String::from_str(<>).unwrap();
 Id: String = <s:id> => s;
 
-//Nninteger: usize = r"[1-9]+[0-9]*|0" => usize::from_str(<>).unwrap();
-Nninteger: usize = <v:int> => usize::from_str(&v).unwrap();
+Size: usize = <v:int> => usize::from_str(&v).unwrap();
 
-// Real: f64 = r"([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?" => f64::from_str(<>).unwrap();
+Int: f64 = <v:int> => f64::from_str(&v).unwrap();
+
 Real: f64 = <v:real> => f64::from_str(&v).unwrap();
+
+Version: String = <s:version> => s;
 
 List<T>: Vec<T> = {
   T => vec![<>],
@@ -149,19 +150,20 @@ extern {
   type Error = lexer::LexicalError;
 
   enum lexer::Tok {
-    ";" => lexer::Tok::Semi,
-    "{" => lexer::Tok::LBrace,
-    "}" => lexer::Tok::RBrace,
-    "[" => lexer::Tok::LBracket,
-    "]" => lexer::Tok::RBracket,
-    "(" => lexer::Tok::LParent,
-    ")" => lexer::Tok::RParent,
     "+" => lexer::Tok::Add,
     "-" => lexer::Tok::Minus,
     "*" => lexer::Tok::Mult,
     "/" => lexer::Tok::Div,
+    "[" => lexer::Tok::LBracket,
+    "]" => lexer::Tok::RBracket,
+    "{" => lexer::Tok::LBrace,
+    "}" => lexer::Tok::RBrace,
+    "(" => lexer::Tok::LParent,
+    ")" => lexer::Tok::RParent,
+    ";" => lexer::Tok::Semi,
+    "," => lexer::Tok::Comma,
+    "->" => lexer::Tok::Arrow,
     "pi" => lexer::Tok::ConstPi,
-    "," => lexer::Tok::Comman,
     "U" => lexer::Tok::U,
     "CX" => lexer::Tok::CX,
     "opaque" => lexer::Tok::Opaque,
@@ -172,12 +174,11 @@ extern {
     "measure" => lexer::Tok::Measure,
     "reset" => lexer::Tok::Reset,
     "barrier" => lexer::Tok::Barrier,
-    "->" => lexer::Tok::Arrow,
     "OPENQASM" => lexer::Tok::QASMHeader,
-    "version" => lexer::Tok::Version { repr: <String> },
+    version => lexer::Tok::Version { repr: <String> },
     id => lexer::Tok::Id { repr: <String> },
     int => lexer::Tok::Int { repr: <String> },
-    real => lexer::Tok::Float { repr: <String> },
+    real => lexer::Tok::Real { repr: <String> },
     string => lexer::Tok::Str { repr: <String> }
   }
 }
