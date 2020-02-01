@@ -105,6 +105,11 @@ impl<'input> Lexer<'input> {
 impl<'input> Iterator for Lexer<'input> {
   type Item = Spanned<Tok, usize, LexicalError>;
 
+  // XXX: The function is not split since I'm trying to distinguish a pattern
+  // for creating a macro to autogenerate a stack-based lexer with matching
+  // rules specific per mode.
+  //
+  // Proposed syntax (if possible): #[modes(mode1, mode2,...)]
   fn next(&mut self) -> Option<Self::Item> {
     lazy_static! {
       static ref ALL_THE_LINE: Regex = Regex::new(r"^[^\n]*").unwrap();
@@ -123,12 +128,14 @@ impl<'input> Iterator for Lexer<'input> {
         return None;
       }
 
+      // #[modes(all)]
       if let Some(_blank) = self.try_pattern(&BLANK) {
         continue;
       }
 
       let start = self.offset;
 
+      // #[modes(Base)]
       match self.mode.get(0) {
         Some(Mode::Base) => {
           if let Some((_, c)) = self.chars.peek() {
@@ -142,6 +149,7 @@ impl<'input> Iterator for Lexer<'input> {
         _ => ()
       }
 
+      // #[modes(Str)]
       match self.mode.get(0) {
         Some(Mode::Str) => {
           loop {
@@ -161,6 +169,7 @@ impl<'input> Iterator for Lexer<'input> {
         _ => ()
       }
 
+      // #[modes(Comment)]
       match self.mode.get(0) {
         Some(Mode::Comment) => {
           if let Some(_) = self.try_pattern(&ALL_THE_LINE) {
@@ -171,12 +180,14 @@ impl<'input> Iterator for Lexer<'input> {
         _ => ()
       }
 
+      // #[modes(all)]
       if let Some(repr) = self.try_pattern(&OPENQASM) {
         self.mode.push_front(Mode::Version);
         let end = start + repr.len();
         return Some(Ok((start, Tok::QASMHeader, end)));
       }
 
+      // #[modes(all)]
       if let Some(gate) = self.try_pattern(&GATE) {
         let end = start + gate.len();
         return Some(match gate.as_str() {
@@ -186,6 +197,7 @@ impl<'input> Iterator for Lexer<'input> {
         })
       }
 
+      // #[modes(all)]
       if let Some(repr) = self.try_pattern(&ID) {
         let end = start + repr.len();
         return Some(match self.keywords.get(&repr) {
@@ -194,6 +206,7 @@ impl<'input> Iterator for Lexer<'input> {
         })
       }
 
+      // #[modes(Base)]
       match self.mode.get(0) {
         Some(Mode::Base) => {
           if let Some(repr) = self.try_pattern(&REAL) {
@@ -204,6 +217,7 @@ impl<'input> Iterator for Lexer<'input> {
         _ => ()
       }
 
+      // #[modes(Version)]
       match self.mode.get(0) {
         Some(Mode::Version) => {
           if let Some(repr) = self.try_pattern(&VERSION) {
@@ -215,11 +229,13 @@ impl<'input> Iterator for Lexer<'input> {
         _ => ()
       }
 
+      // #[modes(all)]
       if let Some(repr) = self.try_pattern(&INTEGER) {
         let end = start + repr.len();
         return Some(Ok((start, Tok::Int{ repr }, end)));
       }
 
+      // #[modes(all)]
       if let Some(symbol) = self.try_pattern(&SYMBOL) {
         let end = start + symbol.len();
         let token = match symbol.as_str() {
