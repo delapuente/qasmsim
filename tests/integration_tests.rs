@@ -233,3 +233,22 @@ fn test_all_classical_memory_is_displayed() {
   assert_eq!(*result.memory.get("d").unwrap(), 0b0);
   assert_eq!(*result.memory.get("e").unwrap(), 0b0);
 }
+
+#[test]
+fn test_conditional() {
+  let source = "
+  OPENQASM 2.0;
+  include \"qelib1.inc\";
+  qreg q[2];
+  creg c[2];
+  creg d[2];
+  x q[1];
+  measure q[1] -> c[1];
+  if (c==2) x q;
+  measure q -> d;
+  ";
+  let result = &qasmsim::run(source).unwrap();
+  assert_eq!(result.memory.len(), 2);
+  assert_eq!(*result.memory.get("c").unwrap(), 0b10);
+  assert_eq!(*result.memory.get("d").unwrap(), 0b01);
+}
