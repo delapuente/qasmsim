@@ -238,7 +238,7 @@ mod tests {
   }
 
   #[test]
-  fn test_semantics_comments() {
+  fn test_comments() {
     let source = "
     // Comment 1
     OPENQASM 2.0;
