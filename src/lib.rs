@@ -67,8 +67,12 @@ cfg_if! {
 #[cfg(target_arch = "wasm32")]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub fn run(input: &str) -> JsComputation {
-  use std::panic;
-  panic::set_hook(Box::new(console_error_panic_hook::hook));
   let result = do_run(input).unwrap();
   as_js_computation(result)
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
+pub fn init() {
+  use std::panic;
+  panic::set_hook(Box::new(console_error_panic_hook::hook));
 }
