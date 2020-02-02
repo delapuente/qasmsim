@@ -40,8 +40,8 @@ Include: ast::Statement = {
 }
 
 If: ast::Statement = {
-  "if" "(" <Argument> "==" <Int> ")" <QuantumOperation> =>
-    ast::Statement::Conditional(<>)
+  "if" "(" <r:Id> "==" <t:Int> ")" <op:QuantumOperation> =>
+    ast::Statement::Conditional(ast::Argument::Id(r), t, op)
 }
 
 GateDefinitionList: Vec<ast::Statement> = {

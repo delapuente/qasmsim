@@ -39,6 +39,25 @@ impl Runtime {
       match statement {
         ast::Statement::QuantumOperation(operation) => {
           self.apply_quantum_operation(operation);
+        },
+        ast::Statement::Conditional(register, test, operation) => {
+          // In program execution, do not replace symbols
+          let actual_register: ast::Argument = if self.macro_stack.len() == 0 {
+            (*register).clone()
+          }
+          // In macro execution, replace formal arguments with actual arguments
+          else {
+            let arg_bindings = &self.macro_stack.get(0).unwrap().1;
+            let argument_solver = ArgumentSolver::new(arg_bindings);
+            argument_solver.solve(&register)
+          };
+          let value = match actual_register {
+            ast::Argument::Id(register_name) => self.memory.get(&register_name).unwrap(),
+            _ => unreachable!()
+          };
+          if value == test {
+            self.apply_quantum_operation(operation);
+          }
         }
         _ => ()
       };
