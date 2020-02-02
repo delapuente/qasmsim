@@ -1,7 +1,7 @@
 use std::collections::{ HashMap, VecDeque };
 use std::iter::FromIterator;
 
-use semantics::{ Semantics, extract_semantics };
+use semantics::{ Semantics, RegisterType, extract_semantics };
 use statevector::StateVector;
 use grammar::ast;
 use interpreter::expression_solver::ExpressionSolver;
@@ -20,11 +20,17 @@ struct Runtime {
 impl Runtime {
   pub fn new(semantics: Semantics) -> Self {
     let memory_size = semantics.quantum_memory_size;
+    let mut initial_memory = HashMap::new();
+    for register in semantics.register_table.values() {
+      if register.1 == RegisterType::C {
+        initial_memory.insert(register.0.clone(), 0_u64);
+      }
+    }
     Runtime {
       macro_stack: VecDeque::new(),
       semantics,
       statevector: StateVector::new(memory_size),
-      memory: HashMap::new()
+      memory: initial_memory
     }
   }
 
@@ -97,7 +103,7 @@ impl Runtime {
     let measurement = self.statevector.measure(source) as u64;
 
     if !self.memory.contains_key(&classical_register_name) {
-      self.memory.insert(classical_register_name.clone(), 0);
+      unreachable!();
     }
 
     let target = self.get_bit_mapping(&args[1]);

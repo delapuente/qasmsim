@@ -214,3 +214,22 @@ fn test_measurements() {
     assert_eq!(*result.memory.get("c").unwrap(), *expected_result);
   }
 }
+
+#[test]
+fn test_all_classical_memory_is_displayed() {
+  let source = "
+  OPENQASM 2.0;
+  include \"qelib1.inc\";
+  qreg q[2];
+  creg c[2];
+  creg d[2];
+  creg e[2];
+  x q;
+  measure q -> c;
+  ";
+  let result = &qasmsim::run(source).unwrap();
+  assert_eq!(result.memory.len(), 3);
+  assert_eq!(*result.memory.get("c").unwrap(), 0b11);
+  assert_eq!(*result.memory.get("d").unwrap(), 0b0);
+  assert_eq!(*result.memory.get("e").unwrap(), 0b0);
+}
