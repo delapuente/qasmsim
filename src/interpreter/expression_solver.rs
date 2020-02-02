@@ -12,6 +12,7 @@ impl<'a> ExpressionSolver<'a> {
   pub fn solve(&self, expression: &ast::Expression) -> f64 {
     match expression {
       ast::Expression::Pi => std::f64::consts::PI,
+      ast::Expression::Int(value) => *value as f64,
       ast::Expression::Real(value) => *value,
       ast::Expression::Minus(expr) => - self.solve(expr),
       ast::Expression::Op(opcode, left, right) => match opcode {

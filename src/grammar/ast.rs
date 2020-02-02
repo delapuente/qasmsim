@@ -17,7 +17,8 @@ pub enum Statement {
   GateDecl(String, Vec<String>,  Vec<String>, Vec<GateOperation>),
   Include(String),
   OpaqueGateDecl(String, Vec<String>, Vec<String>),
-  QuantumOperation(QuantumOperation)
+  QuantumOperation(QuantumOperation),
+  Conditional(Argument, Expression, QuantumOperation)
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -49,6 +50,7 @@ pub enum Expression {
   Pi,
   Id(String),
   Real(f64),
+  Int(u64),
   Op(Opcode, Box<Expression>, Box<Expression>),
   Minus(Box<Expression>)
 }

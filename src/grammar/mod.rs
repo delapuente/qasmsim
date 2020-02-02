@@ -258,4 +258,28 @@ mod tests {
       ]
     });
   }
+
+  #[test]
+  fn test_conditional_application() {
+    let source = "
+    if (c==5) cx c, t;
+    ";
+    let lexer = Lexer::new(source);
+    let parser = open_qasm2::StatementParser::new();
+    let tree = parser.parse(lexer).unwrap();
+    assert_eq!(tree, Statement::Conditional(
+      Argument::Id(String::from("c")),
+      Expression::Int(5_u64),
+      QuantumOperation::Unitary(
+        UnitaryOperation(
+          String::from("cx"),
+          vec![],
+          vec![
+            Argument::Id(String::from("c")),
+            Argument::Id(String::from("t"))
+          ]
+        )
+      )
+    ));
+  }
 }

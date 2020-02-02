@@ -24,6 +24,7 @@ pub enum Tok {
   Semi,
   Comma,
   Arrow,
+  Equal,
   ConstPi,
   U,
   CX,
@@ -35,6 +36,7 @@ pub enum Tok {
   Measure,
   Reset,
   Barrier,
+  If,
   QASMHeader,
   Version { repr: String },
   Id { repr: String },
@@ -54,6 +56,7 @@ fn get_keywords() -> HashMap<String, Tok> {
   kw.insert(String::from("measure"), Tok::Measure);
   kw.insert(String::from("reset"), Tok::Reset);
   kw.insert(String::from("barrier"), Tok::Barrier);
+  kw.insert(String::from("if"), Tok::If);
   kw
 }
 
@@ -120,7 +123,7 @@ impl<'input> Iterator for Lexer<'input> {
       static ref ID: Regex = Regex::new(r"^([a-z][A-Za-z0-9_]*)").unwrap();
       static ref INTEGER: Regex = Regex::new(r"^([1-9]+[0-9]*|0)").unwrap();
       static ref REAL: Regex = Regex::new(r"^([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?").unwrap();
-      static ref SYMBOL: Regex = Regex::new(r"^(->|//|[+\-\*/\[\]\{\}\(\);,])").unwrap();
+      static ref SYMBOL: Regex = Regex::new(r"^(->|==|//|[+\-\*/\[\]\{\}\(\);,])").unwrap();
     }
 
     loop {
@@ -252,6 +255,7 @@ impl<'input> Iterator for Lexer<'input> {
           ";" => Tok::Semi,
           "," => Tok::Comma,
           "->" => Tok::Arrow,
+          "==" => Tok::Equal,
           "//" => { self.mode.push_front(Mode::Comment); continue },
           _ => unreachable!()
         };
@@ -337,10 +341,11 @@ mod tests {
 
   #[test]
   fn test_composite_symbols() {
-    let source = "->//";
+    let source = "->==//";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
-      Ok((0, Tok::Arrow, 2))
+      Ok((0, Tok::Arrow, 2)),
+      Ok((2, Tok::Equal, 4))
     ]);
   }
 
