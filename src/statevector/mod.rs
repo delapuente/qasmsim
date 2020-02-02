@@ -85,6 +85,10 @@ impl StateVector {
     let mut measurement = Measurement::new(&mut self.bases, target);
     measurement.collapse(random::<f64>())
   }
+
+  pub fn probabilities(&self) -> Vec<f64> {
+    self.bases.iter().map(|c| c.norm_sqr()).collect()
+  }
 }
 
 impl<'a> ApproxEq for &'a StateVector {

@@ -71,6 +71,7 @@ pub fn run(input: &str) -> JsComputation {
   as_js_computation(result)
 }
 
+#[cfg(target_arch = "wasm32")]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub fn init() {
   use std::panic;

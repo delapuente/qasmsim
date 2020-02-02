@@ -14,4 +14,8 @@ impl Computation {
   pub fn new(memory: HashMap<String, u64>, statevector: StateVector) -> Self {
     Computation{ statevector, memory }
   }
+
+  pub fn probabilities(&self) -> Vec<f64> {
+    self.statevector.probabilities()
+  }
 }
