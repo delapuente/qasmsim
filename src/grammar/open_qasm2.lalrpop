@@ -23,6 +23,7 @@ pub Statement: ast::Statement = {
   RegisterDeclaration,
   GateDefinition,
   Include,
+  If,
   QuantumOperation => ast::Statement::QuantumOperation(<>)
 };
 
@@ -36,6 +37,11 @@ pub GateDefinition: ast::Statement = {
 
 Include: ast::Statement = {
   "include" <s:string> ";" => ast::Statement::Include(s)
+}
+
+If: ast::Statement = {
+  "if" "(" <Argument> "==" <Int> ")" <QuantumOperation> =>
+    ast::Statement::Conditional(<>)
 }
 
 GateDefinitionList: Vec<ast::Statement> = {
@@ -117,7 +123,6 @@ Term: ast::Expression = {
   "pi" => ast::Expression::Pi,
   Id => ast::Expression::Id(<>),
   Real => ast::Expression::Real(<>),
-  Int => ast::Expression::Real(<>),
   "(" <Expr> ")"
 };
 
@@ -134,9 +139,12 @@ Id: String = <s:id> => s;
 
 Size: usize = <v:int> => usize::from_str(&v).unwrap();
 
-Int: f64 = <v:int> => f64::from_str(&v).unwrap();
+Int: u64 = <v:int> => u64::from_str(&v).unwrap();
 
-Real: f64 = <v:real> => f64::from_str(&v).unwrap();
+Real: f64 = {
+  <v:real> => f64::from_str(&v).unwrap(),
+  <v:int> => f64::from_str(&v).unwrap()
+}
 
 Version: String = <s:version> => s;
 
@@ -163,6 +171,7 @@ extern {
     ";" => lexer::Tok::Semi,
     "," => lexer::Tok::Comma,
     "->" => lexer::Tok::Arrow,
+    "==" => lexer::Tok::Equal,
     "pi" => lexer::Tok::ConstPi,
     "U" => lexer::Tok::U,
     "CX" => lexer::Tok::CX,
@@ -174,6 +183,7 @@ extern {
     "measure" => lexer::Tok::Measure,
     "reset" => lexer::Tok::Reset,
     "barrier" => lexer::Tok::Barrier,
+    "if" => lexer::Tok::If,
     "OPENQASM" => lexer::Tok::QASMHeader,
     version => lexer::Tok::Version { repr: <String> },
     id => lexer::Tok::Id { repr: <String> },

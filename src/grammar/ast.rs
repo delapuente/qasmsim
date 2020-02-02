@@ -18,7 +18,7 @@ pub enum Statement {
   Include(String),
   OpaqueGateDecl(String, Vec<String>, Vec<String>),
   QuantumOperation(QuantumOperation),
-  Conditional(Argument, Expression, QuantumOperation)
+  Conditional(Argument, u64, QuantumOperation)
 }
 
 #[derive(Debug, PartialEq, Clone)]

@@ -269,7 +269,7 @@ mod tests {
     let tree = parser.parse(lexer).unwrap();
     assert_eq!(tree, Statement::Conditional(
       Argument::Id(String::from("c")),
-      Expression::Int(5_u64),
+      5_u64,
       QuantumOperation::Unitary(
         UnitaryOperation(
           String::from("cx"),
