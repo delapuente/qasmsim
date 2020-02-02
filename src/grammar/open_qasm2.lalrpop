@@ -23,6 +23,7 @@ pub Statement: ast::Statement = {
   RegisterDeclaration,
   GateDefinition,
   Include,
+  Barrier => ast::Statement::Barrier(<>),
   If,
   QuantumOperation => ast::Statement::QuantumOperation(<>)
 };
@@ -78,9 +79,13 @@ GateOperationList: Vec<ast::GateOperation> = {
 };
 
 GateOperation: ast::GateOperation = {
-  UnitaryOperation => ast::GateOperation::Unitary(<>),
-  "barrier" <IdList> ";" => ast::GateOperation::Barrier(<>)
+  Barrier => ast::GateOperation::Barrier(<>),
+  UnitaryOperation => ast::GateOperation::Unitary(<>)
 };
+
+Barrier: ast::BarrierPragma = {
+  "barrier" <ArgumentList> ";" => ast::BarrierPragma(<>),
+}
 
 UnitaryOperation: ast::UnitaryOperation = {
   "U" "(" <theta:Expr> "," <phi:Expr> "," <lambda:Expr> ")" <target:Argument> ";" =>

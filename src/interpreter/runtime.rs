@@ -205,7 +205,13 @@ impl Runtime {
 
   fn bind(&mut self, macro_name: String, real_args: &Vec<f64>, args: &Vec<ast::Argument>)
   -> BindingMappings {
-    let definition = self.semantics.macro_definitions.get(&macro_name).unwrap();
+    let definition = match self.semantics.macro_definitions.get(&macro_name) {
+      None => {
+        println!("Call to unknown gate `{}`.", macro_name);
+        panic!();
+      }
+      Some(definition) => definition
+    };
     let real_args_mapping = HashMap::from_iter(
       definition.1.iter()
       .zip(real_args.iter()) // pair formal arguments with their float values

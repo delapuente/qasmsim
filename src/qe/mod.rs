@@ -1,5 +1,5 @@
 
-pub const QELIB1: &'static str = "
+pub const QELIB1: &'static str = r#"
 // Quantum Experience (QE) Standard Header
 // file: qelib1.inc
 
@@ -15,6 +15,8 @@ gate u1(lambda) q { U(0,0,lambda) q; }
 gate cx c,t { CX c,t; }
 // idle gate (identity)
 gate id a { U(0,0,0) a; }
+// idle gate (identity) with length gamma*sqglen
+gate u0(gamma) q { U(0,0,0) q; }
 
 // --- QE Standard Gates ---
 
@@ -37,7 +39,7 @@ gate tdg a { u1(-pi/4) a; }
 
 // --- Standard rotations ---
 // Rotation around X-axis
-gate rx(theta) a { u3(theta,-pi/2,pi/2) a; }
+gate rx(theta) a { u3(theta, -pi/2,pi/2) a; }
 // rotation around Y-axis
 gate ry(theta) a { u3(theta,0,0) a; }
 // rotation around Z axis
@@ -49,6 +51,8 @@ gate rz(phi) a { u1(phi) a; }
 gate cz a,b { h b; cx a,b; h b; }
 // controlled-Y
 gate cy a,b { sdg b; cx a,b; s b; }
+// swap
+gate swap a,b { cx a,b; cx b,a; cx a,b; }
 // controlled-H
 gate ch a,b {
 h b; sdg b;
@@ -66,6 +70,30 @@ gate ccx a,b,c
   cx b,c; tdg c;
   cx a,c; t b; t c; h c;
   cx a,b; t a; tdg b;
+  cx a,b;
+}
+// cswap (Fredkin)
+gate cswap a,b,c
+{
+  cx c,b;
+  ccx a,b,c;
+  cx c,b;
+}
+// controlled rx rotation
+gate crx(lambda) a,b
+{
+  u1(pi/2) b;
+  cx a,b;
+  u3(-lambda/2,0,0) b;
+  cx a,b;
+  u3(lambda/2,-pi/2,0) b;
+}
+// controlled ry rotation
+gate cry(lambda) a,b
+{
+  u3(lambda/2,0,0) b;
+  cx a,b;
+  u3(-lambda/2,0,0) b;
   cx a,b;
 }
 // controlled rz rotation
@@ -89,10 +117,29 @@ gate cu1(lambda) a,b
 gate cu3(theta,phi,lambda) c, t
 {
   // implements controlled-U(theta,phi,lambda) with  target t and control c
+  u1((lambda+phi)/2) c;
   u1((lambda-phi)/2) t;
   cx c,t;
   u3(-theta/2,0,-(phi+lambda)/2) t;
   cx c,t;
   u3(theta/2,phi,0) t;
 }
-";
+// two-qubit XX rotation
+gate rxx(theta) a,b
+{
+  u3(pi/2, theta, 0) a;
+  h b;
+  cx a,b;
+  u1(-theta) b;
+  cx a,b;
+  h b;
+  u2(-pi, pi-theta) a;
+}
+// two-qubit ZZ rotation
+gate rzz(theta) a,b
+{
+  cx a,b;
+  u1(theta) b;
+  cx a,b;
+}
+"#;

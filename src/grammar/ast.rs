@@ -10,12 +10,18 @@ pub struct OpenQasmLibrary {
   pub definitions: Vec<Statement>
 }
 
+// TODO: This should not be part of the grammar. It is a directive for
+// the optimizer or compiler.
+#[derive(Debug, PartialEq, Clone)]
+pub struct BarrierPragma(pub Vec<Argument>);
+
 #[derive(Debug, PartialEq)]
 pub enum Statement {
   QRegDecl(String, usize),
   CRegDecl(String, usize),
   GateDecl(String, Vec<String>,  Vec<String>, Vec<GateOperation>),
   Include(String),
+  Barrier(BarrierPragma),
   OpaqueGateDecl(String, Vec<String>, Vec<String>),
   QuantumOperation(QuantumOperation),
   Conditional(Argument, u64, QuantumOperation)
@@ -24,7 +30,7 @@ pub enum Statement {
 #[derive(Debug, PartialEq, Clone)]
 pub enum GateOperation {
   Unitary(UnitaryOperation),
-  Barrier(Vec<String>)
+  Barrier(BarrierPragma)
 }
 
 #[derive(Debug, PartialEq)]

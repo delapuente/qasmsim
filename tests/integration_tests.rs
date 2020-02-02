@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 extern crate qasmsim;
 
 use std::f64::consts::FRAC_1_SQRT_2;
