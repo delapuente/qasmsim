@@ -4,8 +4,8 @@ use js_sys;
 use wasm_bindgen;
 use wasm_bindgen::prelude::*;
 
-use statevector::StateVector;
-use interpreter::computation::Computation;
+use crate::statevector::StateVector;
+use crate::interpreter::computation::Computation;
 
 #[wasm_bindgen]
 pub struct JsComputation {
@@ -16,7 +16,7 @@ pub struct JsComputation {
 
 #[wasm_bindgen]
 impl JsComputation {
-  pub fn get_memory(&self) -> js_sys::Array {
+  pub fn memory(&self) -> js_sys::Array {
     use std::iter::FromIterator;
     js_sys::Array::from_iter(
       self.memory.iter()
@@ -27,7 +27,7 @@ impl JsComputation {
     )
   }
 
-  pub fn get_statevector(&self) -> Vec<f64> {
+  pub fn statevector(&self) -> Vec<f64> {
     self.statevector.iter().cloned().collect()
   }
 

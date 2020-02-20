@@ -1,21 +1,4 @@
-#[macro_use(lalrpop_mod)]
-extern crate lalrpop_util;
-extern crate cfg_if;
-#[cfg(feature = "wasm")]
-extern crate wasm_bindgen;
-#[cfg(feature = "wasm")]
-extern crate js_sys;
-#[cfg(feature = "wasm")]
-extern crate console_error_panic_hook;
-extern crate num;
-#[cfg_attr(test, macro_use(approx_eq))]
-extern crate float_cmp;
-#[macro_use(cached, cached_key)]
-extern crate cached;
-extern crate rand;
-#[macro_use]
-extern crate lazy_static;
-extern crate regex;
+use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
 mod grammar;

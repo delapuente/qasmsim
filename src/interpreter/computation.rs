@@ -2,7 +2,7 @@ pub mod wasm;
 
 use std::collections::HashMap;
 
-use statevector::StateVector;
+use crate::statevector::StateVector;
 
 #[derive(Debug)]
 pub struct Computation {

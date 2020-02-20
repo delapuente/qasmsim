@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use grammar::ast;
+use crate::grammar::ast;
 
 pub struct ArgumentSolver<'a>(&'a HashMap<String, ast::Argument>);
 

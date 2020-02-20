@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
-use grammar::ast;
-use grammar::lexer;
+use crate::grammar::ast;
+use crate::grammar::lexer;
 
 grammar;
 

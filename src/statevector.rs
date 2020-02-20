@@ -2,9 +2,10 @@ use std::f64;
 
 use rand::random;
 use float_cmp::ApproxEq;
-use cached::SizedCache;
+use cached::{ SizedCache, cached, cached_key };
 use num::Float;
-use complex::{ self, Complex, ComplexMargin };
+
+use crate::complex::{ self, Complex, ComplexMargin };
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StateVector {
@@ -210,6 +211,8 @@ fn e_power_to(x: f64) -> Complex {
 mod tests {
   use super::*;
   use std::f64::consts::{ FRAC_1_SQRT_2, PI };
+
+  use float_cmp::approx_eq;
 
   #[test]
   fn test_cnot_c0t1() {

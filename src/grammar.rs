@@ -3,9 +3,9 @@ pub mod lexer;
 
 #[cfg(test)]
 mod tests {
-  use grammar::ast::*;
-  use grammar::lexer::Lexer;
-  use open_qasm2;
+  use crate::grammar::ast::*;
+  use crate::grammar::lexer::Lexer;
+  use crate::open_qasm2;
 
   #[test]
   fn test_parse_open_qasm() {

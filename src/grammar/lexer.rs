@@ -2,6 +2,7 @@ use std::str::CharIndices;
 use std::collections::VecDeque;
 use std::collections::HashMap;
 
+use lazy_static::lazy_static;
 use regex::Regex;
 
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;

@@ -1,12 +1,12 @@
 use std::collections::{ HashMap, VecDeque };
 use std::iter::FromIterator;
 
-use semantics::{ Semantics, RegisterType, extract_semantics };
-use statevector::StateVector;
-use grammar::ast;
-use interpreter::expression_solver::ExpressionSolver;
-use interpreter::argument_solver::ArgumentSolver;
-use interpreter::computation::Computation;
+use crate::semantics::{ Semantics, RegisterType, extract_semantics };
+use crate::statevector::StateVector;
+use crate::grammar::ast;
+use crate::interpreter::expression_solver::ExpressionSolver;
+use crate::interpreter::argument_solver::ArgumentSolver;
+use crate::interpreter::computation::Computation;
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 

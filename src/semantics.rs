@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use grammar::ast;
+use crate::grammar::ast;
 
 #[derive(Debug, PartialEq)]
 pub enum RegisterType {
@@ -153,8 +153,9 @@ pub fn extract_semantics(tree: &ast::OpenQasmProgram)
 mod test {
   use super::*;
   use std::iter::FromIterator;
-  use open_qasm2;
-  use grammar::lexer::Lexer;
+
+  use crate::open_qasm2;
+  use crate::grammar::lexer::Lexer;
 
   #[test]
   fn test_symbol_table_stores_register_info() {

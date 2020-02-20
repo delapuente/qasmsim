@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use grammar::ast;
+use crate::grammar::ast;
 
 pub struct ExpressionSolver<'a>(&'a HashMap<String, f64>);
 
@@ -29,7 +29,7 @@ impl<'a> ExpressionSolver<'a> {
 #[cfg(test)]
 mod test {
   use super::*;
-  use grammar::ast::*;
+  use crate::grammar::ast::*;
   use std::f64::consts::PI;
 
   #[test]
