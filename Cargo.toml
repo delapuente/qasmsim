@@ -33,4 +33,5 @@ features = ["getrandom", "wasm-bindgen"]
 lalrpop = "0.17.2"
 
 [profile.release]
-opt-level = "s"
+lto = true
+opt-level = "z"
