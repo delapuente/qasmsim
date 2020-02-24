@@ -6,7 +6,7 @@ use cached::{ SizedCache, cached, cached_key };
 use num::Float;
 
 #[cfg(target_arch = "wasm32")]
-use serde_derive::Serialize;
+use serde::Serialize;
 
 use crate::complex::{ self, Complex, ComplexMargin };
 

@@ -4,7 +4,7 @@ pub mod wasm {
   use std::collections::HashMap;
   use std::convert::From;
 
-  use serde_derive::Serialize;
+  use serde::Serialize;
   use cfg_if::cfg_if;
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
 
