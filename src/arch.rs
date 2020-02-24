@@ -7,6 +7,7 @@ pub mod wasm {
   use serde::Serialize;
   use cfg_if::cfg_if;
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
+  use serde_wasm_bindgen;
 
   use crate::api::do_run;
   use crate::statevector::StateVector;
@@ -56,7 +57,7 @@ pub mod wasm {
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
     let result = do_run(input).unwrap();
-    JsValue::from_serde(&JsComputation::from(result)).unwrap()
+    serde_wasm_bindgen::to_value(&JsComputation::from(result)).unwrap()
   }
 
   #[wasm_bindgen(start)]
