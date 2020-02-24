@@ -11,6 +11,7 @@ pub mod wasm {
   use crate::api::do_run;
   use crate::statevector::StateVector;
   use crate::interpreter::computation::Computation;
+  use crate::complex::Complex;
 
   cfg_if! {
     if #[cfg(feature = "wee_alloc")] {
@@ -21,17 +22,32 @@ pub mod wasm {
   }
 
   #[derive(Serialize)]
+  pub struct JsStateVector {
+    pub bases: Vec<Complex>,
+    pub bit_width: usize
+  }
+
+  impl From<StateVector> for JsStateVector {
+    fn from(statevector: StateVector) -> Self {
+      JsStateVector {
+        bases: statevector.bases,
+        bit_width: statevector.bit_width
+      }
+    }
+  }
+
+  #[derive(Serialize)]
   pub struct JsComputation {
     pub memory: HashMap<String, u64>,
-    pub statevector: StateVector,
+    pub statevector: JsStateVector,
     pub probabilities: Vec<f64>
   }
 
   impl From<Computation> for JsComputation {
     fn from(computation: Computation) -> Self {
-      JsComputation{
+      JsComputation {
         memory: computation.memory,
-        statevector: computation.statevector,
+        statevector: JsStateVector::from(computation.statevector),
         probabilities: computation.probabilities
       }
     }
