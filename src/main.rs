@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
   }
 
   let computation = result.unwrap();
-  let state_vector = computation.statevector();
+  let state_vector = &computation.statevector;
 
   println!("{:?}", state_vector);
   println!("Calculated {} item statevector in {:?}s", state_vector.len(), start.elapsed().as_secs_f32());
