@@ -5,7 +5,6 @@ pub mod wasm {
   use std::convert::From;
 
   use serde::Serialize;
-  use cfg_if::cfg_if;
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use serde_wasm_bindgen;
 
@@ -14,13 +13,8 @@ pub mod wasm {
   use crate::interpreter::computation::Computation;
   use crate::complex::Complex;
 
-  cfg_if! {
-    if #[cfg(feature = "wee_alloc")] {
-      extern crate wee_alloc;
-      #[global_allocator]
-      static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-    }
-  }
+  #[global_allocator]
+  static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
   #[derive(Serialize)]
   pub struct JsStateVector {
