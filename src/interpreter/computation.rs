@@ -1,5 +1,3 @@
-pub mod wasm;
-
 use std::collections::HashMap;
 
 use crate::statevector::StateVector;
