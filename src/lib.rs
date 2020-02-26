@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 use wasm_bindgen::prelude::wasm_bindgen;
+use console_error_panic_hook;
 
 use crate::grammar::lexer::Lexer;
 use crate::linker::Linker;
@@ -33,4 +34,10 @@ pub fn run(input: &str) -> Result<Computation, String> {
 pub fn js_run(input: &str) -> Vec<f64> {
   let computation = run(input).unwrap();
   computation.statevector.bases.iter().map(|c| vec![c.re, c.im]).flatten().collect()
+}
+
+#[wasm_bindgen(start)]
+pub fn init() {
+  use std::panic;
+  panic::set_hook(Box::new(console_error_panic_hook::hook))
 }
