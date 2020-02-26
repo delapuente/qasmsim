@@ -12,7 +12,9 @@ mod qe;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::wasm_bindgen;
+#[cfg(target_arch = "wasm32")]
 use console_error_panic_hook;
 
 use crate::grammar::lexer::Lexer;
@@ -30,12 +32,14 @@ pub fn run(input: &str) -> Result<Computation, String> {
   interpreter::runtime::execute(&linked)
 }
 
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn js_run(input: &str) -> Vec<f64> {
   let computation = run(input).unwrap();
   computation.statevector.bases.iter().map(|c| vec![c.re, c.im]).flatten().collect()
 }
 
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn init() {
   use std::panic;
