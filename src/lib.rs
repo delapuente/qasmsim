@@ -1,7 +1,6 @@
 use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
-mod api;
 mod grammar;
 mod linker;
 mod semantics;
@@ -9,10 +8,21 @@ pub mod complex;
 pub mod statevector;
 mod interpreter;
 mod qe;
-mod arch;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub use crate::arch::native::run;
+use std::collections::HashMap;
+use std::iter::FromIterator;
 
-#[cfg(target_arch = "wasm32")]
-pub use crate::arch::wasm::run;
+use crate::grammar::lexer::Lexer;
+use crate::linker::Linker;
+use crate::interpreter::computation::Computation;
+
+pub fn run(input: &str) -> Result<Computation, String> {
+  let linker = Linker::with_embedded(HashMap::from_iter(vec![
+    ("qelib1.inc".to_owned(), qe::QELIB1.to_owned())
+  ]));
+  let lexer = Lexer::new(&input);
+  let parser = open_qasm2::OpenQasmProgramParser::new();
+  let program = parser.parse(lexer).unwrap();
+  let linked = linker.link(program).unwrap();
+  interpreter::runtime::execute(&linked)
+}
