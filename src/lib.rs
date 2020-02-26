@@ -12,10 +12,13 @@ mod qe;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
+use wasm_bindgen::prelude::wasm_bindgen;
+
 use crate::grammar::lexer::Lexer;
 use crate::linker::Linker;
 use crate::interpreter::computation::Computation;
 
+#[wasm_bindgen]
 pub fn run(input: &str) -> Result<Computation, String> {
   let linker = Linker::with_embedded(HashMap::from_iter(vec![
     ("qelib1.inc".to_owned(), qe::QELIB1.to_owned())

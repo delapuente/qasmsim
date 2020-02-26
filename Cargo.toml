@@ -15,6 +15,7 @@ cached = "0.11.0"
 float-cmp = "0.6.0"
 lazy_static = "1.4.0"
 rand = "0.7.3"
+wasm-bindgen = "0.2.58"
 
 [build-dependencies]
 lalrpop = "0.17.2"
