@@ -30,6 +30,7 @@ pub fn run(input: &str) -> Result<Computation, String> {
 }
 
 #[wasm_bindgen]
-pub fn js_run(input: &str) -> Computation {
-  run(input).unwrap()
+pub fn js_run(input: &str) -> Vec<f64> {
+  let computation = run(input).unwrap();
+  computation.statevector.bases.iter().map(|c| vec![c.re, c.im]).flatten().collect()
 }
