@@ -2,15 +2,14 @@
 pub mod wasm {
   #![cfg(target_arch = "wasm32")]
 
-  use wasm_bindgen::prelude::wasm_bindgen;
+  use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use console_error_panic_hook;
 
   use crate::qasmsim::do_run;
 
   #[wasm_bindgen]
-  pub fn run(input: &str) -> Vec<f64> {
-    let computation = do_run(input).unwrap();
-    computation.statevector.bases.iter().map(|c| vec![c.re, c.im]).flatten().collect()
+  pub fn run(input: &str) -> JsValue {
+    JsValue::from_serde(&do_run(input).unwrap()).unwrap()
   }
 
   #[wasm_bindgen(start)]

@@ -1,5 +1,7 @@
 use std::f64;
 
+#[cfg(target_arch = "wasm32")]
+use serde::Serialize;
 use rand::random;
 use float_cmp::ApproxEq;
 use cached::{ SizedCache, cached, cached_key };
@@ -8,6 +10,7 @@ use num::Float;
 use crate::complex::{ self, Complex, ComplexMargin };
 
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
 pub struct StateVector {
   pub bases: Vec<Complex>,
   pub bit_width: usize
