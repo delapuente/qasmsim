@@ -7,6 +7,9 @@ repository = "git@github.com:delapuente/qasmsim.git"
 license = "MIT"
 authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 num = "0.2.1"
 lalrpop-util = "0.17.2"
