@@ -21,7 +21,7 @@ use crate::grammar::lexer::Lexer;
 use crate::linker::Linker;
 use crate::interpreter::computation::Computation;
 
-pub fn run(input: &str) -> Result<Computation, String> {
+fn do_run(input: &str) -> Result<Computation, String> {
   let linker = Linker::with_embedded(HashMap::from_iter(vec![
     ("qelib1.inc".to_owned(), qe::QELIB1.to_owned())
   ]));
@@ -32,10 +32,15 @@ pub fn run(input: &str) -> Result<Computation, String> {
   interpreter::runtime::execute(&linked)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+pub fn run(input: &str) -> Result<Computation, String> {
+  do_run(input)
+}
+
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-pub fn js_run(input: &str) -> Vec<f64> {
-  let computation = run(input).unwrap();
+pub fn run(input: &str) -> Vec<f64> {
+  let computation = do_run(input).unwrap();
   computation.statevector.bases.iter().map(|c| vec![c.re, c.im]).flatten().collect()
 }
 
