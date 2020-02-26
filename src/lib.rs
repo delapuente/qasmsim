@@ -18,7 +18,6 @@ use crate::grammar::lexer::Lexer;
 use crate::linker::Linker;
 use crate::interpreter::computation::Computation;
 
-#[wasm_bindgen]
 pub fn run(input: &str) -> Result<Computation, String> {
   let linker = Linker::with_embedded(HashMap::from_iter(vec![
     ("qelib1.inc".to_owned(), qe::QELIB1.to_owned())
@@ -28,4 +27,9 @@ pub fn run(input: &str) -> Result<Computation, String> {
   let program = parser.parse(lexer).unwrap();
   let linked = linker.link(program).unwrap();
   interpreter::runtime::execute(&linked)
+}
+
+#[wasm_bindgen]
+pub fn js_run(input: &str) -> Computation {
+  run(input).unwrap()
 }

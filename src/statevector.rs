@@ -4,9 +4,11 @@ use rand::random;
 use float_cmp::ApproxEq;
 use cached::{ SizedCache, cached, cached_key };
 use num::Float;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::complex::{ self, Complex, ComplexMargin };
 
+#[wasm_bindgen]
 #[derive(Clone, Debug, PartialEq)]
 pub struct StateVector {
   pub bases: Vec<Complex>,
