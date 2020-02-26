@@ -21,5 +21,8 @@ rand = "0.7.3"
 wasm-bindgen = "0.2.58"
 console_error_panic_hook = "0.1.6"
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+rand = { version = "0.7.3", features = ["wasm-bindgen", "getrandom"] }
+
 [build-dependencies]
 lalrpop = "0.17.2"
