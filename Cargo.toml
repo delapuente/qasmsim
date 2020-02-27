@@ -10,6 +10,10 @@ authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[profile.release]
+lto = true
+opt-level = "z"
+
 [dependencies]
 num = "0.2.1"
 lalrpop-util = "0.17.2"
