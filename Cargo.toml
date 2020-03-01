@@ -5,7 +5,7 @@ description = "A QASM interpreter and quantum simulator in Rust"
 version = "0.1.0"
 repository = "git@github.com:delapuente/qasmsim.git"
 license = "MIT"
-authors = ["Salvador de la Puente González <salva@unoyunodiez.com>"]
+authors = ["Salvador de la Puente González <hola@salvadelapuente.com>"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
