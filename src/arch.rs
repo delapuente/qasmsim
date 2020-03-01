@@ -2,6 +2,7 @@
 pub mod wasm {
   #![cfg(target_arch = "wasm32")]
 
+  use serde_wasm_bindgen;
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use console_error_panic_hook;
 
@@ -9,7 +10,7 @@ pub mod wasm {
 
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
-    JsValue::from_serde(&do_run(input).unwrap()).unwrap()
+    serde_wasm_bindgen::to_value(&do_run(input).unwrap()).unwrap()
   }
 
   #[wasm_bindgen(start)]
