@@ -57,14 +57,18 @@ $ cargo test
 `qasmsim` can be used in the web if you compile it for Web Assembly. Doing it is easy, simply ensure you have `wasm-pack` installed and run:
 
 ```sh
-$ wasm-pack build -- --features "wasm"
+$ wasm-pack build
 ```
 
-It will compile your project and pack it inside the `pkg` folder. Now enter the `www` directory and run:
+It will compile your project and pack it inside the `pkg` folder. Now enter the `www` directory, install the dependencies with (you only need run this once):
 
 ```sh
-# This command is only needed the first time you want to launch the web version
 $ npm install
+```
+
+And start the web server with:
+
+```sh
 $ npm start
 ```
 
@@ -78,8 +82,9 @@ qreg q[2];
 h q[0];
 cx q[0], q[1];
 `);
-var statevector = result.get_statevector(); // histogram
-var memory = result.get_memory(); // classical memory with name and value
+var statevector = result.statevector.bases; // amplitude histogram; pairs represent complex numbers.
+var probabilities = result.probabilities; // vector of probabilities
+var memory = result.memory; // JavaScript Map with classical results by name of the registry.
 ```
 
 The answer is a flat [`Float64Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays) representing the pairs of complex numbers that form the statevector, and the list of classical memory locations and current values.
