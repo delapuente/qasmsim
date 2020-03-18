@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 
 use crate::grammar::lexer::Lexer;
 use crate::linker::Linker;
-use crate::interpreter::{ self, computation::Computation };
+use crate::interpreter::{ self, Computation };
 use crate::open_qasm2;
 use crate::qe;
 

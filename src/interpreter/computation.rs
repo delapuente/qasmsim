@@ -1,12 +1,8 @@
 use std::collections::HashMap;
 
-#[cfg(target_arch = "wasm32")]
-use serde::Serialize;
-
 use crate::statevector::StateVector;
 
 #[derive(Debug)]
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
 pub struct Computation {
   pub statevector: StateVector,
   pub memory: HashMap<String, u64>,
