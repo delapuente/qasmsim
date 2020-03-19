@@ -7,6 +7,7 @@ pub mod wasm {
   use std::collections::HashMap;
 
   use js_sys::{ self, Float64Array, Object, Map };
+  use web_sys;
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use console_error_panic_hook;
 
@@ -90,7 +91,11 @@ pub mod wasm {
 
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
-    do_run(input).unwrap().into()
+    let computation: Computation = do_run(input).unwrap();
+    let out = measure!("serialization", {
+      computation.into()
+    });
+    out
   }
 
   #[wasm_bindgen(start)]
