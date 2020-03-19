@@ -6,47 +6,13 @@ pub mod wasm {
   use std::iter::IntoIterator;
   use std::collections::HashMap;
 
-  use js_sys::{ self, Float64Array };
-  use serde::Serialize;
+  use js_sys::{ self, Float64Array, Object, Map };
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use console_error_panic_hook;
 
   use crate::qasmsim::do_run;
-  use crate::interpreter;
-  use crate::statevector;
-  use crate::complex::Complex;
-
-  #[derive(Serialize)]
-  pub struct StateVector {
-    pub bases: Vec<Complex>,
-    pub bit_width: usize
-  }
-
-  impl From<statevector::StateVector> for StateVector {
-    fn from(value: statevector::StateVector) -> Self {
-      StateVector {
-        bases: value.bases,
-        bit_width: value.bit_width
-      }
-    }
-  }
-
-  #[derive(Serialize)]
-  pub struct Computation {
-    pub statevector: StateVector,
-    pub memory: HashMap<String, u64>,
-    pub probabilities: Vec<f64>
-  }
-
-  impl From<interpreter::Computation> for Computation {
-    fn from(value: interpreter::Computation) -> Self {
-      Computation {
-        statevector: value.statevector.into(),
-        memory: value.memory,
-        probabilities: value.probabilities
-      }
-    }
-  }
+  use crate::interpreter::Computation;
+  use crate::statevector::StateVector;
 
   macro_rules! measure {
     ($measure_name:expr, $block:block) => {
@@ -74,29 +40,48 @@ pub mod wasm {
 
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
-    let computation: Computation = do_run(input).unwrap().into();
-    let out = js_sys::Object::new();
-    js_sys::Reflect::set(&out,
-      &"statevector".into(),
-      &sv_into_f64array(computation.statevector).into()
-    );
-    js_sys::Reflect::set(&out,
-      &"probabilities".into(),
-      &into_f64array(computation.probabilities).into()
-    );
-    out.into()
+    do_run(input).unwrap().into()
   }
 
-  fn sv_into_f64array(statevector: StateVector) -> Float64Array {
-    let bases = statevector.bases;
-    let flatten_amplitudes = bases.iter().flat_map(|c| vec![c.re, c.im]);
-    into_f64array(flatten_amplitudes)
+  impl From<Computation> for JsValue {
+    fn from(computation: Computation) -> Self {
+      let out = Object::new();
+      js_sys::Reflect::set(&out,
+        &"statevector".into(),
+        &computation.statevector.into()
+      );
+      js_sys::Reflect::set(&out,
+        &"probabilities".into(),
+        &as_typed_array(computation.probabilities).into()
+      );
+      js_sys::Reflect::set(&out,
+        &"memory".into(),
+        &as_map(computation.memory).into()
+      );
+      out.into()
+    }
   }
 
-  fn into_f64array<'a, I>(iterator: I) -> Float64Array
+  impl From<StateVector> for JsValue {
+    fn from(statevector: StateVector) -> Self {
+      let bases = statevector.bases;
+      let flatten_amplitudes: Vec<f64> = bases.iter().flat_map(|c| vec![c.re, c.im]).collect();
+      as_typed_array(flatten_amplitudes).into()
+    }
+  }
+
+  fn as_typed_array<I>(iterator: I) -> Float64Array
   where I: IntoIterator<Item=f64> {
     let values: Vec<f64> = iterator.into_iter().collect();
     Float64Array::from(&values[..])
+  }
+
+  fn as_map(hashmap: HashMap<String, u64>) -> Map {
+    let map = Map::new();
+    for (key, value) in hashmap {
+      map.set(&key.into(), &(value as f64).into());
+    }
+    map
   }
 
   #[wasm_bindgen(start)]
