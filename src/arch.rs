@@ -38,11 +38,6 @@ pub mod wasm {
     };
   }
 
-  #[wasm_bindgen]
-  pub fn run(input: &str) -> JsValue {
-    do_run(input).unwrap().into()
-  }
-
   impl From<Computation> for JsValue {
     fn from(computation: Computation) -> Self {
       let out = Object::new();
@@ -66,7 +61,16 @@ pub mod wasm {
     fn from(statevector: StateVector) -> Self {
       let bases = statevector.bases;
       let flatten_amplitudes: Vec<f64> = bases.iter().flat_map(|c| vec![c.re, c.im]).collect();
-      as_typed_array(flatten_amplitudes).into()
+      let out = Object::new();
+      js_sys::Reflect::set(&out,
+        &"bases".into(),
+        &as_typed_array(flatten_amplitudes).into()
+      );
+      js_sys::Reflect::set(&out,
+        &"bitWidth".into(),
+        &(statevector.bit_width as i32).into()
+      );
+      out.into()
     }
   }
 
@@ -82,6 +86,11 @@ pub mod wasm {
       map.set(&key.into(), &(value as f64).into());
     }
     map
+  }
+
+  #[wasm_bindgen]
+  pub fn run(input: &str) -> JsValue {
+    do_run(input).unwrap().into()
   }
 
   #[wasm_bindgen(start)]
