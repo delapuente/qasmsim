@@ -91,7 +91,9 @@ pub mod wasm {
 
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
-    let computation: Computation = do_run(input).unwrap();
+    let computation: Computation = measure!("computation", {
+      do_run(input).unwrap()
+    });
     let out = measure!("serialization", {
       computation.into()
     });
