@@ -3,11 +3,11 @@ pub mod wasm {
   #![cfg(target_arch = "wasm32")]
 
   use std::convert::From;
+  use std::iter::IntoIterator;
   use std::collections::HashMap;
 
-  use web_sys;
+  use js_sys::{ self, Float64Array };
   use serde::Serialize;
-  use serde_wasm_bindgen;
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use console_error_panic_hook;
 
@@ -74,11 +74,29 @@ pub mod wasm {
 
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
-    let computation: interpreter::Computation = do_run(input).unwrap();
-    let out = measure!("serialization", {
-      serde_wasm_bindgen::to_value(&Computation::from(computation)).unwrap()
-    });
-    out
+    let computation: Computation = do_run(input).unwrap().into();
+    let out = js_sys::Object::new();
+    js_sys::Reflect::set(&out,
+      &"statevector".into(),
+      &sv_into_f64array(computation.statevector).into()
+    );
+    js_sys::Reflect::set(&out,
+      &"probabilities".into(),
+      &into_f64array(computation.probabilities).into()
+    );
+    out.into()
+  }
+
+  fn sv_into_f64array(statevector: StateVector) -> Float64Array {
+    let bases = statevector.bases;
+    let flatten_amplitudes = bases.iter().flat_map(|c| vec![c.re, c.im]);
+    into_f64array(flatten_amplitudes)
+  }
+
+  fn into_f64array<'a, I>(iterator: I) -> Float64Array
+  where I: IntoIterator<Item=f64> {
+    let values: Vec<f64> = iterator.into_iter().collect();
+    Float64Array::from(&values[..])
   }
 
   #[wasm_bindgen(start)]
