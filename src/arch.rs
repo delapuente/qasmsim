@@ -11,7 +11,7 @@ pub mod wasm {
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use console_error_panic_hook;
 
-  use crate::qasmsim::do_run;
+  use crate::qasmsim;
   use crate::interpreter::Computation;
   use crate::statevector::StateVector;
 
@@ -91,8 +91,11 @@ pub mod wasm {
 
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
+    let linked = measure!("parsing", {
+      qasmsim::parse_and_link(input, qasmsim::default_linker()).unwrap()
+    });
     let computation: Computation = measure!("computation", {
-      do_run(input).unwrap()
+      qasmsim::execute(&linked).unwrap()
     });
     let out = measure!("serialization", {
       computation.into()
@@ -110,5 +113,5 @@ pub mod wasm {
 pub mod native {
   #![cfg(not(target_arch = "wasm32"))]
 
-  pub use crate::qasmsim::do_run as run;
+  pub use crate::qasmsim::run;
 }

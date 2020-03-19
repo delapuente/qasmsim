@@ -1,6 +1,7 @@
 use std::str::CharIndices;
 use std::collections::VecDeque;
 use std::collections::HashMap;
+use std::fmt;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -9,6 +10,12 @@ pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LexicalError;
+
+impl fmt::Display for LexicalError {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Tok {
@@ -44,6 +51,12 @@ pub enum Tok {
   Int { repr: String },
   Real { repr: String },
   Str { repr: String }
+}
+
+impl fmt::Display for Tok {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}", self)
+  }
 }
 
 fn get_keywords() -> HashMap<String, Tok> {
