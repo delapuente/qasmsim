@@ -18,11 +18,11 @@ fn main() -> io::Result<()> {
 
   let computation = result.unwrap();
 
-  println!("{:?}", computation);
-  println!(
-    "Calculated {} item statevector in {:?}s",
-    computation.statevector.len(),
-    start.elapsed().as_secs_f32()
-  );
+  // println!("{:?}", computation);
+  // println!(
+  //   "Calculated {} item statevector in {:?}s",
+  //   computation.statevector.len(),
+  //   start.elapsed().as_secs_f32()
+  // );
   Ok(())
 }
