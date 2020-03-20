@@ -80,7 +80,7 @@ impl convert::From<ErrAndSrc<'_>> for QasmSimError {
           startpos,
           endpos: Some(endpos),
           linesrc: Some(linesrc.into()),
-          help: Some(format!("use one of {} here", &choices))
+          help: Some(format!("use one of {} before this", &choices))
         }
       }
       ParseError::ExtraToken { token } => {
