@@ -3,7 +3,8 @@
 extern crate qasmsim;
 
 use std::f64::consts::FRAC_1_SQRT_2;
-use qasmsim::statevector::{ StateVector, assert_approx_eq};
+
+use qasmsim::statevector::{ StateVector, assert_approx_eq };
 use qasmsim::complex::Complex;
 
 #[test]

@@ -11,6 +11,7 @@ pub mod statevector;
 mod interpreter;
 mod qe;
 
+pub use crate::qasmsim::QasmSimError;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::arch::native::run;

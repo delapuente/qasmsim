@@ -128,7 +128,7 @@ pub mod native {
     };
   }
 
-  pub fn run(input: &str) -> Result<Computation, String> {
+  pub fn run(input: &str) -> qasmsim::Result<Computation> {
     let linked = measure!("parsing", {
       qasmsim::compile_with_linker(input, qasmsim::default_linker())?
     });
