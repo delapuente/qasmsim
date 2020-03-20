@@ -113,5 +113,28 @@ pub mod wasm {
 pub mod native {
   #![cfg(not(target_arch = "wasm32"))]
 
-  pub use crate::qasmsim::run;
+  use crate::qasmsim;
+  use crate::interpreter::Computation;
+
+  macro_rules! measure {
+    ($measure_name:expr, $block:block) => {
+      {
+        use std::time::Instant;
+        let measurement = Instant::now();
+        let result = $block;
+        println!("{}: {:.2}ms", $measure_name, measurement.elapsed().as_millis());
+        result
+      }
+    };
+  }
+
+  pub fn run(input: &str) -> Result<Computation, String> {
+    let linked = measure!("parsing", {
+      qasmsim::compile_with_linker(input, qasmsim::default_linker())?
+    });
+    let out = measure!("computation", {
+      qasmsim::execute(&linked)
+    });
+    out
+  }
 }
