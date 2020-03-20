@@ -11,19 +11,15 @@ fn test_missing_semicolon() {
   let source = indoc!("
     OPENQASM 2.0;
     qreg q[10]
+    qreg r[10]
   ");
   let err = qasmsim::run(&source).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
-    msg: String::from("missing semicolon: `;`"),
+    msg: "missing semicolon: `;`".into(),
     lineno: 2,
-    linepos: 10,
-    linesrc: String::from("qreg q[10]"),
-    help: String::from("consider adding a semicolor: `;`")
+    startpos: 10,
+    endpos: None,
+    linesrc: Some("qreg q[10]".into()),
+    help: Some("consider adding a semicolon: `;`".into())
   });
-  // assert_eq!(err, indoc!("
-  //   error: missing semicolon: `;`
-  //     |
-  //   2 |   qreg q[10]
-  //     |             ^ help: consider adding a semicolon: `;`
-  // "));
 }

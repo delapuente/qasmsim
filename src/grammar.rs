@@ -1,6 +1,10 @@
 pub mod ast;
 pub mod lexer;
 
+use lalrpop_util;
+
+pub type ParseError = lalrpop_util::ParseError<usize, lexer::Tok, lexer::LexicalError>;
+
 #[cfg(test)]
 mod tests {
   use crate::grammar::ast::*;
