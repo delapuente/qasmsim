@@ -92,7 +92,7 @@ pub mod wasm {
   #[wasm_bindgen]
   pub fn run(input: &str) -> JsValue {
     let linked = measure!("parsing", {
-      qasmsim::parse_and_link(input, qasmsim::default_linker()).unwrap()
+      qasmsim::compile_with_linker(input, qasmsim::default_linker()).unwrap()
     });
     let computation: Computation = measure!("computation", {
       qasmsim::execute(&linked).unwrap()
