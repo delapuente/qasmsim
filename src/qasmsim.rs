@@ -8,7 +8,7 @@ use crate::open_qasm2;
 use crate::qe;
 use crate::error::QasmSimError;
 
-pub type Result<T> = std::result::Result<T, QasmSimError>;
+pub type Result<'src, T> = std::result::Result<T, QasmSimError<'src>>;
 
 pub fn default_linker() -> Linker {
   Linker::with_embedded(HashMap::from_iter(vec![

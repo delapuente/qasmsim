@@ -13,6 +13,12 @@ pub struct Location {
   pub lineoffset: usize
 }
 
+impl fmt::Display for Location {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "L{}C{}", self.lineno, self.lineoffset)
+  }
+}
+
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
 #[derive(Debug, Clone, PartialEq)]
