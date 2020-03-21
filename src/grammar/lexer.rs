@@ -9,11 +9,12 @@ use regex::Regex;
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct LexicalError;
+pub struct LexicalError<Loc> { pub location: Loc }
 
-impl fmt::Display for LexicalError {
+impl<Loc> fmt::Display for LexicalError<Loc>
+where Loc: fmt::Display {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}", self)
+    write!(f, "invalid token at {}", self.location)
   }
 }
 
@@ -55,7 +56,41 @@ pub enum Tok {
 
 impl fmt::Display for Tok {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}", self)
+    let repr: String = match self {
+      Tok::Add => "+".into(),
+      Tok::Minus => "-".into(),
+      Tok::Mult => "*".into(),
+      Tok::Div => "/".into(),
+      Tok::LBracket => "[".into(),
+      Tok::RBracket => "]".into(),
+      Tok::LBrace => "{".into(),
+      Tok::RBrace => "}".into(),
+      Tok::LParent => "(".into(),
+      Tok::RParent => ")".into(),
+      Tok::Semi => ";".into(),
+      Tok::Comma => ".into(),".into(),
+      Tok::Arrow => "=>".into(),
+      Tok::Equal => "==".into(),
+      Tok::ConstPi => "constant `pi`".into(),
+      Tok::U => "primitive gate `U`".into(),
+      Tok::CX => "primitive gate `CX`".into(),
+      Tok::Opaque => "keyword `opaque`".into(),
+      Tok::Gate => "keyword `gate`".into(),
+      Tok::Include => "keyword `include`".into(),
+      Tok::QReg => "keyword `qreg`".into(),
+      Tok::CReg => "keyword `creg`".into(),
+      Tok::Measure => "keyword `measure`".into(),
+      Tok::Reset => "keyword `reset`".into(),
+      Tok::Barrier => "keyword `barrier`".into(),
+      Tok::If => "keyword `if`".into(),
+      Tok::QASMHeader => "qasm header `OPENQASM`".into(),
+      Tok::Version { repr } => format!("open qasm version `{}`", &repr),
+      Tok::Id { repr } => format!("identifier `{}`", &repr),
+      Tok::Int { repr } => format!("integer literal `{}`", &repr),
+      Tok::Real { repr } => format!("real literal `{}`", &repr),
+      Tok::Str { repr } => format!("string literal `\"{}\"`", &repr),
+    };
+    write!(f, "{}", repr)
   }
 }
 
@@ -120,7 +155,7 @@ impl<'input> Lexer<'input> {
 }
 
 impl<'input> Iterator for Lexer<'input> {
-  type Item = Spanned<Tok, usize, LexicalError>;
+  type Item = Spanned<Tok, usize, LexicalError<usize>>;
 
   // XXX: The function is not split since I'm trying to distinguish a pattern
   // for creating a macro to autogenerate a stack-based lexer with matching
@@ -276,7 +311,7 @@ impl<'input> Iterator for Lexer<'input> {
         return Some(Ok((start, token, end)));
       }
 
-      return Some(Err(LexicalError));
+      return Some(Err(LexicalError { location: start }));
     }
   }
 }

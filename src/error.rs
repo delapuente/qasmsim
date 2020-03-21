@@ -1,9 +1,10 @@
-pub mod humanize;
+mod humanize;
 
 use std::error;
 use std::convert;
 use std::fmt;
 
+pub use humanize::humanize_error;
 use crate::grammar::ParseError;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -58,29 +59,29 @@ impl convert::From<ErrAndSrc<'_>> for QasmSimError {
         }
       }
       ParseError::UnrecognizedEOF { location: _, expected } => {
-        let choices = expected.join(", ");
+        let expectation = expectation(&expected);
         let (lineno, startpos, linesrc) = into_doc_coords(src.len() - 1, src);
         QasmSimError::SyntaxError {
-          msg: format!("expected one of {}, found EOF", &choices),
+          msg: format!("{}, found EOF", &expectation),
           lineno,
           startpos: startpos + 1,
           endpos: None,
           linesrc: Some(linesrc.into()),
-          help: Some(format!("expected one of {} here", &choices))
+          help: Some(format!("{} here", hint(&expected)))
         }
       }
       ParseError::UnrecognizedToken { token, expected } => {
         let (start, token, end) = token;
-        let choices = expected.join(", ");
+        let expectation = expectation(&expected);
         let (lineno, startpos, linesrc) = into_doc_coords(start, src);
         let endpos = if end >= src.len() { linesrc.len() } else { into_doc_coords(end, src).1 };
         QasmSimError::SyntaxError {
-          msg: format!("expected one of {}, found \"{}\"", &choices, &token),
+          msg: format!("{}, found \"{}\"", &expectation, &token),
           lineno,
           startpos,
           endpos: Some(endpos),
           linesrc: Some(linesrc.into()),
-          help: Some(format!("use one of {} before this", &choices))
+          help: Some(format!("{} before this", hint(&expected)))
         }
       }
       ParseError::ExtraToken { token } => {
@@ -97,7 +98,8 @@ impl convert::From<ErrAndSrc<'_>> for QasmSimError {
         }
       }
       ParseError::User { error } => {
-        QasmSimError::UnknownError(format!("{}", error))
+        // Transform into InvalidToken and launch the conversion again
+        (ParseError::InvalidToken{ location: error.location }, src).into()
       }
     }
   }
@@ -128,6 +130,31 @@ fn into_doc_coords(pos: usize, doc: &str) -> (usize, usize, &str) {
   }
 
   (lineno, startpos, &doc[linestart..lineend])
+}
+
+fn expectation(expected: &Vec<String>) -> String {
+  let choices = list_of_choices(expected).expect("len() is greater than 0");
+  format!("expected {}", choices)
+}
+
+fn hint(expected: &Vec<String>) -> String {
+  let choices = list_of_choices(expected).expect("len() is greater than 0");
+  format!("consider adding {}{}",
+    if choices.len() == 1 { "one of " } else { "" }, choices)
+}
+
+fn list_of_choices(choices: &Vec<String>) -> Option<String> {
+  let len = choices.len();
+  match len {
+    0 => None,
+    1 => Some(choices.first().unwrap().clone()),
+    _ => Some({
+      let last = choices.last().unwrap();
+      let except_last: Vec<String> =
+        choices.iter().take(len - 1).map(|item| (*item).clone()).collect();
+      format!("{}, or {}", except_last.join(", "), last)
+    })
+  }
 }
 
 #[cfg(test)]

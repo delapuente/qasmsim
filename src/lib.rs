@@ -13,8 +13,7 @@ mod interpreter;
 mod qe;
 
 pub use crate::error::QasmSimError;
-
-pub use crate::error::humanize::humanize_error;
+pub use crate::error::humanize_error;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::arch::native::run;

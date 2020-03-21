@@ -71,4 +71,64 @@ mod test {
           | ^^^^ help: add ";" at the end of the previous line
     "#));
   }
+
+  #[test]
+  fn test_no_hint_error() {
+    let error = QasmSimError::SyntaxError {
+      msg: r#"unexpected keyword `qreg` found"#.into(),
+      lineno: 778,
+      startpos: 0,
+      endpos: Some(4),
+      linesrc: Some("qreg r[10]\n".into()),
+      help: None
+    };
+    let mut buffer = String::new();
+    humanize_error(&mut buffer, &error).expect("should not fail");
+    assert_eq!(buffer, indoc!(r#"
+      error: unexpected keyword `qreg` found
+          |
+      778 | qreg r[10]
+          | ^^^^ help: unexpected keyword `qreg` found
+    "#));
+  }
+
+  #[test]
+  fn test_trim_line_source_end() {
+    let error = QasmSimError::SyntaxError {
+      msg: r#"unexpected keyword `qreg` found"#.into(),
+      lineno: 778,
+      startpos: 0,
+      endpos: Some(4),
+      linesrc: Some("qreg r[10]    \n".into()),
+      help: None
+    };
+    let mut buffer = String::new();
+    humanize_error(&mut buffer, &error).expect("should not fail");
+    assert_eq!(buffer, indoc!(r#"
+      error: unexpected keyword `qreg` found
+          |
+      778 | qreg r[10]
+          | ^^^^ help: unexpected keyword `qreg` found
+    "#));
+  }
+
+  #[test]
+  fn test_preserve_line_source_start() {
+    let error = QasmSimError::SyntaxError {
+      msg: r#"unexpected keyword `qreg` found"#.into(),
+      lineno: 778,
+      startpos: 2,
+      endpos: Some(6),
+      linesrc: Some("  qreg r[10]    \n".into()),
+      help: None
+    };
+    let mut buffer = String::new();
+    humanize_error(&mut buffer, &error).expect("should not fail");
+    assert_eq!(buffer, indoc!(r#"
+      error: unexpected keyword `qreg` found
+          |
+      778 |   qreg r[10]
+          |   ^^^^ help: unexpected keyword `qreg` found
+    "#));
+  }
 }

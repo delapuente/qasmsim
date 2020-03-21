@@ -160,7 +160,7 @@ List<T>: Vec<T> = {
 
 extern {
   type Location = usize;
-  type Error = lexer::LexicalError;
+  type Error = lexer::LexicalError<usize>; // cannot say "Location"?
 
   enum lexer::Tok {
     "+" => lexer::Tok::Add,

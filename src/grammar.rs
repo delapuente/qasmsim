@@ -3,7 +3,7 @@ pub mod lexer;
 
 use lalrpop_util;
 
-pub type ParseError = lalrpop_util::ParseError<usize, lexer::Tok, lexer::LexicalError>;
+pub type ParseError = lalrpop_util::ParseError<usize, lexer::Tok, lexer::LexicalError<usize>>;
 
 #[cfg(test)]
 mod tests {

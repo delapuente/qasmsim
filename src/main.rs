@@ -1,7 +1,7 @@
 extern crate qasmsim;
 
 use std::process;
-use std::io::{ self, Read, Error, ErrorKind };
+use std::io::{ self, Read };
 use std::time::Instant;
 
 fn main() -> io::Result<()> {
@@ -14,7 +14,7 @@ fn main() -> io::Result<()> {
   if let Err(error) = result {
     let mut buffer = String::new();
     qasmsim::humanize_error(&mut buffer, &error)
-      .map_err(|_| Error::new(ErrorKind::Other, ""))?;
+      .expect("human output displayed for qasmsim error");
     println!("{}", buffer);
     process::exit(1);
   }
