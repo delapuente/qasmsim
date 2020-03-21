@@ -68,7 +68,7 @@ impl fmt::Display for Tok {
       Tok::LParent => "(".into(),
       Tok::RParent => ")".into(),
       Tok::Semi => ";".into(),
-      Tok::Comma => ".into(),".into(),
+      Tok::Comma => ",".into(),
       Tok::Arrow => "=>".into(),
       Tok::Equal => "==".into(),
       Tok::ConstPi => "constant `pi`".into(),

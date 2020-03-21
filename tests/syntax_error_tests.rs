@@ -123,3 +123,25 @@ fn test_missing_openqasm_version() {
     help: Some(r#"consider adding version before this"#.into())
   });
 }
+
+#[test]
+#[should_panic]
+fn test_missing_arrow() {
+  let source = indoc!("
+    OPENQASM 2.0;
+    qreg q[1];
+    creg c[1];
+    measure q c;
+  ");
+  let err = qasmsim::run(&source).unwrap_err();
+  // XXX: I have no idea why lalrpop is expecting something different than an
+  // arrow here.
+  assert_eq!(err, QasmSimError::SyntaxError {
+    msg: r#"expected "->", found "identifier `c`""#.into(),
+    lineno: 4,
+    startpos: 10,
+    endpos: Some(11),
+    linesrc: Some("measure q c;\n".into()),
+    help: Some(r#"consider adding "->" before this"#.into())
+  });
+}
