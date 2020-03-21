@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
-use crate::grammar::{ ast, lexer::Lexer };
+use crate::grammar::{ ast, Lexer };
 use crate::linker::Linker;
 use crate::interpreter::{ self, Computation };
 use crate::open_qasm2;

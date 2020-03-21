@@ -6,6 +6,13 @@ use std::fmt;
 use lazy_static::lazy_static;
 use regex::Regex;
 
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Location {
+  pub lineno: usize,
+  pub linepos: usize,
+  pub lineoffset: usize
+}
+
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -119,6 +126,8 @@ enum Mode {
 
 pub struct Lexer<'input> {
   mode: VecDeque<Mode>,
+  lineno: usize,
+  lineoffset: usize,
   offset: usize,
   input: &'input str,
   keywords: HashMap<String, Tok>,
@@ -129,6 +138,8 @@ impl<'input> Lexer<'input> {
   pub fn new(input: &'input str) -> Self {
     Lexer {
       mode: VecDeque::from(vec![Mode::Base]),
+      lineno: 1,
+      lineoffset: 0,
       offset: 0,
       input,
       keywords: get_keywords(),
@@ -152,10 +163,18 @@ impl<'input> Lexer<'input> {
     for _ in 0..count { self.chars.next(); }
     self.offset += count;
   }
+
+  fn location(&self, offset: usize) -> Location {
+    Location {
+      lineno: self.lineno,
+      linepos: offset - self.lineoffset,
+      lineoffset: self.lineoffset
+    }
+  }
 }
 
 impl<'input> Iterator for Lexer<'input> {
-  type Item = Spanned<Tok, usize, LexicalError<usize>>;
+  type Item = Spanned<Tok, Location, LexicalError<Location>>;
 
   // XXX: The function is not split since I'm trying to distinguish a pattern
   // for creating a macro to autogenerate a stack-based lexer with matching
@@ -164,6 +183,7 @@ impl<'input> Iterator for Lexer<'input> {
   // Proposed syntax (if possible): #[modes(mode1, mode2,...)]
   fn next(&mut self) -> Option<Self::Item> {
     lazy_static! {
+      static ref NEW_LINE: Regex = Regex::new(r"^\n").unwrap();
       static ref ALL_THE_LINE: Regex = Regex::new(r"^[^\n]*").unwrap();
       static ref BLANK: Regex = Regex::new(r"^\s+").unwrap();
       static ref GATE: Regex = Regex::new(r"^(CX|U)\b").unwrap();
@@ -178,6 +198,16 @@ impl<'input> Iterator for Lexer<'input> {
     loop {
       if self.chars.peek().is_none() {
         return None;
+      }
+
+      if let Some(_new_line) = self.try_pattern(&NEW_LINE) {
+        self.lineno += 1;
+        self.lineoffset = self.offset;
+        // TODO: Should I force a new loop? It seems consistent with a
+        // line-oriented tokenization. If generalizing the lexer, I should
+        // consider enabling/disabling multiline support and, if disables,
+        // treat `\n` as a regular character.
+        continue;
       }
 
       // #[modes(all)]
@@ -212,7 +242,11 @@ impl<'input> Iterator for Lexer<'input> {
                 self.mode.pop_front();
                 self.offset = end + 1;
                 let content = &self.input[start..end];
-                return Some(Ok((start - 1, Tok::Str{ repr: String::from(content) }, end + 1)));
+                return Some(Ok((
+                  self.location(start - 1),
+                  Tok::Str{ repr: String::from(content) },
+                  self.location(end + 1)
+                )));
               }
               _ => ()
             }
@@ -236,15 +270,27 @@ impl<'input> Iterator for Lexer<'input> {
       if let Some(repr) = self.try_pattern(&OPENQASM) {
         self.mode.push_front(Mode::Version);
         let end = start + repr.len();
-        return Some(Ok((start, Tok::QASMHeader, end)));
+        return Some(Ok((
+          self.location(start),
+          Tok::QASMHeader,
+          self.location(end)
+        )));
       }
 
       // #[modes(all)]
       if let Some(gate) = self.try_pattern(&GATE) {
         let end = start + gate.len();
         return Some(match gate.as_str() {
-          "U" => Ok((start, Tok::U, end)),
-          "CX" => Ok((start, Tok::CX, end)),
+          "U" => Ok((
+            self.location(start),
+            Tok::U,
+            self.location(end)
+          )),
+          "CX" => Ok((
+            self.location(start),
+            Tok::CX,
+            self.location(end)
+          )),
           _ => unreachable!()
         })
       }
@@ -253,8 +299,15 @@ impl<'input> Iterator for Lexer<'input> {
       if let Some(repr) = self.try_pattern(&ID) {
         let end = start + repr.len();
         return Some(match self.keywords.get(&repr) {
-          None => Ok((start, Tok::Id{ repr }, end)),
-          Some(token) => Ok((start, (*token).clone(), end))
+          None => Ok((
+            self.location(start),
+            Tok::Id{ repr }, self.location(end)
+          )),
+          Some(token) => Ok((
+            self.location(start),
+            (*token).clone(),
+            self.location(end)
+          ))
         })
       }
 
@@ -263,7 +316,11 @@ impl<'input> Iterator for Lexer<'input> {
         Some(Mode::Base) => {
           if let Some(repr) = self.try_pattern(&REAL) {
             let end = start + repr.len();
-            return Some(Ok((start, Tok::Real{ repr }, end)));
+            return Some(Ok((
+              self.location(start),
+              Tok::Real{ repr },
+              self.location(end)
+            )));
           }
         }
         _ => ()
@@ -275,7 +332,11 @@ impl<'input> Iterator for Lexer<'input> {
           if let Some(repr) = self.try_pattern(&VERSION) {
             let end = start + repr.len();
             self.mode.pop_front();
-            return Some(Ok((start, Tok::Version{ repr }, end)));
+            return Some(Ok((
+              self.location(start),
+              Tok::Version{ repr },
+              self.location(end)
+            )));
           }
         }
         _ => ()
@@ -284,7 +345,11 @@ impl<'input> Iterator for Lexer<'input> {
       // #[modes(all)]
       if let Some(repr) = self.try_pattern(&INTEGER) {
         let end = start + repr.len();
-        return Some(Ok((start, Tok::Int{ repr }, end)));
+        return Some(Ok((
+          self.location(start),
+          Tok::Int{ repr },
+          self.location(end)
+        )));
       }
 
       // #[modes(all)]
@@ -308,10 +373,14 @@ impl<'input> Iterator for Lexer<'input> {
           "//" => { self.mode.push_front(Mode::Comment); continue },
           _ => unreachable!()
         };
-        return Some(Ok((start, token, end)));
+        return Some(Ok((
+          self.location(start),
+          token,
+          self.location(end)
+        )));
       }
 
-      return Some(Err(LexicalError { location: start }));
+      return Some(Err(LexicalError { location: self.location(start) }));
     }
   }
 }
@@ -332,13 +401,41 @@ mod tests {
     let source = "0 1 20 .3 .4e5 0.6E-7 \"8910\"";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
-      Ok((0, Tok::Int { repr: String::from("0") }, 1)),
-      Ok((2, Tok::Int { repr: String::from("1") }, 3)),
-      Ok((4, Tok::Int { repr: String::from("20") }, 6)),
-      Ok((7, Tok::Real { repr: String::from(".3") }, 9)),
-      Ok((10, Tok::Real { repr: String::from(".4e5") }, 14)),
-      Ok((15, Tok::Real { repr: String::from("0.6E-7") }, 21)),
-      Ok((22, Tok::Str { repr: String::from("8910") }, 28)),
+      Ok((
+        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Tok::Int { repr: String::from("0") },
+        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Tok::Int { repr: String::from("1") },
+        Location{ lineno: 1, linepos: 3, lineoffset: 0 },
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+        Tok::Int { repr: String::from("20") },
+        Location{ lineno: 1, linepos: 6, lineoffset: 0 },
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 7, lineoffset: 0 },
+        Tok::Real { repr: String::from(".3") },
+        Location{ lineno: 1, linepos: 9, lineoffset: 0 },
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 10, lineoffset: 0 },
+        Tok::Real { repr: String::from(".4e5") },
+        Location{ lineno: 1, linepos: 14, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 15, lineoffset: 0 },
+        Tok::Real { repr: String::from("0.6E-7") },
+        Location{ lineno: 1, linepos: 21, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 22, lineoffset: 0 },
+        Tok::Str { repr: String::from("8910") },
+        Location{ lineno: 1, linepos: 28, lineoffset: 0 }
+      )),
     ]);
   }
 
@@ -351,7 +448,11 @@ mod tests {
     ";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
-      Ok((6, Tok::QASMHeader, 14)),
+      Ok((
+        Location{ lineno: 3, linepos: 4, lineoffset: 2 },
+        Tok::QASMHeader,
+        Location{ lineno: 3, linepos: 12, lineoffset: 2 }
+      )),
     ]);
   }
 
@@ -362,9 +463,21 @@ mod tests {
     ";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
-      Ok((5, Tok::QASMHeader, 13)),
-      Ok((14, Tok::Version{ repr: String::from("2.0") }, 17)),
-      Ok((17, Tok::Semi, 18))
+      Ok((
+        Location{ lineno: 2, linepos: 4, lineoffset: 1 },
+        Tok::QASMHeader,
+        Location{ lineno: 2, linepos: 12, lineoffset: 1 }
+      )),
+      Ok((
+        Location{ lineno: 2, linepos: 13, lineoffset: 1 },
+        Tok::Version{ repr: String::from("2.0") },
+        Location{ lineno: 2, linepos: 16, lineoffset: 1 }
+      )),
+      Ok((
+        Location{ lineno: 2, linepos: 16, lineoffset: 1 },
+        Tok::Semi,
+        Location{ lineno: 2, linepos: 17, lineoffset: 1 }
+      ))
     ]);
   }
 
@@ -373,18 +486,66 @@ mod tests {
     let source = "+-*/[]{}();,";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
-      Ok((0, Tok::Add, 1)),
-      Ok((1, Tok::Minus, 2)),
-      Ok((2, Tok::Mult, 3)),
-      Ok((3, Tok::Div, 4)),
-      Ok((4, Tok::LBracket, 5)),
-      Ok((5, Tok::RBracket, 6)),
-      Ok((6, Tok::LBrace, 7)),
-      Ok((7, Tok::RBrace, 8)),
-      Ok((8, Tok::LParent, 9)),
-      Ok((9, Tok::RParent, 10)),
-      Ok((10, Tok::Semi, 11)),
-      Ok((11, Tok::Comma, 12))
+      Ok((
+        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Tok::Add,
+        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 1, lineoffset: 0 },
+        Tok::Minus,
+        Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Tok::Mult,
+        Location{ lineno: 1, linepos: 3, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 3, lineoffset: 0 },
+        Tok::Div,
+        Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+        Tok::LBracket,
+        Location{ lineno: 1, linepos: 5, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 5, lineoffset: 0 },
+        Tok::RBracket,
+        Location{ lineno: 1, linepos: 6, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 6, lineoffset: 0 },
+        Tok::LBrace,
+        Location{ lineno: 1, linepos: 7, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 7, lineoffset: 0 },
+        Tok::RBrace,
+        Location{ lineno: 1, linepos: 8, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 8, lineoffset: 0 },
+        Tok::LParent,
+        Location{ lineno: 1, linepos: 9, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 9, lineoffset: 0 },
+        Tok::RParent,
+        Location{ lineno: 1, linepos: 10, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 10, lineoffset: 0 },
+        Tok::Semi,
+        Location{ lineno: 1, linepos: 11, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 11, lineoffset: 0 },
+        Tok::Comma,
+        Location{ lineno: 1, linepos: 12, lineoffset: 0 }
+      ))
     ]);
   }
 
@@ -393,8 +554,16 @@ mod tests {
     let source = "->==//";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
-      Ok((0, Tok::Arrow, 2)),
-      Ok((2, Tok::Equal, 4))
+      Ok((
+        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Tok::Arrow,
+        Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Tok::Equal,
+        Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+      ))
     ]);
   }
 
@@ -403,7 +572,13 @@ mod tests {
     for (keyword, token) in get_keywords() {
       let lexer = Lexer::new(&keyword);
       assert_eq!(
-        lexer.collect::<Vec<_>>(), vec![Ok((0, token, keyword.len()))]);
+        lexer.collect::<Vec<_>>(), vec![
+          Ok((
+            Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+            token,
+            Location{ lineno: 1, linepos: keyword.len(), lineoffset: 0 }
+          ))
+        ]);
     }
   }
 
@@ -412,8 +587,16 @@ mod tests {
     let source = "CX U";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
-      Ok((0, Tok::CX, 2)),
-      Ok((3, Tok::U, 4))
+      Ok((
+        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Tok::CX,
+        Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 3, lineoffset: 0 },
+        Tok::U,
+        Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+      ))
     ]);
   }
 
@@ -425,18 +608,66 @@ mod tests {
       let source = "U(pi/2, 0, pi) q;";
       let lexer = Lexer::new(source);
       assert_eq!(lexer.collect::<Vec<_>>(), vec![
-        Ok((0, Tok::U, 1)),
-        Ok((1, Tok::LParent, 2)),
-        Ok((2, Tok::ConstPi, 4)),
-        Ok((4, Tok::Div, 5)),
-        Ok((5, Tok::Int { repr: String::from("2")}, 6)),
-        Ok((6, Tok::Comma, 7)),
-        Ok((8, Tok::Int { repr: String::from("0")}, 9)),
-        Ok((9, Tok::Comma, 10)),
-        Ok((11, Tok::ConstPi, 13)),
-        Ok((13, Tok::RParent, 14)),
-        Ok((15, Tok::Id { repr: String::from("q") }, 16)),
-        Ok((16, Tok::Semi, 17)),
+        Ok((
+          Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+          Tok::U,
+          Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 1, lineoffset: 0 },
+          Tok::LParent,
+          Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+          Tok::ConstPi,
+          Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+          Tok::Div,
+          Location{ lineno: 1, linepos: 5, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 5, lineoffset: 0 },
+          Tok::Int { repr: String::from("2")},
+          Location{ lineno: 1, linepos: 6, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 6, lineoffset: 0 },
+          Tok::Comma,
+          Location{ lineno: 1, linepos: 7, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 8, lineoffset: 0 },
+          Tok::Int { repr: String::from("0")},
+          Location{ lineno: 1, linepos: 9, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 9, lineoffset: 0 },
+          Tok::Comma,
+          Location{ lineno: 1, linepos: 10, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 11, lineoffset: 0 },
+          Tok::ConstPi,
+          Location{ lineno: 1, linepos: 13, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 13, lineoffset: 0 },
+          Tok::RParent,
+          Location{ lineno: 1, linepos: 14, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 15, lineoffset: 0 },
+          Tok::Id { repr: String::from("q") },
+          Location{ lineno: 1, linepos: 16, lineoffset: 0 }
+        )),
+        Ok((
+          Location{ lineno: 1, linepos: 16, lineoffset: 0 },
+          Tok::Semi,
+          Location{ lineno: 1, linepos: 17, lineoffset: 0 }
+        )),
       ]);
     }
   }

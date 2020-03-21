@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
-use crate::grammar::ast;
-use crate::grammar::lexer;
+use crate::grammar::{ Location, ast, Tok, LexicalError };
 
 grammar;
 
@@ -159,41 +158,41 @@ List<T>: Vec<T> = {
 }
 
 extern {
-  type Location = usize;
-  type Error = lexer::LexicalError<usize>; // cannot say "Location"?
+  type Location = Location;
+  type Error = LexicalError<Location>; // cannot say "Location"?
 
-  enum lexer::Tok {
-    "+" => lexer::Tok::Add,
-    "-" => lexer::Tok::Minus,
-    "*" => lexer::Tok::Mult,
-    "/" => lexer::Tok::Div,
-    "[" => lexer::Tok::LBracket,
-    "]" => lexer::Tok::RBracket,
-    "{" => lexer::Tok::LBrace,
-    "}" => lexer::Tok::RBrace,
-    "(" => lexer::Tok::LParent,
-    ")" => lexer::Tok::RParent,
-    ";" => lexer::Tok::Semi,
-    "," => lexer::Tok::Comma,
-    "->" => lexer::Tok::Arrow,
-    "==" => lexer::Tok::Equal,
-    "pi" => lexer::Tok::ConstPi,
-    "U" => lexer::Tok::U,
-    "CX" => lexer::Tok::CX,
-    "opaque" => lexer::Tok::Opaque,
-    "gate" => lexer::Tok::Gate,
-    "include" => lexer::Tok::Include,
-    "qreg" => lexer::Tok::QReg,
-    "creg" => lexer::Tok::CReg,
-    "measure" => lexer::Tok::Measure,
-    "reset" => lexer::Tok::Reset,
-    "barrier" => lexer::Tok::Barrier,
-    "if" => lexer::Tok::If,
-    "OPENQASM" => lexer::Tok::QASMHeader,
-    version => lexer::Tok::Version { repr: <String> },
-    id => lexer::Tok::Id { repr: <String> },
-    int => lexer::Tok::Int { repr: <String> },
-    real => lexer::Tok::Real { repr: <String> },
-    string => lexer::Tok::Str { repr: <String> }
+  enum Tok {
+    "+" => Tok::Add,
+    "-" => Tok::Minus,
+    "*" => Tok::Mult,
+    "/" => Tok::Div,
+    "[" => Tok::LBracket,
+    "]" => Tok::RBracket,
+    "{" => Tok::LBrace,
+    "}" => Tok::RBrace,
+    "(" => Tok::LParent,
+    ")" => Tok::RParent,
+    ";" => Tok::Semi,
+    "," => Tok::Comma,
+    "->" => Tok::Arrow,
+    "==" => Tok::Equal,
+    "pi" => Tok::ConstPi,
+    "U" => Tok::U,
+    "CX" => Tok::CX,
+    "opaque" => Tok::Opaque,
+    "gate" => Tok::Gate,
+    "include" => Tok::Include,
+    "qreg" => Tok::QReg,
+    "creg" => Tok::CReg,
+    "measure" => Tok::Measure,
+    "reset" => Tok::Reset,
+    "barrier" => Tok::Barrier,
+    "if" => Tok::If,
+    "OPENQASM" => Tok::QASMHeader,
+    version => Tok::Version { repr: <String> },
+    id => Tok::Id { repr: <String> },
+    int => Tok::Int { repr: <String> },
+    real => Tok::Real { repr: <String> },
+    string => Tok::Str { repr: <String> }
   }
 }

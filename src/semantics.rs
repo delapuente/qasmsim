@@ -155,7 +155,7 @@ mod test {
   use std::iter::FromIterator;
 
   use crate::open_qasm2;
-  use crate::grammar::lexer::Lexer;
+  use crate::grammar::Lexer;
 
   #[test]
   fn test_symbol_table_stores_register_info() {

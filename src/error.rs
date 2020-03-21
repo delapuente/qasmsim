@@ -5,7 +5,7 @@ use std::convert;
 use std::fmt;
 
 pub use humanize::humanize_error;
-use crate::grammar::ParseError;
+use crate::grammar::{ Location, ParseError };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum QasmSimError {
@@ -58,13 +58,13 @@ impl convert::From<ErrAndSrc<'_>> for QasmSimError {
           help: None
         }
       }
-      ParseError::UnrecognizedEOF { location: _, expected } => {
+      ParseError::UnrecognizedEOF { location, expected } => {
         let expectation = expectation(&expected);
-        let (lineno, startpos, linesrc) = into_doc_coords(src.len() - 1, src);
+        let (lineno, startpos, linesrc) = into_doc_coords(location, src);
         QasmSimError::SyntaxError {
           msg: format!("{}, found EOF", &expectation),
           lineno,
-          startpos: startpos + 1,
+          startpos,
           endpos: None,
           linesrc: Some(linesrc.into()),
           help: Some(format!("{} here", hint(&expected)))
@@ -74,7 +74,12 @@ impl convert::From<ErrAndSrc<'_>> for QasmSimError {
         let (start, token, end) = token;
         let expectation = expectation(&expected);
         let (lineno, startpos, linesrc) = into_doc_coords(start, src);
-        let endpos = if end >= src.len() { linesrc.len() } else { into_doc_coords(end, src).1 };
+        let endpos = if end.linepos >= linesrc.len() {
+          linesrc.len()
+        }
+        else {
+          end.linepos
+        };
         QasmSimError::SyntaxError {
           msg: format!("{}, found \"{}\"", &expectation, &token),
           lineno,
@@ -105,30 +110,29 @@ impl convert::From<ErrAndSrc<'_>> for QasmSimError {
   }
 }
 
-fn into_doc_coords(pos: usize, doc: &str) -> (usize, usize, &str) {
-  assert!(pos < doc.len(), "pos={} must in the range 0..doc.len()={}", pos, doc.len());
+// TODO: Just used to extract the src line. Before, used to translate from a
+// source offset into a source coordinates (line number, pos in line). Now this
+// information is the Location struct.
+fn into_doc_coords(pos: Location, doc: &str) -> (usize, usize, &str) {
+  assert!(pos.lineoffset + pos.linepos <= doc.len(),
+    "pos.lineoffset + pos.linepos={} must in the range 0..=doc.len()={}",
+    pos.lineoffset + pos.linepos, doc.len());
 
-  let mut lineno = 1;
-  let mut startpos = 0;
-  let mut linestart = 0;
-  let mut lineend = 0;
+  let lineno = pos.lineno;
+  let startpos = pos.linepos;
+  let linestart = pos.lineoffset;
+  let mut lineend = linestart + 1;
 
-  for (idx, c) in doc.chars().enumerate() {
-    if idx >= pos  {
-      lineend = idx + 1;
-      match c {'\n' => break, _ => continue }
-    }
-
+  for c in doc[linestart..].chars() {
     if c == '\n' {
-      lineno += 1;
-      startpos = 0;
-      linestart = idx + 1;
+      break;
     }
-    else if c != '\r' {
-      startpos += 1;
-    }
+    lineend += 1;
   }
 
+  if lineend > doc.len() {
+    lineend = doc.len();
+  }
   (lineno, startpos, &doc[linestart..lineend])
 }
 
@@ -161,7 +165,7 @@ fn list_of_choices(choices: &Vec<String>) -> Option<String> {
 mod test {
   use indoc::indoc;
 
-  use super::into_doc_coords;
+  use super::*;
 
   macro_rules! test_into_doc_coords {
     ($source:expr, $( $name:ident: $offset:expr => $expected:expr ),*) => {
@@ -177,10 +181,15 @@ mod test {
   test_into_doc_coords!(indoc!("
       line 1
       line 2
-      line 3
-    "),
-    test_beginning_of_source: 0 => (1, 0, "line 1\n"),
-    test_middle_of_source: 11 => (2, 4, "line 2\n"),
-    test_end_of_source: 20 => (3, 6, "line 3\n")
+      line 3"
+    ),
+    test_beginning_of_source:
+      Location { lineno: 1, linepos: 0, lineoffset: 0 } => (1, 0, "line 1\n"),
+    test_middle_of_source:
+      Location { lineno: 2, linepos: 4, lineoffset: 7 } => (2, 4, "line 2\n"),
+    test_last_character:
+      Location { lineno: 3, linepos: 6, lineoffset: 14 } => (3, 6, "line 3"),
+    test_end_of_source:
+      Location { lineno: 3, linepos: 6, lineoffset: 14 } => (3, 6, "line 3")
   );
 }

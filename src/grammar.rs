@@ -1,9 +1,12 @@
 pub mod ast;
-pub mod lexer;
+mod lexer;
 
 use lalrpop_util;
 
-pub type ParseError = lalrpop_util::ParseError<usize, lexer::Tok, lexer::LexicalError<usize>>;
+pub use lexer::{ Lexer, Location, Tok, LexicalError };
+
+pub type ParseError =
+  lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;
 
 #[cfg(test)]
 mod tests {

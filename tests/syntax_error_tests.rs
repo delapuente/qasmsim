@@ -32,7 +32,7 @@ fn test_missing_semicolon_almost_at_eof() {
   assert_eq!(err, QasmSimError::SyntaxError {
     msg: r#"expected ";", found EOF"#.into(),
     lineno: 2,
-    startpos: 11,
+    startpos: 10,
     endpos: None,
     linesrc: Some("qreg q[10]\n".into()),
     help: Some(r#"consider adding ";" here"#.into())

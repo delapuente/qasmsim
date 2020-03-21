@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::open_qasm2;
 use crate::grammar::ast;
-use crate::grammar::lexer::Lexer;
+use crate::grammar::Lexer;
 
 pub struct Linker {
   embedded: HashMap<String, String>
