@@ -1,18 +1,86 @@
-pub mod ast;
+use lalrpop_util::{ self, lalrpop_mod };
+
 mod lexer;
+pub mod ast;
+lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
-use lalrpop_util;
+use std::convert;
 
-pub use lexer::{ Lexer, Location, Tok, LexicalError };
+use crate::error::{
+  ErrorKind,
+  QasmSimError
+};
+
+pub use lexer::{
+   Lexer,
+   Location,
+   Tok,
+   LexicalError
+};
 
 pub type ParseError =
   lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;
+
+type ErrAndSrc<'src> = (ParseError, &'src str);
+
+impl<'src> convert::From<ErrAndSrc<'src>> for QasmSimError<'src> {
+  fn from(err_and_src: ErrAndSrc<'src>) -> Self {
+    let (error, source) = err_and_src;
+    match error {
+      ParseError::InvalidToken { location } => {
+        QasmSimError::SyntaxError {
+          kind: ErrorKind::InvalidToken,
+          source,
+          token: None,
+          expected: Vec::new(),
+          location: Some(location)
+        }
+      }
+      ParseError::UnrecognizedEOF { location, expected } => {
+        QasmSimError::SyntaxError {
+          kind: ErrorKind::UnexpectedEOF,
+          source,
+          token: None,
+          expected: expected,
+          location: Some(location)
+        }
+      }
+      ParseError::UnrecognizedToken { token, expected } => {
+        QasmSimError::SyntaxError {
+          kind: ErrorKind::UnexpectedToken,
+          source,
+          location: Some(token.0.clone()),
+          token: Some(token),
+          expected: expected
+        }
+      }
+      ParseError::ExtraToken { token } => {
+        QasmSimError::SyntaxError {
+          kind: ErrorKind::UnexpectedToken,
+          source,
+          location: Some(token.0.clone()),
+          token: Some(token),
+          expected: Vec::new()
+        }
+      }
+      ParseError::User { error: lexer_error } => {
+        QasmSimError::SyntaxError {
+          kind: ErrorKind::InvalidToken, // XXX: Actually, this should be "InvalidInput"
+          source,
+          token: None,
+          expected: Vec::new(),
+          location: Some(lexer_error.location.clone())
+        }
+      }
+    }
+  }
+}
 
 #[cfg(test)]
 mod tests {
   use crate::grammar::ast::*;
   use crate::grammar::lexer::Lexer;
-  use crate::open_qasm2;
+  use super::open_qasm2;
 
   #[test]
   fn test_parse_open_qasm() {

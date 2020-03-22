@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 use crate::grammar::{ ast, Lexer };
 use crate::linker::Linker;
 use crate::interpreter::{ self, Computation };
-use crate::open_qasm2;
+use crate::grammar::open_qasm2;
 use crate::qe;
 use crate::error::QasmSimError;
 

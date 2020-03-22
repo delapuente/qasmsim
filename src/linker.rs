@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::open_qasm2;
+use crate::grammar::open_qasm2;
 use crate::grammar::ast;
 use crate::grammar::Lexer;
 

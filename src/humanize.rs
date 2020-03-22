@@ -1,8 +1,7 @@
-use std::convert;
 use std::fmt::{ self, Write };
 
-use crate::error::QasmSimError;
-use crate::grammar::{ ParseError, Location };
+use crate::error::{ QasmSimError, ErrorKind };
+use crate::grammar::Location;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HumanDescription {
@@ -16,9 +15,16 @@ pub struct HumanDescription {
 
 fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
   match error {
-    QasmSimError::SyntaxError { error, source } => match error {
-      ParseError::InvalidToken { location } => {
-        let (lineno, startpos, linesrc) = into_doc_coords(location, source);
+    QasmSimError::UnknownError(_) => None,
+    QasmSimError::SyntaxError {
+      kind,
+      source,
+      token,
+      expected,
+      location
+    } => match kind {
+      ErrorKind::InvalidToken => {
+        let (lineno, startpos, linesrc) = into_doc_coords(&location.as_ref().unwrap(), source);
         Some(HumanDescription {
           msg: "invalid token".into(),
           lineno,
@@ -28,9 +34,9 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
           help: None
         })
       }
-      ParseError::UnrecognizedEOF { location, expected } => {
+      ErrorKind::UnexpectedEOF => {
         let expectation = expectation(&expected);
-        let (lineno, startpos, linesrc) = into_doc_coords(location, source);
+        let (lineno, startpos, linesrc) = into_doc_coords(&location.as_ref().unwrap(), source);
         Some(HumanDescription {
           msg: format!("{}, found EOF", &expectation),
           lineno,
@@ -40,47 +46,29 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
           help: Some(format!("{} here", hint(&expected)))
         })
       }
-      ParseError::UnrecognizedToken { token, expected } => {
-        let (start, token, end) = token;
-        let expectation = expectation(&expected);
-        let (lineno, startpos, linesrc) = into_doc_coords(start, source);
-        let endpos = if end.linepos >= linesrc.len() {
-          linesrc.len()
+      ErrorKind::UnexpectedToken => {
+        let (start, token, end) = &token.as_ref().unwrap().clone();
+        let (lineno, startpos, linesrc) = into_doc_coords(&start, source);
+        let endpos = std::cmp::min(end.linepos, linesrc.len());
+
+        let mut msg = format!("unexpected \"{}\" found", &token);
+        let mut help = None;
+        if expected.len() > 0 {
+          let expectation = expectation(&expected);
+          msg = format!("{}, found \"{}\"", &expectation, &token);
+          help =  Some(format!("{} before this", hint(&expected)));
         }
-        else {
-          end.linepos
-        };
+
         Some(HumanDescription {
-          msg: format!("{}, found \"{}\"", &expectation, &token),
+          msg,
           lineno,
           startpos,
           endpos: Some(endpos),
           linesrc: Some(linesrc.into()),
-          help: Some(format!("{} before this", hint(&expected)))
-        })
-      }
-      ParseError::ExtraToken { token } => {
-        let (start, token, end) = token;
-        let (lineno, startpos, linesrc) = into_doc_coords(start, source);
-        let (_, endpos, _) = into_doc_coords(end, source);
-        Some(HumanDescription {
-          msg: format!("unexpected \"{}\" found", &token),
-          lineno,
-          startpos,
-          endpos: Some(endpos),
-          linesrc: Some(linesrc.into()),
-          help: None
-        })
-      }
-      ParseError::User { error } => {
-        // Transform into InvalidToken and launch the conversion again
-        get_human_description(&QasmSimError::SyntaxError {
-          source,
-          error: ParseError::InvalidToken{ location: error.location.clone() },
+          help
         })
       }
     }
-    _ => None
   }
 }
 
