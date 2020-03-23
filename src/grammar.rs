@@ -80,7 +80,7 @@ impl<'src> convert::From<ErrAndSrc<'src>> for QasmSimError<'src> {
           kind: ErrorKind::InvalidToken, // XXX: Actually, this should be "InvalidInput"
           source,
           lineoffset: lexer_error.location.lineoffset,
-          lineno: lexer_error.location.lineoffset,
+          lineno: lexer_error.location.lineno,
           startpos: lexer_error.location.linepos,
           endpos: None,
           token: None,
