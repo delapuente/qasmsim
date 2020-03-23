@@ -2,7 +2,7 @@ mod api;
 mod error;
 mod humanize;
 mod arch;
-mod grammar;
+pub mod grammar;
 mod linker;
 mod semantics;
 pub mod complex;
@@ -10,7 +10,7 @@ pub mod statevector;
 mod interpreter;
 mod qe;
 
-pub use crate::error::QasmSimError;
+pub use crate::error::{ QasmSimError, ErrorKind };
 pub use crate::humanize::humanize_error;
 
 #[cfg(not(target_arch = "wasm32"))]

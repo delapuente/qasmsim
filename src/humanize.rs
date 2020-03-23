@@ -1,7 +1,6 @@
 use std::fmt::{ self, Write };
 
 use crate::error::{ QasmSimError, ErrorKind };
-use crate::grammar::Location;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HumanDescription {
@@ -19,37 +18,41 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
     QasmSimError::SyntaxError {
       kind,
       source,
+      lineoffset,
+      lineno,
+      startpos,
+      endpos,
       token,
-      expected,
-      location
-    } => match kind {
+      expected
+    } =>
+    match kind {
       ErrorKind::InvalidToken => {
-        let (lineno, startpos, linesrc) = into_doc_coords(&location.as_ref().unwrap(), source);
+        let linesrc = get_line_src(*lineoffset, source);
         Some(HumanDescription {
           msg: "invalid token".into(),
-          lineno,
-          startpos,
-          endpos: None,
+          lineno: *lineno,
+          startpos: *startpos,
+          endpos: *endpos,
           linesrc: Some(linesrc.into()),
           help: None
         })
       }
       ErrorKind::UnexpectedEOF => {
         let expectation = expectation(&expected);
-        let (lineno, startpos, linesrc) = into_doc_coords(&location.as_ref().unwrap(), source);
+        let linesrc = get_line_src(*lineoffset, source);
         Some(HumanDescription {
           msg: format!("{}, found EOF", &expectation),
-          lineno,
-          startpos,
-          endpos: None,
+          lineno: *lineno,
+          startpos: *startpos,
+          endpos: *endpos,
           linesrc: Some(linesrc.into()),
           help: Some(format!("{} here", hint(&expected)))
         })
       }
       ErrorKind::UnexpectedToken => {
-        let (start, token, end) = &token.as_ref().unwrap().clone();
-        let (lineno, startpos, linesrc) = into_doc_coords(&start, source);
-        let endpos = std::cmp::min(end.linepos, linesrc.len());
+        let token = token.as_ref().unwrap();
+        let linesrc = get_line_src(*lineoffset, source);
+        let endpos = std::cmp::min(endpos.unwrap(), linesrc.len());
 
         let mut msg = format!("unexpected \"{}\" found", &token);
         let mut help = None;
@@ -61,8 +64,8 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
 
         Some(HumanDescription {
           msg,
-          lineno,
-          startpos,
+          lineno: *lineno,
+          startpos: *startpos,
           endpos: Some(endpos),
           linesrc: Some(linesrc.into()),
           help
@@ -105,19 +108,11 @@ fn humanize(buffer: &mut String, descripition: &HumanDescription) -> fmt::Result
   }
 }
 
-// TODO: Just used to extract the src line. Before, used to translate from a
-// source offset into a source coordinates (line number, pos in line). Now this
-// information is the Location struct.
-fn into_doc_coords<'loc, 'src>(pos: &'loc Location, doc: &'src str) -> (usize, usize, &'src str) {
-  assert!(pos.lineoffset + pos.linepos <= doc.len(),
-    "pos.lineoffset + pos.linepos={} must in the range 0..=doc.len()={}",
-    pos.lineoffset + pos.linepos, doc.len());
+fn get_line_src(linestart: usize, doc: &str) -> &str {
+  assert!(linestart <= doc.len(),
+    "linestart={} must in the range 0..=doc.len()={}", linestart, doc.len());
 
-  let lineno = pos.lineno;
-  let startpos = pos.linepos;
-  let linestart = pos.lineoffset;
   let mut lineend = linestart + 1;
-
   for c in doc[linestart..].chars() {
     if c == '\n' {
       break;
@@ -128,7 +123,8 @@ fn into_doc_coords<'loc, 'src>(pos: &'loc Location, doc: &'src str) -> (usize, u
   if lineend > doc.len() {
     lineend = doc.len();
   }
-  (lineno, startpos, &doc[linestart..lineend])
+
+  &doc[linestart..lineend]
 }
 
 fn expectation(expected: &Vec<String>) -> String {
@@ -267,31 +263,26 @@ mod test_humanize_error {
 mod test_into_doc_coords {
   use indoc::indoc;
 
-  use super::{ into_doc_coords, Location };
+  use super::get_line_src;
 
-  macro_rules! test_into_doc_coords {
+  macro_rules! test_get_line_src {
     ($source:expr, $( $name:ident: $offset:expr => $expected:expr ),*) => {
       $(
         #[test]
         fn $name() {
-          assert_eq!(into_doc_coords($offset, &$source), $expected);
+          assert_eq!(get_line_src($offset, &$source), $expected);
         }
       )*
     };
   }
 
-  test_into_doc_coords!(indoc!("
+  test_get_line_src!(indoc!("
       line 1
       line 2
       line 3"
     ),
-    test_beginning_of_source:
-      &Location { lineno: 1, linepos: 0, lineoffset: 0 } => (1, 0, "line 1\n"),
-    test_middle_of_source:
-      &Location { lineno: 2, linepos: 4, lineoffset: 7 } => (2, 4, "line 2\n"),
-    test_last_character:
-      &Location { lineno: 3, linepos: 6, lineoffset: 14 } => (3, 6, "line 3"),
-    test_end_of_source:
-      &Location { lineno: 3, linepos: 6, lineoffset: 14 } => (3, 6, "line 3")
+    test_beginning_of_source: 0 => "line 1\n",
+    test_middle_of_source: 7 => "line 2\n",
+    test_last_character: 14 => "line 3"
   );
 }

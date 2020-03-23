@@ -31,35 +31,47 @@ impl<'src> convert::From<ErrAndSrc<'src>> for QasmSimError<'src> {
         QasmSimError::SyntaxError {
           kind: ErrorKind::InvalidToken,
           source,
+          lineoffset: location.lineoffset,
+          lineno: location.lineno,
+          startpos: location.linepos,
+          endpos: None,
           token: None,
           expected: Vec::new(),
-          location: Some(location)
         }
       }
       ParseError::UnrecognizedEOF { location, expected } => {
         QasmSimError::SyntaxError {
           kind: ErrorKind::UnexpectedEOF,
           source,
+          lineoffset: location.lineoffset,
+          lineno: location.lineno,
+          startpos: location.linepos,
+          endpos: None,
           token: None,
-          expected: expected,
-          location: Some(location)
+          expected
         }
       }
       ParseError::UnrecognizedToken { token, expected } => {
         QasmSimError::SyntaxError {
           kind: ErrorKind::UnexpectedToken,
           source,
-          location: Some(token.0.clone()),
-          token: Some(token),
-          expected: expected
+          lineoffset: token.0.lineoffset,
+          lineno: token.0.lineno,
+          startpos: token.0.linepos,
+          endpos: Some(token.2.linepos),
+          token: Some(token.1),
+          expected
         }
       }
       ParseError::ExtraToken { token } => {
         QasmSimError::SyntaxError {
           kind: ErrorKind::UnexpectedToken,
           source,
-          location: Some(token.0.clone()),
-          token: Some(token),
+          lineoffset: token.0.lineoffset,
+          lineno: token.0.lineno,
+          startpos: token.0.linepos,
+          endpos: Some(token.2.linepos),
+          token: Some(token.1),
           expected: Vec::new()
         }
       }
@@ -67,9 +79,12 @@ impl<'src> convert::From<ErrAndSrc<'src>> for QasmSimError<'src> {
         QasmSimError::SyntaxError {
           kind: ErrorKind::InvalidToken, // XXX: Actually, this should be "InvalidInput"
           source,
+          lineoffset: lexer_error.location.lineoffset,
+          lineno: lexer_error.location.lineoffset,
+          startpos: lexer_error.location.linepos,
+          endpos: None,
           token: None,
-          expected: Vec::new(),
-          location: Some(lexer_error.location.clone())
+          expected: Vec::new()
         }
       }
     }
