@@ -137,7 +137,8 @@ pub struct Lexer<'input> {
   offset: usize,
   input: &'input str,
   keywords: HashMap<String, Tok>,
-  chars: std::iter::Peekable<CharIndices<'input>>
+  chars: std::iter::Peekable<CharIndices<'input>>,
+  errored: bool
 }
 
 impl<'input> Lexer<'input> {
@@ -150,6 +151,7 @@ impl<'input> Lexer<'input> {
       input,
       keywords: get_keywords(),
       chars: input.char_indices().peekable(),
+      errored: false
     }
   }
 
@@ -202,7 +204,7 @@ impl<'input> Iterator for Lexer<'input> {
     }
 
     loop {
-      if self.chars.peek().is_none() {
+      if self.errored || self.chars.peek().is_none() {
         return None;
       }
 
@@ -303,6 +305,7 @@ impl<'input> Iterator for Lexer<'input> {
 
       // #[modes(all)]
       if let Some(repr) = self.try_pattern(&ID) {
+        dbg!(&repr);
         let end = start + repr.len();
         return Some(match self.keywords.get(&repr) {
           None => Ok((
@@ -386,6 +389,7 @@ impl<'input> Iterator for Lexer<'input> {
         )));
       }
 
+      self.errored = true;
       return Some(Err(LexicalError { location: self.location(start) }));
     }
   }
@@ -606,6 +610,47 @@ mod tests {
     ]);
   }
 
+  #[test]
+  fn test_ids() {
+    let source = "a b c";
+    let lexer = Lexer::new(source);
+    assert_eq!(lexer.collect::<Vec<_>>(), vec![
+      Ok((
+        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Tok::Id { repr: "a".into() },
+        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Tok::Id { repr: "b".into() },
+        Location{ lineno: 1, linepos: 3, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+        Tok::Id { repr: "c".into() },
+        Location{ lineno: 1, linepos: 5, lineoffset: 0 }
+      ))
+    ]);
+  }
+
+  #[test]
+  fn test_dont_admit_all_mayus_ids() {
+    let source = "a B c";
+    let lexer = Lexer::new(source);
+    assert_eq!(lexer.collect::<Vec<_>>(), vec![
+      Ok((
+        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Tok::Id { repr: "a".into() },
+        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+      )),
+      Err(LexicalError { location: Location {
+        lineno: 1,
+        linepos: 2,
+        lineoffset: 0
+      }})
+    ]);
+  }
+
   mod regressions {
     use super::*;
 
@@ -674,6 +719,19 @@ mod tests {
           Tok::Semi,
           Location{ lineno: 1, linepos: 17, lineoffset: 0 }
         )),
+      ]);
+    }
+
+    #[test]
+    fn test_error_at_the_begining() {
+      let source = "XXX"; // unrecognized ID (all caps), and not a keyword.
+      let lexer = Lexer::new(source);
+      assert_eq!(lexer.collect::<Vec<_>>(), vec![
+        Err(LexicalError { location: Location {
+          lineno: 1,
+          linepos: 0,
+          lineoffset: 0
+        }})
       ]);
     }
   }
