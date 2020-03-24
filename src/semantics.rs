@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::grammar::ast;
-use crate::error::{ QasmSimError, ErrorKind };
+use crate::error::QasmSimError;
 use crate::api::Result;
 
 
@@ -83,7 +83,6 @@ impl<'src> SemanticsBuilder {
   -> Result<'src, ()> {
     if self.semantics.macro_definitions.contains_key(&name) {
       return Err(QasmSimError::SemanticError {
-        kind: ErrorKind::Redeclaration,
         symbol_name: name
       })
     }
@@ -100,7 +99,6 @@ impl<'src> SemanticsBuilder {
   -> Result<'src, ()> {
     if self.semantics.register_table.contains_key(&name) {
       return Err(QasmSimError::SemanticError {
-        kind: ErrorKind::Redeclaration,
         symbol_name: name
       })
     }
@@ -267,7 +265,6 @@ mod test {
       let error = extract_semantics(&tree).expect_err("should be a redeclaration error");
       println!("Using source sample #{}", index);
       assert_eq!(error, QasmSimError::SemanticError {
-        kind: ErrorKind::Redeclaration,
         symbol_name: "r".into()
       });
     }

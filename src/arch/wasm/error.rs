@@ -65,11 +65,17 @@ impl From<QasmSimError<'_>> for JsValue {
           ).expect("set `token`");
         }
       }
-      QasmSimError::SemanticError { symbol_name, .. } => {
+      QasmSimError::SemanticError { symbol_name } => {
         js_sys::Reflect::set(&obj,
           &"symbolName".into(),
           &JsValue::from_str(&symbol_name)
-        ).expect("set `name`");
+        ).expect("set `symbolName`");
+      }
+      QasmSimError::LinkerError { libpath } => {
+        js_sys::Reflect::set(&obj,
+          &"libPath".into(),
+          &JsValue::from_str(&libpath)
+        ).expect("set `libpath`");
       }
     };
     obj.into()

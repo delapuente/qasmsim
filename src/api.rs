@@ -20,9 +20,9 @@ pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
   parser.parse(lexer).map_err(|err| (err, input).into())
 }
 
-pub fn compile_with_linker(input: &str, linker: Linker) -> Result<ast::OpenQasmProgram> {
+pub fn compile_with_linker<'src>(input: &'src str, linker: Linker) -> Result<'src, ast::OpenQasmProgram> {
   let program = compile(&input)?;
-  linker.link(program).or_else(|e| Err(format!("{}", e).into()))
+  linker.link(program)
 }
 
 pub fn execute<'src, 'program>(program: &'program ast::OpenQasmProgram) -> Result<'src, Computation> {

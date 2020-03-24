@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::api;
+use crate::error::QasmSimError;
 use crate::grammar::open_qasm2;
 use crate::grammar::ast;
 use crate::grammar::Lexer;
@@ -8,12 +10,12 @@ pub struct Linker {
   embedded: HashMap<String, String>
 }
 
-impl Linker {
+impl<'src> Linker {
   pub fn with_embedded(embedded: HashMap<String, String>) -> Self {
     Linker{embedded}
   }
 
-  pub fn link(&self, mut tree: ast::OpenQasmProgram) -> Result<ast::OpenQasmProgram, String> {
+  pub fn link(&self, mut tree: ast::OpenQasmProgram) -> api::Result<'src, ast::OpenQasmProgram> {
     let mut to_embed = vec![];
     for (index, statement) in tree.program.iter().enumerate() {
       match statement {
@@ -34,11 +36,11 @@ impl Linker {
     Ok(tree)
   }
 
-  fn get_sources(&self, libpath: &str) -> Result<String, String> {
+  fn get_sources(&self, libpath: &str) -> api::Result<'src, String> {
     if self.embedded.contains_key(libpath) {
       return Ok(self.embedded.get(libpath).unwrap().clone());
     }
-    Err(format!("Library `{}` not found", libpath))
+    Err(QasmSimError::LinkerError { libpath: libpath.into() })
   }
 }
 
