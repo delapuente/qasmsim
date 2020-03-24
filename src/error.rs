@@ -9,7 +9,9 @@ use crate::grammar::Tok;
 pub enum ErrorKind {
   InvalidToken,
   UnexpectedEOF,
-  UnexpectedToken
+  UnexpectedToken,
+
+  Redeclaration
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +26,10 @@ pub enum QasmSimError<'src> {
     endpos: Option<usize>,
     token: Option<Tok>,
     expected: Vec<String>,
+  },
+  SemanticError {
+    kind: ErrorKind,
+    symbol_name: String
   }
 }
 

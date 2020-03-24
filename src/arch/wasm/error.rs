@@ -65,6 +65,12 @@ impl From<QasmSimError<'_>> for JsValue {
           ).expect("set `token`");
         }
       }
+      QasmSimError::SemanticError { symbol_name, .. } => {
+        js_sys::Reflect::set(&obj,
+          &"symbolName".into(),
+          &JsValue::from_str(&symbol_name)
+        ).expect("set `name`");
+      }
     };
     obj.into()
   }

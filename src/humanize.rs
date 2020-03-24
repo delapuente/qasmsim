@@ -14,7 +14,6 @@ pub struct HumanDescription {
 
 fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
   match error {
-    QasmSimError::UnknownError(_) => None,
     QasmSimError::SyntaxError {
       kind,
       source,
@@ -70,8 +69,10 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
           linesrc: Some(linesrc.into()),
           help
         })
-      }
+      },
+      _ => unreachable!("other error kinds does not apply to SyntaxError")
     }
+    _ => None
   }
 }
 
@@ -79,8 +80,11 @@ pub fn humanize_error(buffer: &mut String, error: &QasmSimError) -> fmt::Result 
   match error {
     QasmSimError::UnknownError(msg) => write!(buffer, "{}", msg),
     QasmSimError::SyntaxError { .. } => {
-      let description: HumanDescription = get_human_description(error).expect("other cases should be covered");
+      let description: HumanDescription = get_human_description(error).expect("some human description");
       humanize(buffer, &description)
+    }
+    QasmSimError::SemanticError { symbol_name, .. } => {
+      write!(buffer, "symbol `{}` is declared twice", &symbol_name)
     }
   }
 }

@@ -25,6 +25,6 @@ pub fn compile_with_linker(input: &str, linker: Linker) -> Result<ast::OpenQasmP
   linker.link(program).or_else(|e| Err(format!("{}", e).into()))
 }
 
-pub fn execute<'program, 'src>(program: &'program ast::OpenQasmProgram) -> Result<'src, Computation> {
-  interpreter::runtime::execute(program).or_else(|e| Err(format!("{}", e).into()))
+pub fn execute<'src, 'program>(program: &'program ast::OpenQasmProgram) -> Result<'src, Computation> {
+  interpreter::runtime::execute(program)
 }

@@ -1,5 +1,9 @@
 use std::collections::HashMap;
+
 use crate::grammar::ast;
+use crate::error::{ QasmSimError, ErrorKind };
+use crate::api::Result;
+
 
 #[derive(Debug, PartialEq)]
 pub enum RegisterType {
@@ -48,7 +52,7 @@ struct SemanticsBuilder {
   last_classical_register: Option<String>
 }
 
-impl SemanticsBuilder {
+impl<'src> SemanticsBuilder {
   pub fn new() -> Self {
     SemanticsBuilder {
       semantics: Semantics::new(),
@@ -58,77 +62,83 @@ impl SemanticsBuilder {
   }
 
   pub fn new_quantum_register(&mut self, name: String, size: usize)
-  -> Result<(), String> {
+  -> Result<'src, ()> {
     self.new_register(name.clone(), RegisterType::Q, size)?;
-    self.map_register(name.clone(), RegisterType::Q, size)?;
+    self.map_register(name.clone(), RegisterType::Q, size);
     self.semantics.quantum_memory_size += size;
     self.last_quantum_register = Some(name);
     Ok(())
   }
 
   pub fn new_classical_register(&mut self, name: String, size: usize)
-  -> Result<(), String> {
+  -> Result<'src, ()> {
     self.new_register(name.clone(), RegisterType::C, size)?;
-    self.map_register(name.clone(), RegisterType::C, size)?;
+    self.map_register(name.clone(), RegisterType::C, size);
     self.semantics.classical_memory_size += size;
     self.last_classical_register = Some(name);
     Ok(())
   }
 
   pub fn new_gate(&mut self, name: String, real_args: Vec<String>, args: Vec<String>, body: Vec<ast::GateOperation>)
-  -> Result<(), String> {
+  -> Result<'src, ()> {
     if self.semantics.macro_definitions.contains_key(&name) {
-      return Err(format!("Gate '{}' is already declared.", name))
+      return Err(QasmSimError::SemanticError {
+        kind: ErrorKind::Redeclaration,
+        symbol_name: name
+      })
     }
+
     self.semantics.macro_definitions.insert(
       name.clone(),
       MacroDefinition(name, real_args, args, body)
     );
+
     Ok(())
   }
 
   fn new_register(&mut self, name: String, kind: RegisterType, size: usize)
-  -> Result<(), String> {
+  -> Result<'src, ()> {
     if self.semantics.register_table.contains_key(&name) {
-      return Err(format!("Register '{}' is already declared.", name))
+      return Err(QasmSimError::SemanticError {
+        kind: ErrorKind::Redeclaration,
+        symbol_name: name
+      })
     }
+
     self.semantics.register_table.insert(name.clone(), RegisterEntry(name, kind, size));
+
     Ok(())
   }
 
-  fn map_register(&mut self, name: String, kind: RegisterType, size: usize)
-  -> Result<(), String> {
+  fn map_register(&mut self, name: String, kind: RegisterType, size: usize) {
     match &kind {
       RegisterType::Q => self.map_quantum_register(name, size),
       RegisterType::C => self.map_classical_register(name, size)
     }
   }
 
-  pub fn map_quantum_register(&mut self, name: String, size: usize)
-  -> Result<(), String> {
+  pub fn map_quantum_register(&mut self, name: String, size: usize) {
     let new_entry = match &self.last_quantum_register {
       None => MemoryMapEntry(name.clone(), 0, size - 1),
       Some(register_name) => {
-        let last_index = self.semantics.memory_map.get(register_name).unwrap().2;
+        let last_index =
+          self.semantics.memory_map.get(register_name).expect("get last register").2;
         MemoryMapEntry(name.clone(), last_index + 1, last_index + size)
       }
     };
     self.semantics.memory_map.insert(name, new_entry);
-    Ok(())
   }
 
-  pub fn map_classical_register(&mut self, name: String, size: usize)
-  -> Result<(), String> {
+  pub fn map_classical_register(&mut self, name: String, size: usize) {
     self.semantics.memory_map.insert(
       name.clone(),
       MemoryMapEntry(name, 0, size - 1)
     );
-    Ok(())
   }
 }
 
-pub fn extract_semantics(tree: &ast::OpenQasmProgram)
--> Result<Semantics, String> {
+pub fn extract_semantics<'src, 'program>(tree: &'program ast::OpenQasmProgram)
+-> Result<'src, Semantics> {
   let mut builder = SemanticsBuilder::new();
   for statement in &tree.program {
     match statement {
@@ -253,13 +263,13 @@ mod test {
     ];
     for (index, source) in sources.iter().enumerate() {
       let lexer = Lexer::new(source);
-    let tree = open_qasm2::OpenQasmProgramParser::new().parse(lexer).unwrap();
-      let semantics_result = extract_semantics(&tree);
-      assert!(semantics_result.is_err());
-      if let Err(error) = semantics_result {
-        println!("Using source sample #{}", index);
-        assert_eq!(error, "Register 'r' is already declared.");
-      }
+      let tree = open_qasm2::OpenQasmProgramParser::new().parse(lexer).expect("successful parsing");
+      let error = extract_semantics(&tree).expect_err("should be a redeclaration error");
+      println!("Using source sample #{}", index);
+      assert_eq!(error, QasmSimError::SemanticError {
+        kind: ErrorKind::Redeclaration,
+        symbol_name: "r".into()
+      });
     }
   }
 

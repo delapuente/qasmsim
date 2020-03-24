@@ -237,8 +237,8 @@ impl Runtime {
   }
 }
 
-pub fn execute(program: &ast::OpenQasmProgram)
--> api::Result<Computation> {
+pub fn execute<'src, 'program>(program: &'program ast::OpenQasmProgram)
+-> api::Result<'src, Computation> {
   let semantics = extract_semantics(program)?;
   let mut runtime = Runtime::new(semantics);
   runtime.apply_gates(&program.program);
