@@ -1,6 +1,7 @@
 use std::collections::{ HashMap, VecDeque };
 use std::iter::FromIterator;
 
+use crate::api;
 use crate::semantics::{ Semantics, RegisterType, extract_semantics };
 use crate::statevector::StateVector;
 use crate::grammar::ast;
@@ -237,7 +238,7 @@ impl Runtime {
 }
 
 pub fn execute(program: &ast::OpenQasmProgram)
--> Result<Computation, String> {
+-> api::Result<Computation> {
   let semantics = extract_semantics(program)?;
   let mut runtime = Runtime::new(semantics);
   runtime.apply_gates(&program.program);

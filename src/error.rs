@@ -27,6 +27,8 @@ pub enum QasmSimError<'src> {
   }
 }
 
+pub type Result<'src, T> = std::result::Result<T, QasmSimError<'src>>;
+
 impl fmt::Display for QasmSimError<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let mut buffer = String::new();
