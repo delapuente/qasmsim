@@ -12,9 +12,7 @@ fn main() -> io::Result<()> {
   let result = qasmsim::run(&input);
 
   if let Err(error) = result {
-    let mut buffer = String::new();
-    qasmsim::humanize_error(&mut buffer, &error).expect("human output displayed for qasmsim error");
-    println!("{}", buffer);
+    println!("{}", error);
     process::exit(1);
   }
   else {
