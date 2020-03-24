@@ -11,6 +11,7 @@ pub mod wasm {
   use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
   use console_error_panic_hook;
 
+  use crate::{ QasmSimError, ErrorKind };
   use crate::api;
   use crate::interpreter::Computation;
   use crate::statevector::StateVector;
@@ -19,21 +20,21 @@ pub mod wasm {
     ($measure_name:expr, $block:block) => {
       {
         use web_sys;
-        let window = web_sys::window().expect("should have a window");
-        let performance = window.performance().expect("performance should be available");
+        let window = web_sys::window().expect("get `window`");
+        let performance = window.performance().expect("get `window.performance`");
+        performance.clear_measures();
+        performance.clear_marks();
 
         let start_mark = format!("{}_start", $measure_name);
         let end_mark = format!("{}_end", $measure_name);
 
-        performance.mark(&start_mark);
+        performance.mark(&start_mark).expect("set start mark");
         let result = $block;
-        performance.mark(&end_mark);
+        performance.mark(&end_mark).expect("set end mark");
 
         performance.measure_with_start_mark_and_end_mark(
-          &$measure_name, &start_mark, &end_mark);
+          &$measure_name, &start_mark, &end_mark).expect("set the measure");
         web_sys::console::log(&performance.get_entries_by_type(&"measure"));
-        performance.clear_measures();
-        performance.clear_marks();
         result
       }
     };
@@ -45,15 +46,15 @@ pub mod wasm {
       js_sys::Reflect::set(&out,
         &"statevector".into(),
         &computation.statevector.into()
-      );
+      ).expect("set `statevector`");
       js_sys::Reflect::set(&out,
         &"probabilities".into(),
         &as_typed_array(computation.probabilities).into()
-      );
+      ).expect("set `probabilities`");
       js_sys::Reflect::set(&out,
         &"memory".into(),
         &as_map(computation.memory).into()
-      );
+      ).expect("set `memory`");
       out.into()
     }
   }
@@ -66,11 +67,11 @@ pub mod wasm {
       js_sys::Reflect::set(&out,
         &"bases".into(),
         &as_typed_array(flatten_amplitudes).into()
-      );
+      ).expect("set `bases`");
       js_sys::Reflect::set(&out,
         &"bitWidth".into(),
         &(statevector.bit_width as i32).into()
-      );
+      ).expect("set `bitWidth`");
       out.into()
     }
   }
@@ -89,18 +90,24 @@ pub mod wasm {
     map
   }
 
+  impl From<QasmSimError<'_>> for JsValue {
+    fn from(_value: QasmSimError) -> Self {
+      JsValue::from_str("mew!")
+    }
+  }
+
   #[wasm_bindgen]
-  pub fn run(input: &str) -> JsValue {
+  pub fn run(input: &str) -> Result<JsValue, JsValue> {
     let linked = measure!("parsing", {
-      api::compile_with_linker(input, api::default_linker()).unwrap()
-    });
+      api::compile_with_linker(input, api::default_linker())
+    })?;
     let computation: Computation = measure!("computation", {
-      api::execute(&linked).unwrap()
-    });
+      api::execute(&linked)
+    })?;
     let out = measure!("serialization", {
       computation.into()
     });
-    out
+    Ok(out)
   }
 
   #[wasm_bindgen(start)]
