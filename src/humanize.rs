@@ -108,7 +108,7 @@ pub fn humanize_error(buffer: &mut String, error: &QasmSimError) -> fmt::Result 
         write!(buffer, "error calling gate `{}`: the number of real parameters is wrong", &symbol_name)
       }
       RuntimeKind::IndexOutOfBounds => {
-        write!(buffer, "invalid index for register `{}`", &symbol_name)
+        write!(buffer, "index out of bounds for register `{}`", &symbol_name)
       },
       RuntimeKind::DifferentSizeRegisters => {
         write!(buffer, "cannot apply gate to registers of different size")
