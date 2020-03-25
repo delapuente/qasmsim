@@ -1,6 +1,6 @@
 use std::fmt::{ self, Write };
 
-use crate::error::{ QasmSimError, ErrorKind };
+use crate::error::{ QasmSimError, ErrorKind, RuntimeKind };
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HumanDescription {
@@ -87,6 +87,32 @@ pub fn humanize_error(buffer: &mut String, error: &QasmSimError) -> fmt::Result 
     }
     QasmSimError::LinkerError { libpath } => {
       write!(buffer, "cannot find library `{}`", &libpath)
+    }
+    QasmSimError::RuntimeError { kind, symbol_name } => match kind {
+      RuntimeKind::ClassicalRegisterNotFound => {
+        write!(buffer, "classical register `{}` not found in this scope", &symbol_name)
+      }
+      RuntimeKind::QuantumRegisterNotFound => {
+        write!(buffer, "quantum register `{}` not found in this scope", &symbol_name)
+      }
+      RuntimeKind::SymbolNotFound => {
+        write!(buffer, "symbol `{}` not found in this scope", &symbol_name)
+      }
+      RuntimeKind::UndefinedGate => {
+        write!(buffer, "error calling gate `{}`: gate not found in this scope", &symbol_name)
+      }
+      RuntimeKind::WrongNumberOfQuantumParameters => {
+        write!(buffer, "error calling gate `{}`: the number of quantum parameters is wrong", &symbol_name)
+      }
+      RuntimeKind::WrongNumberOfRealParameters => {
+        write!(buffer, "error calling gate `{}`: the number of real parameters is wrong", &symbol_name)
+      }
+      RuntimeKind::IndexOutOfBounds => {
+        write!(buffer, "invalid index for register `{}`", &symbol_name)
+      },
+      RuntimeKind::DifferentSizeRegisters => {
+        write!(buffer, "cannot apply gate to registers of different size")
+      }
     }
   }
 }

@@ -14,10 +14,14 @@ pub enum ErrorKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RuntimeKind {
+  ClassicalRegisterNotFound,
+  QuantumRegisterNotFound,
   SymbolNotFound,
   UndefinedGate,
   WrongNumberOfRealParameters,
-  WrongNumberOfQuantumParameters
+  WrongNumberOfQuantumParameters,
+  IndexOutOfBounds,
+  DifferentSizeRegisters
 }
 
 #[derive(Debug, Clone, PartialEq)]

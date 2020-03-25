@@ -4,14 +4,14 @@ use crate::api;
 use crate::error::{ QasmSimError, RuntimeKind };
 use crate::grammar::ast;
 
-pub struct ExpressionSolver<'a>(&'a HashMap<String, f64>);
+pub struct ExpressionSolver<'bindings>(&'bindings HashMap<String, f64>);
 
-impl<'a> ExpressionSolver<'a> {
-  pub fn new(symbol_table: &'a HashMap<String, f64>) -> Self {
-    ExpressionSolver::<'a>(symbol_table)
+impl<'src, 'bindings> ExpressionSolver<'bindings> {
+  pub fn new(symbol_table: &'bindings HashMap<String, f64>) -> Self {
+    ExpressionSolver::<'bindings>(symbol_table)
   }
 
-  pub fn solve(&self, expression: &ast::Expression) -> api::Result<f64> {
+  pub fn solve(&self, expression: &ast::Expression) -> api::Result<'src, f64> {
     Ok(match expression {
       ast::Expression::Pi => std::f64::consts::PI,
       ast::Expression::Int(value) => *value as f64,
@@ -95,7 +95,7 @@ mod test {
     ]);
     let solver = ExpressionSolver::new(&bindings);
     let result = solver.solve(&expression).expect("get value of expression");
-    assert_eq!(result, - 1.0 + (1.0 - 2.0) * 3.0 / 4.0);
+    assert_eq!(result, 1.0 + (1.0 - 2.0) * 3.0 / 4.0);
   }
 
   #[test]

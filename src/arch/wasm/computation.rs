@@ -13,18 +13,11 @@ use crate::statevector::StateVector;
 impl From<Computation> for JsValue {
   fn from(computation: Computation) -> Self {
     let out = Object::new();
-    js_sys::Reflect::set(&out,
-      &"statevector".into(),
-      &computation.statevector.into()
-    ).expect("set `statevector`");
-    js_sys::Reflect::set(&out,
-      &"probabilities".into(),
-      &as_typed_array(computation.probabilities).into()
-    ).expect("set `probabilities`");
-    js_sys::Reflect::set(&out,
-      &"memory".into(),
-      &as_map(computation.memory).into()
-    ).expect("set `memory`");
+    set!(&out,
+      "statevector" => computation.statevector,
+      "probabilities" => as_typed_array(computation.probabilities),
+      "memory" => as_map(computation.memory)
+    );
     out.into()
   }
 }
@@ -34,14 +27,10 @@ impl From<StateVector> for JsValue {
     let bases = statevector.bases;
     let flatten_amplitudes: Vec<f64> = bases.iter().flat_map(|c| vec![c.re, c.im]).collect();
     let out = Object::new();
-    js_sys::Reflect::set(&out,
-      &"bases".into(),
-      &as_typed_array(flatten_amplitudes).into()
-    ).expect("set `bases`");
-    js_sys::Reflect::set(&out,
-      &"bitWidth".into(),
-      &(statevector.bit_width as i32).into()
-    ).expect("set `bitWidth`");
+    set!(&out,
+      "bases" => as_typed_array(flatten_amplitudes),
+      "bitWidth" => statevector.bit_width as f64
+    );
     out.into()
   }
 }

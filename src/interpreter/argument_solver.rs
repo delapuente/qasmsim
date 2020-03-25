@@ -4,25 +4,25 @@ use crate::api;
 use crate::error::{ QasmSimError, RuntimeKind };
 use crate::grammar::ast;
 
-pub struct ArgumentSolver<'a>(&'a HashMap<String, ast::Argument>);
+pub struct ArgumentSolver<'bindings>(&'bindings HashMap<String, ast::Argument>);
 
-impl<'a> ArgumentSolver<'a> {
-  pub fn new(argument_table: &'a HashMap<String, ast::Argument>) -> Self {
-    ArgumentSolver::<'a>(argument_table)
+impl<'src, 'bindings> ArgumentSolver<'bindings> {
+  pub fn new(argument_table: &'bindings HashMap<String, ast::Argument>) -> Self {
+    ArgumentSolver::<'bindings>(argument_table)
   }
 
-  pub fn solve(&self, arg: &ast::Argument) -> api::Result<ast::Argument> {
+  pub fn solve(&self, arg: &ast::Argument) -> api::Result<'src, ast::Argument> {
     match arg {
       ast::Argument::Id(name) => {
         match self.0.get(name) {
           None => Err(QasmSimError::RuntimeError {
-            kind: RuntimeKind::SymbolNotFound,
-            symbol_name: *name
+            kind: RuntimeKind::QuantumRegisterNotFound,
+            symbol_name: name.into()
           }),
           Some(argument) => Ok(argument.clone())
         }
       }
-      _ => unreachable!()
+      _ => unreachable!("while solving, only valid argument style is Argument::Id")
     }
   }
 }
@@ -54,7 +54,7 @@ mod test {
     let formal_argument = ast::Argument::Id("fmal".to_owned());
     let error = solver.solve(&formal_argument).expect_err("actual argument not found");
     assert_eq!(error, QasmSimError::RuntimeError {
-      kind: RuntimeKind::SymbolNotFound,
+      kind: RuntimeKind::QuantumRegisterNotFound,
       symbol_name: "fmal".into()
     });
   }

@@ -305,7 +305,6 @@ impl<'input> Iterator for Lexer<'input> {
 
       // #[modes(all)]
       if let Some(repr) = self.try_pattern(&ID) {
-        dbg!(&repr);
         let end = start + repr.len();
         return Some(match self.keywords.get(&repr) {
           None => Ok((

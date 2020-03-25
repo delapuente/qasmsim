@@ -36,20 +36,21 @@ impl<'src> Runtime {
     }
   }
 
-  fn apply_gates(&mut self, statements: &Vec<ast::Statement>) -> api::Result<()> {
+  fn apply_gates(&mut self, statements: &Vec<ast::Statement>) -> api::Result<'src, ()> {
     for statement in statements {
       match statement {
         ast::Statement::QuantumOperation(operation) => {
-          self.apply_quantum_operation(operation);
+          self.apply_quantum_operation(operation)?;
         }
         ast::Statement::Conditional(register, test, operation) => {
           // In program execution, do not replace symbols
-          let actual_register: ast::Argument = if self.macro_stack.len() == 0 {
+          let actual_register: ast::Argument = if !self.is_running_macro() {
             (*register).clone()
           }
           // In macro execution, replace formal arguments with actual arguments
           else {
-            let arg_bindings = &self.macro_stack.get(0).unwrap().1;
+            let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get the first stack entry");
+            let arg_bindings = &stack_entry.1;
             let argument_solver = ArgumentSolver::new(arg_bindings);
             argument_solver.solve(&register)?
           };
@@ -58,7 +59,7 @@ impl<'src> Runtime {
             _ => unreachable!()
           };
           if value == test {
-            self.apply_quantum_operation(operation);
+            self.apply_quantum_operation(operation)?;
           }
         }
         _ => ()
@@ -67,7 +68,7 @@ impl<'src> Runtime {
     Ok(())
   }
 
-  fn apply_quantum_operation(&mut self, operation: &ast::QuantumOperation) -> api::Result<()> {
+  fn apply_quantum_operation(&mut self, operation: &ast::QuantumOperation) -> api::Result<'src, ()> {
     match operation {
       ast::QuantumOperation::Unitary(unitary) => {
         self.apply_unitary(unitary)
@@ -79,28 +80,31 @@ impl<'src> Runtime {
     }
   }
 
-  fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) -> api::Result<()> {
+  fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) -> api::Result<'src, ()> {
     let name = &unitary.0;
     let real_args = &unitary.1;
     let args = &unitary.2;
 
     let actual_args = self.resolve_actual_args(args)?;
+    self.check_all_are_quantum_registers(&actual_args)?;
+
     let solved_real_args = self.resolve_real_expressions(real_args)?;
 
-    for argument_expansion in self.expand_arguments(&actual_args) {
+    for argument_expansion in self.expand_arguments(&actual_args)? {
       self.apply_one_gate(name, &solved_real_args, &argument_expansion)?;
     }
 
     Ok(())
   }
 
-  fn resolve_actual_args(&self, args: &Vec<ast::Argument>) -> api::Result<Vec<ast::Argument>> {
+  fn resolve_actual_args(&self, args: &Vec<ast::Argument>) -> api::Result<'src, Vec<ast::Argument>> {
     let mut actual = Vec::new();
     if !self.is_running_macro() {
       actual = args.iter().cloned().collect();
     }
     else {
-      let arg_bindings = &self.macro_stack.get(0).expect("get first entry of the stack").1;
+      let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get first entry of the stack");
+      let arg_bindings = &stack_entry.1;
       let argument_solver = ArgumentSolver::new(arg_bindings);
       for argument in args {
         let actual_argument = argument_solver.solve(argument)?;
@@ -110,10 +114,11 @@ impl<'src> Runtime {
     Ok(actual)
   }
 
-  fn resolve_real_expressions(&self, exprs: &Vec<ast::Expression>) -> api::Result<Vec<f64>> {
+  fn resolve_real_expressions(&self, exprs: &Vec<ast::Expression>) -> api::Result<'src, Vec<f64>> {
     let mut real_bindings = &HashMap::new();
     if self.is_running_macro() {
-      real_bindings = &self.macro_stack.get(0).unwrap().0;
+      let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get first stack entry");
+      real_bindings = &stack_entry.0;
     };
     let expression_solver = ExpressionSolver::new(real_bindings);
     let mut solved = Vec::new();
@@ -128,35 +133,34 @@ impl<'src> Runtime {
     self.macro_stack.len() > 0
   }
 
-  fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<()> {
-    for argument_expansion in self.expand_arguments(&args) {
+  fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<'src, ()> {
+    self.assert_is_quantum_register(self.get_register_name(&args[0]))?;
+    self.assert_is_classical_register(self.get_register_name(&args[1]))?;
+    for argument_expansion in self.expand_arguments(&args)? {
       self.apply_one_measurement(argument_expansion)?;
     }
     Ok(())
   }
 
-  fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<()> {
+  fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<'src, ()> {
     let classical_register_name = match &args[1] {
       ast::Argument::Item(name, _) => name.clone(),
       _ => unreachable!("after `expand_arguments()`, argument should be Argument::Item")
     };
+
     let source = self.get_bit_mapping(&args[0])?;
     let measurement = self.statevector.measure(source) as u64;
 
-    if !self.memory.contains_key(&classical_register_name) {
-      unreachable!();
-    }
-
     let target = self.get_bit_mapping(&args[1])?;
     let value = measurement * (1 << target);
-    let prev_value = *(self.memory.get(&classical_register_name).unwrap());
+    let prev_value = *(self.memory.get(&classical_register_name).expect("after `apply_measurement()`, get the entry"));
     self.memory.insert(classical_register_name, prev_value + value);
 
     Ok(())
   }
 
   fn apply_one_gate(&mut self, name: &str, real_args: &Vec<f64>,
-  args: &Vec<ast::Argument>) -> api::Result<()> {
+  args: &Vec<ast::Argument>) -> api::Result<'src, ()> {
     match name {
       "U" => {
         let theta = real_args[0];
@@ -172,14 +176,56 @@ impl<'src> Runtime {
       }
       macro_name => {
         let binding_mappings = self.bind(macro_name.to_owned(), real_args, args)?;
-        self.call(macro_name.to_owned(), binding_mappings).unwrap();
+        self.call(macro_name.to_owned(), binding_mappings)?;
       }
     };
     Ok(())
   }
 
+  fn check_all_are_quantum_registers(&self, args: &Vec<ast::Argument>) -> api::Result<'src, ()> {
+    for argument in args {
+      let register_name = self.get_register_name(argument);
+      self.assert_is_quantum_register(register_name)?;
+    }
+    Ok(())
+  }
+
+  fn get_register_name<'a>(&self, arg: &'a ast::Argument) -> &'a str {
+    match arg {
+      ast::Argument::Id(name) => name,
+      ast::Argument::Item(name, _) => name
+    }
+  }
+
+  fn assert_is_quantum_register(&self, name: &str) -> api::Result<'src, ()> {
+    if !self.is_register_of_type(RegisterType::Q, name) {
+      return Err(QasmSimError::RuntimeError {
+        kind: RuntimeKind::QuantumRegisterNotFound,
+        symbol_name: name.into()
+      });
+    }
+    Ok(())
+  }
+
+  fn assert_is_classical_register(&self, name: &str) -> api::Result<'src, ()> {
+    if !self.is_register_of_type(RegisterType::C, name) {
+      return Err(QasmSimError::RuntimeError {
+        kind: RuntimeKind::ClassicalRegisterNotFound,
+        symbol_name: name.into()
+      });
+    }
+    Ok(())
+  }
+
+  fn is_register_of_type(&self, rtype: RegisterType, name: &str) -> bool {
+    match self.semantics.register_table.get(name) {
+      Some(entry) => entry.1 == rtype,
+      None => false
+    }
+  }
+
   fn apply_gate_operations(&mut self, operations: &Vec<ast::GateOperation>)
-  -> api::Result<()> {
+  -> api::Result<'src, ()> {
     for one_operation in operations {
       match one_operation {
         ast::GateOperation::Unitary(unitary) => self.apply_unitary(unitary)?,
@@ -190,37 +236,67 @@ impl<'src> Runtime {
   }
 
   fn expand_arguments(&self, args: &Vec<ast::Argument>)
-  -> Vec<Vec<ast::Argument>> {
-    let range = self.get_range(args);
-    range.map(|index| Runtime::specify(args, index)).collect()
+  -> api::Result<'src, Vec<Vec<ast::Argument>>> {
+    let range = self.get_range(args)?;
+    Ok(range.map(|index| Runtime::specify(args, index)).collect())
   }
 
   // TODO: Add index boundaries control
-  fn get_bit_mapping(&self, argument: &ast::Argument) -> api::Result<usize> {
+  fn get_bit_mapping(&self, argument: &ast::Argument) -> api::Result<'src, usize> {
     match argument {
       ast::Argument::Item(name, index) => {
         match self.semantics.memory_map.get(name) {
           None => Err(QasmSimError::RuntimeError {
-            kind: RuntimeKind::SymbolNotFound,
+            kind: RuntimeKind::QuantumRegisterNotFound,
             symbol_name: name.into()
           }),
-          Some(mapping) => Ok(mapping.1 + *index)
+          Some(mapping) => {
+            let size = mapping.2 - mapping.1 + 1;
+            if *index >= size {
+              return Err(QasmSimError::RuntimeError {
+                kind: RuntimeKind::IndexOutOfBounds,
+                symbol_name: name.into()
+              });
+            }
+            Ok(mapping.1 + *index)
+          }
         }
       }
       _ => unreachable!("after `expand_arguments()`, argument should be Argument::Item")
     }
   }
 
-  fn get_range(&self, args: &Vec<ast::Argument>) -> std::ops::Range<usize> {
-    for arg in args {
-      match arg {
-        ast::Argument::Id(name) => {
-          return 0..self.semantics.register_table.get(name).unwrap().2;
-        }
-        _ => ()
-      }
+  fn get_range(&self, args: &Vec<ast::Argument>) -> api::Result<'src, std::ops::Range<usize>> {
+    // XXX: This is performed after validating the type of args.
+
+    let whole_registers: Vec<&ast::Argument> = args.iter()
+    .filter(|arg| match arg { ast::Argument::Id(_) => true, _ => false })
+    .collect();
+
+    // Return a one-iteration range, `specify()` takes care of ignoring Item arugments.
+    if whole_registers.len() == 0 {
+      return Ok(0..1);
     }
-    0..1
+
+    let all_sizes: Vec<usize> = whole_registers.iter()
+    .map(|arg| {
+      let register_name = self.get_register_name(arg);
+      let register_entry = self.semantics.register_table.get(register_name).expect("after validation, get register entry");
+      register_entry.2
+    })
+    .collect();
+
+    let reference_size = all_sizes[0];
+    let all_the_same_size = all_sizes.iter().all(|size| *size == reference_size);
+
+    if all_the_same_size {
+      return Ok(0..reference_size);
+    }
+
+    return Err(QasmSimError::RuntimeError {
+      kind: RuntimeKind::DifferentSizeRegisters,
+      symbol_name: self.get_register_name(whole_registers[0]).into()
+    });
   }
 
   fn specify(args: &Vec<ast::Argument>, index: usize) -> Vec<ast::Argument> {
@@ -235,7 +311,7 @@ impl<'src> Runtime {
   }
 
   fn bind(&mut self, macro_name: String, real_args: &Vec<f64>, args: &Vec<ast::Argument>)
-  -> api::Result<BindingMappings> {
+  -> api::Result<'src, BindingMappings> {
     let definition = match self.semantics.macro_definitions.get(&macro_name) {
       None => {
         return Err(QasmSimError::RuntimeError {
@@ -274,7 +350,7 @@ impl<'src> Runtime {
   }
 
   fn call(&mut self, macro_name: String, bindings: BindingMappings)
-  -> Result<(), String> {
+  -> api::Result<'src, ()> {
     // XXX: Why clonning is necessary??
     let definition = (*self.semantics.macro_definitions.get(&macro_name).unwrap()).clone();
     self.macro_stack.push_front(bindings);
@@ -288,6 +364,6 @@ pub fn execute<'src, 'program>(program: &'program ast::OpenQasmProgram)
 -> api::Result<'src, Computation> {
   let semantics = extract_semantics(program)?;
   let mut runtime = Runtime::new(semantics);
-  runtime.apply_gates(&program.program);
+  runtime.apply_gates(&program.program)?;
   Ok(Computation::new(runtime.memory, runtime.statevector))
 }

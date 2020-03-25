@@ -1,5 +1,14 @@
 #![cfg(target_arch = "wasm32")]
 
+macro_rules! set {
+  ($obj:expr, $( $key:expr => $value:expr ),*) => {{
+    use js_sys;
+    $(
+      js_sys::Reflect::set($obj, &$key.into(), &$value.into()).expect(&format!("set `{}`", $key));
+    )*
+  }};
+}
+
 mod computation;
 mod error;
 

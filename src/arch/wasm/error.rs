@@ -11,21 +11,15 @@ impl From<QasmSimError<'_>> for JsValue {
   fn from(value: QasmSimError) -> Self {
     let message = format!("{}", &value);
     let obj = Object::new();
-    js_sys::Reflect::set(&obj,
-      &"message".into(),
-      &JsValue::from_str(&message)
-    ).expect("set `message`");
-    js_sys::Reflect::set(&obj,
-      &"toString".into(),
-      &js_sys::Function::new_no_args("return this.message").into()
-    ).expect("set `toString`");
+
+    set!(&obj,
+      "message" => &message,
+      "toString" => js_sys::Function::new_no_args("return this.message")
+    );
 
     match value {
       QasmSimError::UnknownError (_) => {
-        js_sys::Reflect::set(&obj,
-          &"type".into(),
-          &JsValue::from_str("Unknown")
-        ).expect("set `type`");
+        set!(&obj, "type" => "Unknown");
       },
       QasmSimError::SyntaxError {
         kind,
@@ -36,46 +30,30 @@ impl From<QasmSimError<'_>> for JsValue {
         token,
         ..
       } => {
-        js_sys::Reflect::set(&obj,
-          &"type".into(),
-          &JsValue::from_str(&format!("{:?}", kind))
-        ).expect("set `type`");
-        js_sys::Reflect::set(&obj,
-          &"lineOffset".into(),
-          &JsValue::from_f64(lineoffset as f64)
-        ).expect("set `lineOffset`");
-        js_sys::Reflect::set(&obj,
-          &"lineNumber".into(),
-          &JsValue::from_f64(lineno as f64)
-        ).expect("set `lineNumber`");
-        js_sys::Reflect::set(&obj,
-          &"startPosition".into(),
-          &JsValue::from_f64(startpos as f64)
-        ).expect("set `startPosition`");
+        set!(&obj,
+          "type" => &format!("{:?}", kind),
+          "lineOffset" => lineoffset as f64,
+          "lineNumber" => lineno as f64,
+          "startPosition" => startpos as f64
+        );
         if let Some(endpos) = endpos {
-          js_sys::Reflect::set(&obj,
-            &"endPosition".into(),
-            &JsValue::from_f64(endpos as f64)
-          ).expect("set `endPosition`");
+          set!(&obj, "endPosition" => endpos as f64);
         }
         if let Some(token) = token {
-          js_sys::Reflect::set(&obj,
-            &"token".into(),
-            &JsValue::from_str(&format!("{}", token))
-          ).expect("set `token`");
+          set!(&obj, "token" => &format!("{}", token));
         }
       }
       QasmSimError::SemanticError { symbol_name } => {
-        js_sys::Reflect::set(&obj,
-          &"symbolName".into(),
-          &JsValue::from_str(&symbol_name)
-        ).expect("set `symbolName`");
+        set!(&obj, "symbolName" => &symbol_name);
       }
       QasmSimError::LinkerError { libpath } => {
-        js_sys::Reflect::set(&obj,
-          &"libPath".into(),
-          &JsValue::from_str(&libpath)
-        ).expect("set `libpath`");
+        set!(&obj, "libPath" => &libpath);
+      }
+      QasmSimError::RuntimeError { kind, symbol_name } => {
+        set!(&obj,
+          "type" => &format!("{:?}", kind),
+          "symbolName" => &symbol_name
+        );
       }
     };
     obj.into()
