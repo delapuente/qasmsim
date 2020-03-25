@@ -168,3 +168,35 @@ fn test_argument_expansion_with_different_size_registers() {
     symbol_name: "q".into()
   });
 }
+
+#[test]
+fn test_quantum_register_in_conditional() {
+  let source = r#"
+  OPENQASM 2.0;
+  include "qelib1.inc";
+  qreg q[2];
+  creg c[2];
+  if (q==3) h q;
+  "#;
+  let error = qasmsim::run(source).expect_err("should fail");
+  assert_eq!(error, QasmSimError::RuntimeError {
+    kind: RuntimeKind::ClassicalRegisterNotFound,
+    symbol_name: "q".into()
+  });
+}
+
+#[test]
+fn test_non_existent_register_in_conditional() {
+  let source = r#"
+  OPENQASM 2.0;
+  include "qelib1.inc";
+  qreg q[2];
+  creg c[2];
+  if (d==3) h q;
+  "#;
+  let error = qasmsim::run(source).expect_err("should fail");
+  assert_eq!(error, QasmSimError::RuntimeError {
+    kind: RuntimeKind::ClassicalRegisterNotFound,
+    symbol_name: "d".into()
+  });
+}

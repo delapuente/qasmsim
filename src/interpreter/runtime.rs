@@ -43,20 +43,13 @@ impl<'src> Runtime {
           self.apply_quantum_operation(operation)?;
         }
         ast::Statement::Conditional(register, test, operation) => {
-          // In program execution, do not replace symbols
-          let actual_register: ast::Argument = if !self.is_running_macro() {
-            (*register).clone()
-          }
-          // In macro execution, replace formal arguments with actual arguments
-          else {
-            let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get the first stack entry");
-            let arg_bindings = &stack_entry.1;
-            let argument_solver = ArgumentSolver::new(arg_bindings);
-            argument_solver.solve(&register)?
-          };
+          let actual_register = (*register).clone();
+          let register_name = self.get_register_name(&actual_register);
+          self.assert_is_classical_register(register_name)?;
+
           let value = match actual_register {
-            ast::Argument::Id(register_name) => self.memory.get(&register_name).unwrap(),
-            _ => unreachable!()
+            ast::Argument::Id(register_name) => self.memory.get(&register_name).expect("after `assert_is_classical_register()`, must exist"),
+            _ => unreachable!("cannot index a register inside the condition")
           };
           if value == test {
             self.apply_quantum_operation(operation)?;
