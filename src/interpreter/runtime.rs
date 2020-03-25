@@ -143,18 +143,14 @@ impl<'src> Runtime {
   }
 
   fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<'src, ()> {
-    let classical_register_name = match &args[1] {
-      ast::Argument::Item(name, _) => name.clone(),
-      _ => unreachable!("after `expand_arguments()`, argument should be Argument::Item")
-    };
-
+    let classical_register_name = self.get_register_name(&args[1]);
     let source = self.get_bit_mapping(&args[0])?;
     let measurement = self.statevector.measure(source) as u64;
 
     let target = self.get_bit_mapping(&args[1])?;
     let value = measurement * (1 << target);
-    let prev_value = *(self.memory.get(&classical_register_name).expect("after `apply_measurement()`, get the entry"));
-    self.memory.insert(classical_register_name, prev_value + value);
+    let prev_value = *(self.memory.get(classical_register_name).expect("after `apply_measurement()`, get the entry"));
+    self.memory.insert(classical_register_name.into(), prev_value + value);
 
     Ok(())
   }
