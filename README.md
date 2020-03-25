@@ -12,7 +12,7 @@ also installed.
 The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although it still remains to be done...
 
  - [ ] Add trigonometric and exponential functions for the real expressions.
- - [ ] Test all the ugly, error paths.
+ - [X] Test all the ugly, error paths.
  - [ ] Semantic comments for documenting the gates.
 
 Although there is still no support for including external gate definitions,
@@ -36,7 +36,7 @@ The complete specification can be found under the [QASM repository](https://gith
 
 ## Building from sources
 
-Current version of qasmsim is very limited. You can test it by doing:
+Current version of qasmsim CLI utility is very limited. You can test it by doing:
 
 ```sh
 $ cargo run < samples/bell.qasm
