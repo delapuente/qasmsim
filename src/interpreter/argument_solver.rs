@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::api;
+use crate::error::{ QasmSimError, RuntimeKind };
 use crate::grammar::ast;
 
 pub struct ArgumentSolver<'a>(&'a HashMap<String, ast::Argument>);
@@ -9,9 +11,17 @@ impl<'a> ArgumentSolver<'a> {
     ArgumentSolver::<'a>(argument_table)
   }
 
-  pub fn solve(&self, arg: &ast::Argument) -> ast::Argument {
+  pub fn solve(&self, arg: &ast::Argument) -> api::Result<ast::Argument> {
     match arg {
-      ast::Argument::Id(name) => (*self.0.get(name).unwrap()).clone(),
+      ast::Argument::Id(name) => {
+        match self.0.get(name) {
+          None => Err(QasmSimError::RuntimeError {
+            kind: RuntimeKind::SymbolNotFound,
+            symbol_name: *name
+          }),
+          Some(argument) => Ok(argument.clone())
+        }
+      }
       _ => unreachable!()
     }
   }
@@ -30,6 +40,22 @@ mod test {
     ]);
     let solver = ArgumentSolver::new(&bindings);
     let formal_argument = ast::Argument::Id("formal".to_owned());
-    assert_eq!(solver.solve(&formal_argument), actual_argument);
+    let argument = solver.solve(&formal_argument).expect("get actual argument");
+    assert_eq!(argument, actual_argument);
+  }
+
+  #[test]
+  fn test_actual_parameter_not_found() {
+    let actual_argument = ast::Argument::Item("actual".to_owned(), 0);
+    let bindings = HashMap::from_iter(vec![
+      ("formal".to_owned(), actual_argument.clone())
+    ]);
+    let solver = ArgumentSolver::new(&bindings);
+    let formal_argument = ast::Argument::Id("fmal".to_owned());
+    let error = solver.solve(&formal_argument).expect_err("actual argument not found");
+    assert_eq!(error, QasmSimError::RuntimeError {
+      kind: RuntimeKind::SymbolNotFound,
+      symbol_name: "fmal".into()
+    });
   }
 }

@@ -2,6 +2,7 @@ use std::collections::{ HashMap, VecDeque };
 use std::iter::FromIterator;
 
 use crate::api;
+use crate::error::{ QasmSimError, RuntimeKind };
 use crate::semantics::{ Semantics, RegisterType, extract_semantics };
 use crate::statevector::StateVector;
 use crate::grammar::ast;
@@ -18,7 +19,7 @@ struct Runtime {
   memory: HashMap<String, u64>
 }
 
-impl Runtime {
+impl<'src> Runtime {
   pub fn new(semantics: Semantics) -> Self {
     let memory_size = semantics.quantum_memory_size;
     let mut initial_memory = HashMap::new();
@@ -35,12 +36,12 @@ impl Runtime {
     }
   }
 
-  fn apply_gates(&mut self, statements: &Vec<ast::Statement>) {
+  fn apply_gates(&mut self, statements: &Vec<ast::Statement>) -> api::Result<()> {
     for statement in statements {
       match statement {
         ast::Statement::QuantumOperation(operation) => {
           self.apply_quantum_operation(operation);
-        },
+        }
         ast::Statement::Conditional(register, test, operation) => {
           // In program execution, do not replace symbols
           let actual_register: ast::Argument = if self.macro_stack.len() == 0 {
@@ -50,7 +51,7 @@ impl Runtime {
           else {
             let arg_bindings = &self.macro_stack.get(0).unwrap().1;
             let argument_solver = ArgumentSolver::new(arg_bindings);
-            argument_solver.solve(&register)
+            argument_solver.solve(&register)?
           };
           let value = match actual_register {
             ast::Argument::Id(register_name) => self.memory.get(&register_name).unwrap(),
@@ -63,102 +64,125 @@ impl Runtime {
         _ => ()
       };
     }
+    Ok(())
   }
 
-  fn apply_quantum_operation(&mut self, operation: &ast::QuantumOperation) {
+  fn apply_quantum_operation(&mut self, operation: &ast::QuantumOperation) -> api::Result<()> {
     match operation {
       ast::QuantumOperation::Unitary(unitary) => {
         self.apply_unitary(unitary)
-      },
+      }
       ast::QuantumOperation::Measure(source, target) => {
         self.apply_measurement(vec![(*source).clone(), (*target).clone()])
-      },
-      _ => ()
-    };
+      }
+      _ => Ok(())
+    }
   }
 
-  fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) {
+  fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) -> api::Result<()> {
     let name = &unitary.0;
     let real_args = &unitary.1;
     let args = &unitary.2;
 
-    // In program execution, do not replace symbols
-    let actual_args: Vec<ast::Argument> = if self.macro_stack.len() == 0 {
-      args.iter().map(|arg| arg.clone()).collect()
-    }
-    // In macro execution, replace formal arguments with actual arguments
-    else {
-      let arg_bindings = &self.macro_stack.get(0).unwrap().1;
-      let argument_solver = ArgumentSolver::new(arg_bindings);
-      args.iter().map(|arg| argument_solver.solve(&arg)).collect()
-    };
-
-    let empty = HashMap::new();
-    let real_bindings = if self.macro_stack.len() == 0 {
-      &empty
-    }
-    else {
-      &self.macro_stack.get(0).unwrap().0
-    };
-    let solver = ExpressionSolver::new(real_bindings);
-    let solved_real_args: Vec<f64> = real_args.iter().map(|arg| solver.solve(&arg)).collect();
+    let actual_args = self.resolve_actual_args(args)?;
+    let solved_real_args = self.resolve_real_expressions(real_args)?;
 
     for argument_expansion in self.expand_arguments(&actual_args) {
-      self.apply_one_gate(name, &solved_real_args, &argument_expansion)
+      self.apply_one_gate(name, &solved_real_args, &argument_expansion)?;
     }
+
+    Ok(())
   }
 
-  fn apply_measurement(&mut self, args: Vec<ast::Argument>) {
+  fn resolve_actual_args(&self, args: &Vec<ast::Argument>) -> api::Result<Vec<ast::Argument>> {
+    let mut actual = Vec::new();
+    if !self.is_running_macro() {
+      actual = args.iter().cloned().collect();
+    }
+    else {
+      let arg_bindings = &self.macro_stack.get(0).expect("get first entry of the stack").1;
+      let argument_solver = ArgumentSolver::new(arg_bindings);
+      for argument in args {
+        let actual_argument = argument_solver.solve(argument)?;
+        actual.push(actual_argument)
+      }
+    }
+    Ok(actual)
+  }
+
+  fn resolve_real_expressions(&self, exprs: &Vec<ast::Expression>) -> api::Result<Vec<f64>> {
+    let mut real_bindings = &HashMap::new();
+    if self.is_running_macro() {
+      real_bindings = &self.macro_stack.get(0).unwrap().0;
+    };
+    let expression_solver = ExpressionSolver::new(real_bindings);
+    let mut solved = Vec::new();
+    for expression in exprs {
+      let value = expression_solver.solve(&expression)?;
+      solved.push(value);
+    }
+    Ok(solved)
+  }
+
+  fn is_running_macro(&self) -> bool {
+    self.macro_stack.len() > 0
+  }
+
+  fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<()> {
     for argument_expansion in self.expand_arguments(&args) {
-      self.apply_one_measurement(argument_expansion)
+      self.apply_one_measurement(argument_expansion)?;
     }
+    Ok(())
   }
 
-  fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) {
+  fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<()> {
     let classical_register_name = match &args[1] {
       ast::Argument::Item(name, _) => name.clone(),
-      _ => unreachable!()
+      _ => unreachable!("after `expand_arguments()`, argument should be Argument::Item")
     };
-    let source = self.get_bit_mapping(&args[0]);
+    let source = self.get_bit_mapping(&args[0])?;
     let measurement = self.statevector.measure(source) as u64;
 
     if !self.memory.contains_key(&classical_register_name) {
       unreachable!();
     }
 
-    let target = self.get_bit_mapping(&args[1]);
+    let target = self.get_bit_mapping(&args[1])?;
     let value = measurement * (1 << target);
     let prev_value = *(self.memory.get(&classical_register_name).unwrap());
     self.memory.insert(classical_register_name, prev_value + value);
+
+    Ok(())
   }
 
   fn apply_one_gate(&mut self, name: &str, real_args: &Vec<f64>,
-  args: &Vec<ast::Argument>) {
+  args: &Vec<ast::Argument>) -> api::Result<()> {
     match name {
       "U" => {
         let theta = real_args[0];
         let phi = real_args[1];
         let lambda = real_args[2];
-        let target = self.get_bit_mapping(&args[0]);
+        let target = self.get_bit_mapping(&args[0])?;
         self.statevector.u(theta, phi, lambda, target);
       }
       "CX" => {
-        let control = self.get_bit_mapping(&args[0]);
-        let target = self.get_bit_mapping(&args[1]);
+        let control = self.get_bit_mapping(&args[0])?;
+        let target = self.get_bit_mapping(&args[1])?;
         self.statevector.cnot(control, target);
       }
       macro_name => {
-        let binding_mappings = self.bind(macro_name.to_owned(), real_args, args);
+        let binding_mappings = self.bind(macro_name.to_owned(), real_args, args)?;
         self.call(macro_name.to_owned(), binding_mappings).unwrap();
       }
     };
+    Ok(())
   }
 
   fn apply_gate_operations(&mut self, operations: &Vec<ast::GateOperation>)
-  -> Result<(), String> {
+  -> api::Result<()> {
     for one_operation in operations {
       match one_operation {
-        ast::GateOperation::Unitary(unitary) => self.apply_unitary(unitary),
+        ast::GateOperation::Unitary(unitary) => self.apply_unitary(unitary)?,
         _ => ()
       };
     }
@@ -171,13 +195,19 @@ impl Runtime {
     range.map(|index| Runtime::specify(args, index)).collect()
   }
 
-  fn get_bit_mapping(&self, argument: &ast::Argument) -> usize {
+  // TODO: Add index boundaries control
+  fn get_bit_mapping(&self, argument: &ast::Argument) -> api::Result<usize> {
     match argument {
       ast::Argument::Item(name, index) => {
-        let mapping = self.semantics.memory_map.get(name).unwrap();
-        mapping.1 + *index
+        match self.semantics.memory_map.get(name) {
+          None => Err(QasmSimError::RuntimeError {
+            kind: RuntimeKind::SymbolNotFound,
+            symbol_name: name.into()
+          }),
+          Some(mapping) => Ok(mapping.1 + *index)
+        }
       }
-      _ => unreachable!()
+      _ => unreachable!("after `expand_arguments()`, argument should be Argument::Item")
     }
   }
 
@@ -205,25 +235,42 @@ impl Runtime {
   }
 
   fn bind(&mut self, macro_name: String, real_args: &Vec<f64>, args: &Vec<ast::Argument>)
-  -> BindingMappings {
+  -> api::Result<BindingMappings> {
     let definition = match self.semantics.macro_definitions.get(&macro_name) {
       None => {
-        println!("Call to unknown gate `{}`.", macro_name);
-        panic!();
+        return Err(QasmSimError::RuntimeError {
+          kind: RuntimeKind::UndefinedGate,
+          symbol_name: macro_name
+        });
       }
       Some(definition) => definition
     };
+
+    if real_args.len() != definition.1.len() {
+      return Err(QasmSimError::RuntimeError {
+        kind: RuntimeKind::WrongNumberOfRealParameters,
+        symbol_name: macro_name
+      });
+    }
     let real_args_mapping = HashMap::from_iter(
       definition.1.iter()
       .zip(real_args.iter()) // pair formal arguments with their float values
       .map(|(s, f)| (s.to_owned(), *f)) // convert them into proper copies
     );
+
+    if args.len() != definition.2.len() {
+      return Err(QasmSimError::RuntimeError {
+        kind: RuntimeKind::WrongNumberOfQuantumParameters,
+        symbol_name: macro_name
+      });
+    }
     let args_mapping = HashMap::from_iter(
       definition.2.iter()
       .zip(args.iter().map(|a| a.clone())) // pair formal arguments with their registers
       .map(|(s, r)| (s.to_owned(), r.clone())) // convert them into proper copies
     );
-    (real_args_mapping, args_mapping)
+
+    Ok((real_args_mapping, args_mapping))
   }
 
   fn call(&mut self, macro_name: String, bindings: BindingMappings)

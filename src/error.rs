@@ -13,6 +13,14 @@ pub enum ErrorKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum RuntimeKind {
+  SymbolNotFound,
+  UndefinedGate,
+  WrongNumberOfRealParameters,
+  WrongNumberOfQuantumParameters
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum QasmSimError<'src> {
   UnknownError (String),
   SyntaxError {
@@ -30,6 +38,10 @@ pub enum QasmSimError<'src> {
   },
   LinkerError {
     libpath: String
+  },
+  RuntimeError {
+    kind: RuntimeKind,
+    symbol_name: String,
   }
 }
 
