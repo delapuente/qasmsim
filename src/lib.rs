@@ -10,6 +10,7 @@ pub mod statevector;
 mod interpreter;
 mod qe;
 
+pub use crate::interpreter::Computation;
 pub use crate::error::{ QasmSimError, ErrorKind, RuntimeKind };
 
 #[cfg(not(target_arch = "wasm32"))]

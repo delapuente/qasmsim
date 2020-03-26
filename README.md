@@ -9,10 +9,17 @@ also installed.
 
 ## What is missing?
 
-The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although it still remains to be done...
+The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although it still remains to be done for releasing version `1.0.0`:
 
- - [ ] Add trigonometric and exponential functions for the real expressions.
- - [X] Test all the ugly, error paths.
+ - [ ] Create CLI interface.
+ - [ ] Add trigonometric and exponential functions in real expressions.
+ - [ ] Add a semantic checker for checking the correctness of the program before runtime.
+ - [X] Handle error paths.
+   - [ ] Improve error hierarchy.
+   - [ ] Add source references to errors.
+ - [ ] Allow including external source.
+   - [ ] In the native lib.
+   - [ ] In the WASM version.
  - [ ] Semantic comments for documenting the gates.
 
 Although there is still no support for including external gate definitions,
