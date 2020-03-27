@@ -9,9 +9,11 @@ also installed.
 
 ## What is missing?
 
-The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although it still remains to be done for releasing version `1.0.0`:
+The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although the following is still lacking before version `1.0.0`:
 
- - [ ] Create CLI interface.
+ - [X] Create CLI interface.
+   - [ ] Better formatting of results.
+   - [ ] Add --shots option + histogram output.
  - [ ] Add trigonometric and exponential functions in real expressions.
  - [ ] Add a semantic checker for checking the correctness of the program before runtime.
  - [X] Handle error paths.
@@ -23,7 +25,7 @@ The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almos
  - [ ] Semantic comments for documenting the gates.
 
 Although there is still no support for including external gate definitions,
-[including `qelib1.inc`](https://github.com/Qiskit/openqasm/blob/master/examples/generic/qelib1.inc) via the `include` instruction will work:
+[including `qelib1.inc`](https://github.com/Qiskit/openqasm/blob/master/examples/generic/qelib1.inc) via the `include` instruction will work, for the `qelib1.inc` lib is embedded in the simulator:
 
 ```
 include "qelib1.inc";
@@ -41,15 +43,43 @@ cx q[0], q[1];
 
 The complete specification can be found under the [QASM repository](https://github.com/Qiskit/openqasm/blob/master/spec-human/).
 
-## Building from sources
+## qasmsim CLI
 
-Current version of qasmsim CLI utility is very limited. You can test it by doing:
+Install `qasmsim` with:
 
 ```sh
-$ cargo run < samples/bell.qasm
+$ cargo install --git https://github.com/delapuente/qasmsim
 ```
 
-And it will print the internal statevector and the time invested in calculating it. Nothing impressive so far.
+And simulate a QASM program with:
+
+```sh
+$ qasmsim source.qasm
+```
+
+See more options with:
+
+```
+$ qasmsim --help
+qasmsim 0.1.0
+A QASM interpreter and quantum simulator in Rust.
+
+USAGE:
+    qasmsim [FLAGS] [OPTIONS] [source]
+
+FLAGS:
+    -h, --help             Prints help information
+        --probabilities    Prints the probabilities vector of the simulation
+        --statevector      Prints the state vector of the simulation
+    -t, --times            Prints times measured for parsing and simulating
+    -V, --version          Prints version information
+
+OPTIONS:
+        --output <output>    Output file, stdout if not present
+
+ARGS:
+    <source>    QASM program file, read from stdin if not present
+```
 
 ## Testing the project
 
