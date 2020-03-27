@@ -12,12 +12,15 @@ use console_error_panic_hook;
 use crate::api;
 
 #[wasm_bindgen]
-pub fn run(input: &str) -> Result<JsValue, JsValue> {
+pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
   let (linked, parsing_time) = measure!("parsing", {
     api::compile_with_linker(input, api::default_linker())
   });
   let (computation, simulation_time) = measure!("simulation", {
-    api::execute(&linked?)
+    match shots {
+      None => api::execute(&linked?),
+      Some(shots) => api::execute_with_shots(&linked?, shots)
+    }
   });
   let (out, serialization_time) = measure!("serialization", {
     computation?.into()

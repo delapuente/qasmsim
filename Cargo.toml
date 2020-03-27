@@ -29,13 +29,13 @@ structopt = { version = "0.3", default-features = false }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 num = { version = "0.2.1", features = ["serde"] }
 rand = { version = "0.7.3", features = ["wasm-bindgen", "getrandom"] }
-wasm-bindgen = "0.2.59"
+wasm-bindgen = "0.2.60"
 console_error_panic_hook = "0.1.6"
-js-sys = "0.3.36"
-web-sys = { version = "0.3.36", features = ["console", "Performance", "Window"] }
+js-sys = "0.3.37"
+web-sys = { version = "0.3.37", features = ["console", "Performance", "Window"] }
 
 [dev-dependencies]
-indoc = "0.3.4"
+indoc = "0.3.5"
 unindent = "0.1.5"
 
 [build-dependencies]

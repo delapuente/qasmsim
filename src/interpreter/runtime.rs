@@ -8,7 +8,7 @@ use crate::statevector::StateVector;
 use crate::grammar::ast;
 use crate::interpreter::expression_solver::ExpressionSolver;
 use crate::interpreter::argument_solver::ArgumentSolver;
-use crate::interpreter::computation::Computation;
+use crate::interpreter::computation::{ Computation, HistogramBuilder };
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 
@@ -22,17 +22,30 @@ struct Runtime {
 impl<'src> Runtime {
   pub fn new(semantics: Semantics) -> Self {
     let memory_size = semantics.quantum_memory_size;
-    let mut initial_memory = HashMap::new();
-    for register in semantics.register_table.values() {
-      if register.1 == RegisterType::C {
-        initial_memory.insert(register.0.clone(), 0_u64);
-      }
-    }
-    Runtime {
+
+    let mut runtime = Runtime {
       macro_stack: VecDeque::new(),
       semantics,
       statevector: StateVector::new(memory_size),
-      memory: initial_memory
+      memory: HashMap::new()
+    };
+
+    runtime.reset();
+    runtime
+  }
+
+  pub fn reset(&mut self) {
+    self.macro_stack.clear();
+    self.statevector.reset();
+    self.clear_memory();
+  }
+
+  fn clear_memory(&mut self) {
+    self.memory.clear();
+    for register in self.semantics.register_table.values() {
+      if register.1 == RegisterType::C {
+        self.memory.insert(register.0.clone(), 0_u64);
+      }
     }
   }
 
@@ -354,5 +367,22 @@ pub fn execute<'src, 'program>(program: &'program ast::OpenQasmProgram)
   let semantics = extract_semantics(program)?;
   let mut runtime = Runtime::new(semantics);
   runtime.apply_gates(&program.program)?;
-  Ok(Computation::new(runtime.memory, runtime.statevector))
+  Ok(Computation::new(runtime.memory, runtime.statevector, None))
+}
+
+pub fn execute_with_shots<'src, 'program>(program: &'program ast::OpenQasmProgram, shots: usize)
+-> api::Result<'src, Computation> {
+  let semantics = extract_semantics(program)?;
+  let mut runtime = Runtime::new(semantics);
+  let mut histogram_builder = HistogramBuilder::new();
+  for _ in 0..shots {
+    runtime.reset();
+    runtime.apply_gates(&program.program)?;
+    histogram_builder.update(&runtime.memory);
+  }
+  Ok(Computation::new(
+    runtime.memory,
+    runtime.statevector,
+    Some(histogram_builder.histogram())
+  ))
 }

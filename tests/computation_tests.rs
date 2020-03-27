@@ -16,7 +16,7 @@ fn endianess() {
   U (pi/2, 0, pi) r[0];
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(
       Complex::from(FRAC_1_SQRT_2),
       Complex::from(0.0),
@@ -37,7 +37,7 @@ fn call_custom_gate_on_qubit() {
   h q[0];
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(
       Complex::from(FRAC_1_SQRT_2),
       Complex::from(FRAC_1_SQRT_2)
@@ -56,7 +56,7 @@ fn call_custom_gate_on_register() {
   h q;
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(
       Complex::from(0.5),
       Complex::from(0.5),
@@ -80,7 +80,7 @@ fn call_custom_gate_inside_custom_gate() {
   h q;
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(
       Complex::from(0.5),
       Complex::from(0.5),
@@ -99,7 +99,7 @@ fn test_one_register_bell_circuit() {
   CX q[0], q[1];
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(
       Complex::from(FRAC_1_SQRT_2),
       Complex::from(0.0),
@@ -119,7 +119,7 @@ fn test_two_registers_bell_circuit() {
   CX q[0], r[0];
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(
       Complex::from(FRAC_1_SQRT_2),
       Complex::from(0.0),
@@ -139,7 +139,7 @@ fn test_no_indices_bell_circuit() {
   CX q, r;
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(
       Complex::from(FRAC_1_SQRT_2),
       Complex::from(0.0),
@@ -157,7 +157,7 @@ fn test_no_indices_superposition() {
   U (pi/2, 0, pi) q;
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(Complex::from(0.25); 16))
   )
 }
@@ -171,7 +171,7 @@ fn test_quantum_experience_header_is_included() {
   h q;
   ";
   assert_approx_eq(
-    &qasmsim::run(source).unwrap().statevector,
+    &qasmsim::run(source, None).unwrap().statevector,
     &StateVector::from_bases(vec!(Complex::from(0.25); 16))
   )
 }
@@ -212,7 +212,7 @@ fn test_measurements() {
      ", 0b11_u64)
   ];
   for (index, (source, expected_result)) in subtests.iter().enumerate() {
-    let result = &qasmsim::run(source).unwrap();
+    let result = &qasmsim::run(source, None).unwrap();
     println!("Using source sample #{}", index);
     assert_eq!(*result.memory.get("c").unwrap(), *expected_result);
   }
@@ -230,7 +230,7 @@ fn test_all_classical_memory_is_displayed() {
   x q;
   measure q -> c;
   ";
-  let result = &qasmsim::run(source).unwrap();
+  let result = &qasmsim::run(source, None).unwrap();
   assert_eq!(result.memory.len(), 3);
   assert_eq!(*result.memory.get("c").unwrap(), 0b11);
   assert_eq!(*result.memory.get("d").unwrap(), 0b0);
@@ -250,7 +250,7 @@ fn test_conditional() {
   if (c==2) x q;
   measure q -> d;
   ";
-  let result = &qasmsim::run(source).unwrap();
+  let result = &qasmsim::run(source, None).unwrap();
   assert_eq!(result.memory.len(), 2);
   assert_eq!(*result.memory.get("c").unwrap(), 0b10);
   assert_eq!(*result.memory.get("d").unwrap(), 0b01);

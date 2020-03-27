@@ -8,10 +8,11 @@ use crate::{
   statevector::StateVector
 };
 
-use crate::interpreter::Computation;
+use crate::interpreter::{ Computation, Histogram };
 
 pub use api::compile_with_linker;
 pub use api::execute;
+pub use api::execute_with_shots;
 pub use api::default_linker;
 
 
@@ -38,6 +39,7 @@ pub struct Run {
   pub statevector: StateVector,
   pub probabilities: Vec<f64>,
   pub memory: HashMap<String, u64>,
+  pub histogram: Option<Histogram>,
   pub times: RunTimes
 }
 
@@ -49,6 +51,7 @@ impl convert::From<(Computation, u128, u128)> for Run {
       statevector: computation.statevector,
       probabilities: computation.probabilities,
       memory: computation.memory,
+      histogram: computation.histogram,
       times: RunTimes {
         parsing_time,
         simulation_time
@@ -58,12 +61,15 @@ impl convert::From<(Computation, u128, u128)> for Run {
 
 }
 
-pub fn run(input: &str) -> api::Result<Run> {
+pub fn run(input: &str, shots: Option<usize>) -> api::Result<Run> {
   let (linked, parsing_time) = measure!({
     compile_with_linker(input, api::default_linker())
   });
   let (out, simulation_time) = measure!({
-    execute(&linked?)
+    match shots {
+      None => execute(&linked?),
+      Some(shots) => execute_with_shots(&linked?, shots)
+    }
   });
   Ok(Run::from((out?, parsing_time, simulation_time)))
 }

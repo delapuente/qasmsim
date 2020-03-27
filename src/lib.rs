@@ -10,7 +10,7 @@ pub mod statevector;
 mod interpreter;
 mod qe;
 
-pub use crate::interpreter::Computation;
+pub use crate::interpreter::{ Computation, Histogram };
 pub use crate::error::{ QasmSimError, ErrorKind, RuntimeKind };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -27,6 +27,9 @@ pub use crate::arch::native::compile_with_linker;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::arch::native::execute;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::arch::native::execute_with_shots;
 
 #[cfg(target_arch = "wasm32")]
 pub use crate::arch::wasm::run;

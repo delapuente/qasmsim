@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 
 use crate::grammar::{ ast, Lexer };
 use crate::linker::Linker;
-use crate::interpreter::{ self, Computation };
+use crate::interpreter;
 use crate::grammar::open_qasm2;
 use crate::qe;
 pub use crate::error::Result;
@@ -25,6 +25,6 @@ pub fn compile_with_linker<'src>(input: &'src str, linker: Linker) -> Result<'sr
   linker.link(program)
 }
 
-pub fn execute<'src, 'program>(program: &'program ast::OpenQasmProgram) -> Result<'src, Computation> {
-  interpreter::runtime::execute(program)
-}
+pub use interpreter::runtime::execute;
+
+pub use interpreter::runtime::execute_with_shots;

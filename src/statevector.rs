@@ -49,9 +49,10 @@ impl<'a> Measurement<'a> {
 impl StateVector {
 
   pub fn new(bit_width: usize) -> Self {
-    let mut bases = vec![Complex::new(0.0, 0.0); exp2(bit_width)];
-    bases[0].re = 1.0;
-    StateVector { bases, bit_width }
+    let bases = vec![Complex::new(0.0, 0.0); exp2(bit_width)];
+    let mut statevector = StateVector { bases, bit_width };
+    statevector.reset();
+    statevector
   }
 
   pub fn from_bases(bases: Vec<Complex>) -> Self {
@@ -89,6 +90,14 @@ impl StateVector {
 
   pub fn probabilities(&self) -> Vec<f64> {
     self.bases.iter().map(|c| c.norm_sqr()).collect()
+  }
+
+  pub fn reset(&mut self) {
+    for amplitude in self.bases.iter_mut() {
+      amplitude.re = 0.0;
+      amplitude.im = 0.0;
+    }
+    self.bases[0].re = 1.0;
   }
 }
 
