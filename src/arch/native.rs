@@ -3,6 +3,10 @@
 use crate::api;
 use crate::interpreter::Computation;
 
+pub use api::compile_with_linker;
+pub use api::execute;
+pub use api::default_linker;
+
 macro_rules! measure {
   ($measure_name:expr, $block:block) => {
     {
