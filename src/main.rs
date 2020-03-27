@@ -6,7 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::fmt::{ self, Write };
 
-use qasmsim::Computation;
+use qasmsim::{ Run, RunTimes };
 use qasmsim::statevector::StateVector;
 use structopt::StructOpt;
 
@@ -40,7 +40,7 @@ fn main() -> io::Result<()> {
   let options = CLI::from_args();
   let source = get_source(&options.source)?;
   match qasmsim::run(&source) {
-    Ok(result) => print_result(&result, &options.output, options.statevector, options.probabilities).expect("print result"),
+    Ok(result) => print_result(&result, &options).expect("print result"),
     Err(error) => eprintln!("{}", error)
   }
   Ok(())
@@ -57,16 +57,19 @@ fn get_source(source: &Option<PathBuf>) -> io::Result<String> {
   }
 }
 
-fn print_result(result: &Computation, output: &Option<PathBuf>, statevector: bool, probabilities: bool) -> fmt::Result {
+fn print_result(result: &Run, options: &CLI) -> fmt::Result {
   let mut buffer = String::new();
   print_memory(&mut buffer, &result.memory).expect("can print");
-  if statevector {
+  if options.statevector {
     print_statevector(&mut buffer, &result.statevector).expect("can print");
   }
-  if probabilities {
+  if options.probabilities {
     print_probabilities(&mut buffer, &result.probabilities).expect("can print");
   }
-  Ok(match output {
+  if options.times {
+    print_times(&mut buffer, &result.times).expect("can print");
+  }
+  Ok(match &options.output {
     Some(path) => fs::write(path, buffer).expect("can write"),
     None => print!("{}", buffer)
   })
@@ -80,15 +83,23 @@ fn print_memory(buffer: &mut String, memory: &HashMap<String, u64>) -> fmt::Resu
 }
 
 fn print_probabilities(buffer: &mut String, probabilities: &Vec<f64>) -> fmt::Result {
+  let width = format!("{}", probabilities.len() - 1).len();
   for (idx, chance) in probabilities.iter().enumerate() {
-    writeln!(buffer, "{}: {:.6}%", idx, *chance * 100.0)?;
+    writeln!(buffer, "{1: >0$}: {2:.6}%", width, idx, *chance * 100.0)?;
   }
   Ok(())
 }
 
 fn print_statevector(buffer: &mut String, statevector: &StateVector) -> fmt::Result {
+  let width = format!("{}", statevector.len() - 1).len();
   for (idx, amplitude) in statevector.bases.iter().enumerate() {
-    writeln!(buffer, "{}: {:.6}", idx, amplitude)?;
+    writeln!(buffer, "{1: >0$}: {2:.6}", width, idx, amplitude)?;
   }
+  Ok(())
+}
+
+fn print_times(buffer: &mut String, times: &RunTimes) -> fmt::Result {
+  writeln!(buffer, "parsing_time: {}", times.parsing_time)?;
+  writeln!(buffer, "simulation_time: {}", times.simulation_time)?;
   Ok(())
 }

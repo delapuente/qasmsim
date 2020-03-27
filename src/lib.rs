@@ -14,6 +14,9 @@ pub use crate::interpreter::Computation;
 pub use crate::error::{ QasmSimError, ErrorKind, RuntimeKind };
 
 #[cfg(not(target_arch = "wasm32"))]
+pub use crate::arch::native::{ Run, RunTimes };
+
+#[cfg(not(target_arch = "wasm32"))]
 pub use crate::arch::native::run;
 
 #[cfg(not(target_arch = "wasm32"))]
