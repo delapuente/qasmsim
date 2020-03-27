@@ -1,14 +1,7 @@
 #![cfg(target_arch = "wasm32")]
 
-macro_rules! set {
-  ($obj:expr, $( $key:expr => $value:expr ),*) => {{
-    use js_sys;
-    $(
-      js_sys::Reflect::set($obj, &$key.into(), &$value.into()).expect(&format!("set `{}`", $key));
-    )*
-  }};
-}
-
+#[macro_use]
+mod macros;
 mod computation;
 mod error;
 
@@ -17,43 +10,28 @@ use wasm_bindgen::prelude::{ wasm_bindgen, JsValue };
 use console_error_panic_hook;
 
 use crate::api;
-use crate::interpreter::Computation;
-
-macro_rules! measure {
-  ($measure_name:expr, $block:block) => {
-    {
-      use web_sys;
-      let window = web_sys::window().expect("get `window`");
-      let performance = window.performance().expect("get `window.performance`");
-      performance.clear_measures();
-      performance.clear_marks();
-
-      let start_mark = format!("{}_start", $measure_name);
-      let end_mark = format!("{}_end", $measure_name);
-
-      performance.mark(&start_mark).expect("set start mark");
-      let result = $block;
-      performance.mark(&end_mark).expect("set end mark");
-
-      performance.measure_with_start_mark_and_end_mark(
-        &$measure_name, &start_mark, &end_mark).expect("set the measure");
-      web_sys::console::log(&performance.get_entries_by_type(&"measure"));
-      result
-    }
-  };
-}
 
 #[wasm_bindgen]
 pub fn run(input: &str) -> Result<JsValue, JsValue> {
-  let linked = measure!("parsing", {
+  let (linked, parsing_time) = measure!("parsing", {
     api::compile_with_linker(input, api::default_linker())
-  })?;
-  let computation: Computation = measure!("computation", {
-    api::execute(&linked)
-  })?;
-  let out = measure!("serialization", {
-    computation.into()
   });
+  let (computation, simulation_time) = measure!("simulation", {
+    api::execute(&linked?)
+  });
+  let (out, serialization_time) = measure!("serialization", {
+    computation?.into()
+  });
+  set!(&out,
+    "parsing" => parsing_time
+  );
+  let times = js_sys::Object::new();
+  set!(&times,
+    "parsing" => parsing_time,
+    "simulation" => simulation_time,
+    "serialization" => serialization_time
+  );
+  set!(&out, "times" => times);
   Ok(out)
 }
 
