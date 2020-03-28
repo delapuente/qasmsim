@@ -13,7 +13,7 @@ The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almos
 
  - [X] Create CLI interface.
    - [ ] Better formatting of results.
-   - [ ] Add --shots option + histogram output.
+   - [X] Add --shots option + histogram output.
  - [ ] Add trigonometric and exponential functions in real expressions.
  - [ ] Add a semantic checker for checking the correctness of the program before runtime.
  - [X] Handle error paths.
@@ -76,6 +76,9 @@ FLAGS:
 
 OPTIONS:
         --output <output>    Output file, stdout if not present
+        --shots <shots>      Specify the number of simulations. If ommited, only one simulation is run and there will be
+                             no histogram among the results. If specified, the state and probabilities vector correspond
+                             to the latest execution
 
 ARGS:
     <source>    QASM program file, read from stdin if not present

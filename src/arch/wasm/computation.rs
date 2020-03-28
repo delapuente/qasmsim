@@ -5,10 +5,40 @@ use std::iter::IntoIterator;
 use std::collections::HashMap;
 
 use wasm_bindgen::prelude::JsValue;
-use js_sys::{ self, Float64Array, Object, Map };
+use js_sys::{ self, Float64Array, Object, Array };
 
 use crate::interpreter::Computation;
 use crate::statevector::StateVector;
+
+struct JsMemory(HashMap<String, u64>);
+struct JsHistogram(HashMap<String, Vec<(u64, usize)>>);
+
+impl From<JsMemory> for JsValue {
+  fn from(value: JsMemory) -> Self {
+    let hashmap = value.0;
+    let obj = Object::new();
+    for (register_name, value) in hashmap {
+      set!(&obj, &register_name => value as f64);
+    }
+    obj.into()
+  }
+}
+
+impl From<JsHistogram> for JsValue {
+  fn from(value: JsHistogram) -> Self {
+    let hashmap = value.0;
+    let obj = Object::new();
+    for (register_name, histogram) in hashmap {
+      let array = Array::new();
+      for (value, count) in histogram {
+        let pair = Array::of2(&(value as f64).into(), &(count as f64).into());
+        array.push(&pair.into());
+      }
+      set!(&obj, &register_name => array);
+    }
+    obj.into()
+  }
+}
 
 impl From<Computation> for JsValue {
   fn from(computation: Computation) -> Self {
@@ -16,8 +46,13 @@ impl From<Computation> for JsValue {
     set!(&out,
       "statevector" => computation.statevector,
       "probabilities" => as_typed_array(computation.probabilities),
-      "memory" => as_map(computation.memory)
+      "memory" => JsMemory(computation.memory)
     );
+    if let Some(histogram) = computation.histogram {
+      set!(&out,
+        "histogram" => JsHistogram(histogram)
+      );
+    }
     out.into()
   }
 }
@@ -39,12 +74,4 @@ fn as_typed_array<I>(iterator: I) -> Float64Array
 where I: IntoIterator<Item=f64> {
   let values: Vec<f64> = iterator.into_iter().collect();
   Float64Array::from(&values[..])
-}
-
-fn as_map(hashmap: HashMap<String, u64>) -> Map {
-  let map = Map::new();
-  for (key, value) in hashmap {
-    map.set(&key.into(), &(value as f64).into());
-  }
-  map
 }
