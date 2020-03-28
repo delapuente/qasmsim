@@ -11,17 +11,20 @@ also installed.
 
 The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although the following is still lacking before version `1.0.0`:
 
+ - [ ] Add trigonometric and exponential functions in real expressions.
  - [X] Create CLI interface.
    - [ ] Better formatting of results.
    - [X] Add --shots option + histogram output.
- - [ ] Add trigonometric and exponential functions in real expressions.
- - [ ] Add a semantic checker for checking the correctness of the program before runtime.
  - [X] Handle error paths.
    - [ ] Improve error hierarchy.
    - [ ] Add source references to errors.
+
+And planned for `1.1.0` is:
+
  - [ ] Allow including external source.
    - [ ] In the native lib.
    - [ ] In the WASM version.
+ - [ ] Add a semantic checker for checking the correctness of the program before runtime.
  - [ ] Semantic comments for documenting the gates.
 
 Although there is still no support for including external gate definitions,
@@ -94,7 +97,7 @@ $ cargo test
 
 ## WASM version
 
-`qasmsim` can be used in the web if you compile it for Web Assembly. Doing it is easy, simply ensure you have `wasm-pack` installed and run:
+`qasmsim` can be used in the web if you compile it for Web Assembly. Doing it is easy, simply download the sources, ensure you have `wasm-pack` installed and run:
 
 ```sh
 $ wasm-pack build
@@ -122,9 +125,28 @@ qreg q[2];
 h q[0];
 cx q[0], q[1];
 `);
-var statevector = result.statevector.bases; // amplitude histogram; pairs represent complex numbers.
-var probabilities = result.probabilities; // vector of probabilities
-var memory = result.memory; // JavaScript Map with classical results by name of the registry.
 ```
 
-The answer is a flat [`Float64Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays) representing the pairs of complex numbers that form the statevector, and the list of classical memory locations and current values.
+The module is exported by default as the `qasmsim` object in `window` and implments the following interface:
+
+```ts
+interface qasmsim {
+  run: (input: string, shots?: number) => Run
+}
+
+interface Run {
+  histogram?: Histogram,
+  probabilities: Float64Array,
+  statevector: Float64Array,
+  memory: Memory,
+  times: RunTimes
+}
+
+type Memory = { [key: string]: Array[number] }
+type Histogram = { [key: string]: Array[[number, number]] }
+type RunTimes = {
+  parsing_time: number,
+  simulation_time: number,
+  serialization_time: number
+}
+```
