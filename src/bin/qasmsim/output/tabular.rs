@@ -1,132 +1,58 @@
-extern crate qasmsim;
-
 use std::collections::HashMap;
-use std::io::{ self, Read };
-use std::fs;
-use std::path::PathBuf;
 use std::fmt::{ self, Write };
 use std::iter::FromIterator;
 
-use structopt::StructOpt;
 use prettytable::{ Table, row, cell, format };
 
 use qasmsim::{ Run, RunTimes, Histogram };
 use qasmsim::statevector::StateVector;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "qasmsim", about = "A QASM interpreter and quantum simulator in Rust.")]
-struct Options {
+use crate::options::Options;
 
-  /// QASM program file, read from stdin if not present.
-  #[structopt(parse(from_os_str))]
-  source: Option<PathBuf>,
-
-  /// Output file, stdout if not present.
-  #[structopt(long)]
-  output: Option<PathBuf>,
-
-  /// Verbosity of the output.
-  #[structopt(short, parse(from_occurrences))]
-  verbose: u64,
-
-  /// Prints the binary representation of the values.
-  #[structopt(long, short="b")]
-  binary: bool,
-
-  /// Prints the hexadecimal representation of the values.
-  #[structopt(long, short="x")]
-  hexadecimal: bool,
-
-  /// Prints the interger representation of the values. Default option.
-  #[structopt(long, short="i")]
-  integer: bool,
-
-  /// Prints the state vector of the simulation.
-  #[structopt(long)]
-  statevector: bool,
-
-  /// Prints the probabilities vector of the simulation.
-  #[structopt(long)]
-  probabilities: bool,
-
-  /// Prints times measured for parsing and simulating.
-  #[structopt(short, long)]
-  times: bool,
-
-  /// Specify the number of simulations. If ommited, only one simulation is
-  /// run and there will be no histogram among the results. If specified,
-  /// the state and probabilities vector correspond to the latest execution.
-  #[structopt(long)]
-  shots: Option<usize>
-}
-
-fn main() -> io::Result<()> {
-  let options = Options::from_args();
-  let source = get_source(&options.source)?;
-  match qasmsim::run(&source, options.shots) {
-    Ok(result) => print_result(&result, &options).expect("print result"),
-    Err(error) => eprintln!("{}", error)
-  }
-  Ok(())
-}
-
-fn get_source(source: &Option<PathBuf>) -> io::Result<String> {
-  if let Some(path) = source {
-    fs::read_to_string(path)
-  }
-  else {
-    let mut source = String::new();
-    io::stdin().read_to_string(&mut source)?;
-    Ok(source)
-  }
-}
-
-fn print_result(result: &Run, options: &Options) -> fmt::Result {
+pub fn prints(result: &Run, options: &Options) -> String {
   let mut buffer = String::new();
 
+  writeln!(&mut buffer, "").expect("writes");
   if let Some(_) = options.shots {
     if options.verbose > 0 {
-      writeln!(&mut buffer, "Memory histogram:")?;
+      writeln!(&mut buffer, "Memory histogram:").expect("writes");
     }
     let histogram = result.histogram.as_ref().expect("there is some histogram");
-    print_histogram(&mut buffer, histogram, options).expect("can print");
+    print_histogram(&mut buffer, histogram, options).expect("writes");
   }
   else {
     if options.verbose > 0 {
-      writeln!(&mut buffer, "Memory:")?;
+      writeln!(&mut buffer, "Memory:").expect("writes");
     }
-    print_memory(&mut buffer, &result.memory, options).expect("can print");
+    print_memory(&mut buffer, &result.memory, options).expect("writes");
   }
   if options.verbose > 0 {
-    writeln!(&mut buffer, "")?;
+    writeln!(&mut buffer, "").expect("writes");
   }
 
   if options.statevector || options.probabilities {
     let statevector = if options.statevector { Some(&result.statevector) } else { None };
     let probabilities = if options.probabilities { Some(&result.probabilities) } else { None };
     if options.verbose > 0 {
-      writeln!(&mut buffer, "Simulation state:")?;
+      writeln!(&mut buffer, "Simulation state:").expect("writes");
     }
-    print_state(&mut buffer, statevector, probabilities).expect("can print");
+    print_state(&mut buffer, statevector, probabilities).expect("writes");
   }
   if options.verbose > 0 {
-    writeln!(&mut buffer, "")?;
+    writeln!(&mut buffer, "").expect("writes");
   }
 
   if options.times {
     if options.verbose > 0 {
-      writeln!(&mut buffer, "Times:")?;
+      writeln!(&mut buffer, "Times:").expect("writes");
     }
-    print_times(&mut buffer, &result.times).expect("can print");
+    print_times(&mut buffer, &result.times).expect("writes");
   }
   if options.verbose > 0 {
-    writeln!(&mut buffer, "")?;
+    writeln!(&mut buffer, "").expect("writes");
   }
 
-  Ok(match &options.output {
-    Some(path) => fs::write(path, buffer).expect("can write"),
-    None => print!("{}", buffer)
-  })
+  buffer
 }
 
 fn print_memory(buffer: &mut String, memory: &HashMap<String, u64>, options: &Options) -> fmt::Result {

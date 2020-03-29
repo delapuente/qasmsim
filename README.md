@@ -71,11 +71,15 @@ USAGE:
     qasmsim [FLAGS] [OPTIONS] [source]
 
 FLAGS:
+    -b, --binary           Prints the binary representation of the values
     -h, --help             Prints help information
+    -x, --hexadecimal      Prints the hexadecimal representation of the values
+    -i, --integer          Prints the interger representation of the values. Default option
         --probabilities    Prints the probabilities vector of the simulation
         --statevector      Prints the state vector of the simulation
     -t, --times            Prints times measured for parsing and simulating
     -V, --version          Prints version information
+    -v                     Verbosity of the output
 
 OPTIONS:
         --output <output>    Output file, stdout if not present
