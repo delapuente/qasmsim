@@ -11,7 +11,7 @@ also installed.
 
 The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although the following is still lacking before version `1.0.0`:
 
- - [ ] Add trigonometric and exponential functions in real expressions.
+ - [X] Add trigonometric and exponential functions in real expressions.
  - [X] Create CLI interface.
    - [ ] Better formatting of results.
    - [X] Add --shots option + histogram output.
@@ -85,6 +85,17 @@ OPTIONS:
 
 ARGS:
     <source>    QASM program file, read from stdin if not present
+```
+
+## qasmsim library
+
+`qasmsim` is also a library including a QASM parser which generates a QASM AST,
+an interpreter, and a quantum state-vector simulator. The command-line tool is
+just one of the multiple consumers the library can have. If you want to install
+the library functionality only, remove the `default` features when installing:
+
+```sh
+$ cargo install --no-default-features
 ```
 
 ## Testing the project

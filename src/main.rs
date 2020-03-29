@@ -12,7 +12,7 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "qasmsim", about = "A QASM interpreter and quantum simulator in Rust.")]
-struct CLI {
+struct Options {
 
   /// QASM program file, read from stdin if not present.
   #[structopt(parse(from_os_str))]
@@ -42,7 +42,7 @@ struct CLI {
 }
 
 fn main() -> io::Result<()> {
-  let options = CLI::from_args();
+  let options = Options::from_args();
   let source = get_source(&options.source)?;
   match qasmsim::run(&source, options.shots) {
     Ok(result) => print_result(&result, &options).expect("print result"),
@@ -62,7 +62,7 @@ fn get_source(source: &Option<PathBuf>) -> io::Result<String> {
   }
 }
 
-fn print_result(result: &Run, options: &CLI) -> fmt::Result {
+fn print_result(result: &Run, options: &Options) -> fmt::Result {
   let mut buffer = String::new();
 
   if let Some(_) = options.shots {
