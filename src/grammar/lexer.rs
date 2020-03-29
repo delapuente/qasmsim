@@ -37,6 +37,7 @@ pub enum Tok {
   Minus,
   Mult,
   Div,
+  Pow,
   LBracket,
   RBracket,
   LBrace,
@@ -74,6 +75,7 @@ impl fmt::Display for Tok {
       Tok::Minus => "-".into(),
       Tok::Mult => "*".into(),
       Tok::Div => "/".into(),
+      Tok::Pow => "^".into(),
       Tok::LBracket => "[".into(),
       Tok::RBracket => "]".into(),
       Tok::LBrace => "{".into(),
@@ -200,7 +202,7 @@ impl<'input> Iterator for Lexer<'input> {
       static ref ID: Regex = Regex::new(r"^([a-z][A-Za-z0-9_]*)").unwrap();
       static ref INTEGER: Regex = Regex::new(r"^([1-9]+[0-9]*|0)").unwrap();
       static ref REAL: Regex = Regex::new(r"^([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?").unwrap();
-      static ref SYMBOL: Regex = Regex::new(r"^(->|==|//|[+\-\*/\[\]\{\}\(\);,])").unwrap();
+      static ref SYMBOL: Regex = Regex::new(r"^(->|==|//|[+\-\*/\^\[\]\{\}\(\);,])").unwrap();
     }
 
     loop {
@@ -368,6 +370,7 @@ impl<'input> Iterator for Lexer<'input> {
           "-" => Tok::Minus,
           "*" => Tok::Mult,
           "/" => Tok::Div,
+          "^" => Tok::Pow,
           "[" => Tok::LBracket,
           "]" => Tok::RBracket,
           "{" => Tok::LBrace,
@@ -492,7 +495,7 @@ mod tests {
 
   #[test]
   fn test_simple_symbols() {
-    let source = "+-*/[]{}();,";
+    let source = "+-*/[]{}();,^";
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
@@ -554,6 +557,11 @@ mod tests {
         Location{ lineno: 1, linepos: 11, lineoffset: 0 },
         Tok::Comma,
         Location{ lineno: 1, linepos: 12, lineoffset: 0 }
+      )),
+      Ok((
+        Location{ lineno: 1, linepos: 12, lineoffset: 0 },
+        Tok::Pow,
+        Location{ lineno: 1, linepos: 13, lineoffset: 0 }
       ))
     ]);
   }

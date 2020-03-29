@@ -113,13 +113,22 @@ ExprOp: ast::Opcode = {
 }
 
 Factor: ast::Expression = {
-  <l:Factor> <op:FactorOp> <r:Term> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
-  Term
+  <l:Factor> <op:FactorOp> <r:Base> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
+  Base
 }
 
 FactorOp: ast::Opcode = {
   "*" => ast::Opcode::Mul,
   "/" => ast::Opcode::Div
+}
+
+Base: ast::Expression = {
+  <l:Base> <op:BaseOp> <r:Term> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
+  Term
+}
+
+BaseOp: ast::Opcode = {
+  "^" => ast::Opcode::Pow
 }
 
 Term: ast::Expression = {
@@ -166,6 +175,7 @@ extern {
     "-" => Tok::Minus,
     "*" => Tok::Mult,
     "/" => Tok::Div,
+    "^" => Tok::Pow,
     "[" => Tok::LBracket,
     "]" => Tok::RBracket,
     "{" => Tok::LBrace,

@@ -48,7 +48,8 @@ pub enum Opcode {
   Add,
   Sub,
   Mul,
-  Div
+  Div,
+  Pow
 }
 
 #[derive(Debug, PartialEq, Clone)]

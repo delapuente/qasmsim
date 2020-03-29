@@ -21,7 +21,8 @@ impl<'src, 'bindings> ExpressionSolver<'bindings> {
         ast::Opcode::Add => self.solve(left)? + self.solve(right)?,
         ast::Opcode::Sub => self.solve(left)? - self.solve(right)?,
         ast::Opcode::Mul => self.solve(left)? * self.solve(right)?,
-        ast::Opcode::Div => self.solve(left)? / self.solve(right)?
+        ast::Opcode::Div => self.solve(left)? / self.solve(right)?,
+        ast::Opcode::Pow => self.solve(left)?.powf(self.solve(right)?)
       },
       ast::Expression::Id(name) => {
         match self.0.get(name) {
@@ -58,17 +59,21 @@ mod test {
           Box::new(Expression::Op(
             Opcode::Sub,
             Box::new(Expression::Real(1.0)),
-            Box::new(Expression::Real(2.0))
+            Box::new(Expression::Op(
+              Opcode::Pow,
+              Box::new(Expression::Real(2.0)),
+              Box::new(Expression::Real(3.0))
+            ))
           )),
-          Box::new(Expression::Real(3.0))
+          Box::new(Expression::Real(4.0))
         )),
-        Box::new(Expression::Real(4.0))
+        Box::new(Expression::Real(5.0))
       ))
     );
     let empty = HashMap::new();
     let solver = ExpressionSolver::new(&empty);
     let result = solver.solve(&expression).expect("get value of expression");
-    assert_eq!(result, - PI + (1.0 - 2.0) * 3.0 / 4.0);
+    assert_eq!(result, - PI + (1.0 - 2.0_f64.powf(3.0)) * 4.0 / 5.0);
   }
 
   #[test]
