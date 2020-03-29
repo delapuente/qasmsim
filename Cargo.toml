@@ -16,7 +16,7 @@ required-features = ["default"]
 
 [features]
 default = ["cli"]
-cli = ["structopt"]
+cli = ["structopt", "prettytable-rs"]
 
 [profile.release]
 lto = true
@@ -30,11 +30,8 @@ cached = "0.12.0"
 float-cmp = "0.6.0"
 lazy_static = "1.4.0"
 rand = "0.7.3"
-
-[dependencies.structopt]
-optional = true
-version = "0.3"
-default-features = false
+structopt = { version = "0.3", default-features = false, optional = true }
+prettytable-rs = { version = "0.8.0", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 num = { version = "0.2.1", features = ["serde"] }
