@@ -134,10 +134,20 @@ BaseOp: ast::Opcode = {
 Term: ast::Expression = {
   "-" <Term> => ast::Expression::Minus(Box::new(<>)),
   "pi" => ast::Expression::Pi,
+  <f:Func> "(" <e:Expr> ")" => ast::Expression::Function(f, Box::new(e)),
   Id => ast::Expression::Id(<>),
   Real => ast::Expression::Real(<>),
   "(" <Expr> ")"
 };
+
+Func: ast::Funccode = {
+  "sin" => ast::Funccode::Sin,
+  "cos" => ast::Funccode::Cos,
+  "tan" => ast::Funccode::Tan,
+  "exp" => ast::Funccode::Exp,
+  "ln" => ast::Funccode::Ln,
+  "sqrt" => ast::Funccode::Sqrt
+}
 
 ArgumentList = List<Argument>;
 
@@ -186,6 +196,12 @@ extern {
     "," => Tok::Comma,
     "->" => Tok::Arrow,
     "==" => Tok::Equal,
+    "sin" => Tok::Sin,
+    "cos" => Tok::Cos,
+    "tan" => Tok::Tan,
+    "exp" => Tok::Exp,
+    "ln" => Tok::Ln,
+    "sqrt" => Tok::Sqrt,
     "pi" => Tok::ConstPi,
     "U" => Tok::U,
     "CX" => Tok::CX,

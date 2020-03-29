@@ -53,12 +53,23 @@ pub enum Opcode {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum Funccode {
+  Sin,
+  Cos,
+  Tan,
+  Exp,
+  Ln,
+  Sqrt
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
   Pi,
   Id(String),
   Real(f64),
   Int(u64),
   Op(Opcode, Box<Expression>, Box<Expression>),
+  Function(Funccode, Box<Expression>),
   Minus(Box<Expression>)
 }
 

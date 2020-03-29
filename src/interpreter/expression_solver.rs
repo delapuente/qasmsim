@@ -24,6 +24,14 @@ impl<'src, 'bindings> ExpressionSolver<'bindings> {
         ast::Opcode::Div => self.solve(left)? / self.solve(right)?,
         ast::Opcode::Pow => self.solve(left)?.powf(self.solve(right)?)
       },
+      ast::Expression::Function(funccode, expr) => match funccode {
+        ast::Funccode::Sin => self.solve(expr)?.sin(),
+        ast::Funccode::Cos => self.solve(expr)?.cos(),
+        ast::Funccode::Tan => self.solve(expr)?.tan(),
+        ast::Funccode::Exp => self.solve(expr)?.exp(),
+        ast::Funccode::Ln => self.solve(expr)?.ln(),
+        ast::Funccode::Sqrt => self.solve(expr)?.sqrt()
+      },
       ast::Expression::Id(name) => {
         match self.0.get(name) {
           None => {
@@ -74,6 +82,33 @@ mod test {
     let solver = ExpressionSolver::new(&empty);
     let result = solver.solve(&expression).expect("get value of expression");
     assert_eq!(result, - PI + (1.0 - 2.0_f64.powf(3.0)) * 4.0 / 5.0);
+  }
+
+  #[test]
+  fn test_expression_solver_with_functions() {
+    let expression = Expression::Function(
+      Funccode::Sqrt,
+      Box::new(Expression::Function(
+        Funccode::Ln,
+        Box::new(Expression::Function(
+          Funccode::Exp,
+          Box::new(Expression::Function(
+            Funccode::Tan,
+            Box::new(Expression::Function(
+              Funccode::Cos,
+              Box::new(Expression::Function(
+                Funccode::Sin,
+                Box::new(Expression::Real(1.0))
+              ))
+            ))
+          ))
+        ))
+      ))
+    );
+    let empty = HashMap::new();
+    let solver = ExpressionSolver::new(&empty);
+    let result = solver.solve(&expression).expect("get value of expression");
+    assert_eq!(result, 1.0_f64.sin().cos().tan().exp().ln().sqrt());
   }
 
   #[test]

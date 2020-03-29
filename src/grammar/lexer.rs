@@ -48,6 +48,12 @@ pub enum Tok {
   Comma,
   Arrow,
   Equal,
+  Sin,
+  Cos,
+  Tan,
+  Exp,
+  Ln,
+  Sqrt,
   ConstPi,
   U,
   CX,
@@ -86,6 +92,12 @@ impl fmt::Display for Tok {
       Tok::Comma => ",".into(),
       Tok::Arrow => "=>".into(),
       Tok::Equal => "==".into(),
+      Tok::Sin => "function `sin`".into(),
+      Tok::Cos => "function `cos`".into(),
+      Tok::Tan => "function `tan`".into(),
+      Tok::Exp => "function `exp`".into(),
+      Tok::Ln => "function `ln`".into(),
+      Tok::Sqrt => "function `sqrt`".into(),
       Tok::ConstPi => "constant `pi`".into(),
       Tok::U => "primitive gate `U`".into(),
       Tok::CX => "primitive gate `CX`".into(),
@@ -111,6 +123,12 @@ impl fmt::Display for Tok {
 
 fn get_keywords() -> HashMap<String, Tok> {
   let mut kw = HashMap::new();
+  kw.insert(String::from("sin"), Tok::Sin);
+  kw.insert(String::from("cos"), Tok::Cos);
+  kw.insert(String::from("tan"), Tok::Tan);
+  kw.insert(String::from("exp"), Tok::Exp);
+  kw.insert(String::from("ln"), Tok::Ln);
+  kw.insert(String::from("sqrt"), Tok::Sqrt);
   kw.insert(String::from("pi"), Tok::ConstPi);
   kw.insert(String::from("opaque"), Tok::Opaque);
   kw.insert(String::from("gate"), Tok::Gate);
