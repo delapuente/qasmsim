@@ -12,7 +12,7 @@ pub struct Options {
 
   /// Output files prefix, print in the stdout if not present. The output
   /// format of each file is CSV. At most, three files are created with the
-  /// names output.memory.csv, output.state.csv and output.times.csv
+  /// names out.memory.csv, out.state.csv and out.times.csv
   #[structopt(long)]
   pub out: Option<PathBuf>,
 

@@ -13,7 +13,7 @@ The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almos
 
  - [X] Add trigonometric and exponential functions in real expressions.
  - [X] Create CLI interface.
-   - [ ] Better formatting of results.
+   - [X] Better formatting of results.
    - [X] Add --shots option + histogram output.
  - [X] Handle error paths.
    - [ ] Improve error hierarchy.
@@ -75,17 +75,17 @@ FLAGS:
     -h, --help             Prints help information
     -x, --hexadecimal      Prints the hexadecimal representation of the values
     -i, --integer          Prints the interger representation of the values. Default option
-        --probabilities    Prints the probabilities vector of the simulation
-        --statevector      Prints the state vector of the simulation
+        --probabilities    Prints the probabilities vector of the simulation. Ignored if shots is set
+        --statevector      Prints the state vector of the simulation. Ignored if shots is set
     -t, --times            Prints times measured for parsing and simulating
     -V, --version          Prints version information
     -v                     Verbosity of the output
 
 OPTIONS:
-        --output <output>    Output file, stdout if not present
-        --shots <shots>      Specify the number of simulations. If ommited, only one simulation is run and there will be
-                             no histogram among the results. If specified, the state and probabilities vector correspond
-                             to the latest execution
+        --out <out>        Output files prefix, print in the stdout if not present. The output format of each file is
+                           CSV. At most, three files are created with the names out.memory.csv, out.state.csv and
+                           out.times.csv
+        --shots <shots>    Specify the number of simulations
 
 ARGS:
     <source>    QASM program file, read from stdin if not present
