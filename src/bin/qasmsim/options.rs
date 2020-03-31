@@ -10,11 +10,11 @@ pub struct Options {
   #[structopt(parse(from_os_str))]
   pub source: Option<PathBuf>,
 
-  /// Output files prefix, printint in the stdout if not present. The output
-  /// format for the files is CSV. At most, three files are created with the
+  /// Output files prefix, print in the stdout if not present. The output
+  /// format of each file is CSV. At most, three files are created with the
   /// names output.memory.csv, output.state.csv and output.times.csv
   #[structopt(long)]
-  pub output: Option<PathBuf>,
+  pub out: Option<PathBuf>,
 
   /// Verbosity of the output.
   #[structopt(short, parse(from_occurrences))]
@@ -32,11 +32,11 @@ pub struct Options {
   #[structopt(long, short="i")]
   pub integer: bool,
 
-  /// Prints the state vector of the simulation.
+  /// Prints the state vector of the simulation. Ignored if shots is set.
   #[structopt(long)]
   pub statevector: bool,
 
-  /// Prints the probabilities vector of the simulation.
+  /// Prints the probabilities vector of the simulation. Ignored if shots is set.
   #[structopt(long)]
   pub probabilities: bool,
 
@@ -44,9 +44,7 @@ pub struct Options {
   #[structopt(short, long)]
   pub times: bool,
 
-  /// Specify the number of simulations. If ommited, only one simulation is
-  /// run and there will be no histogram among the results. If specified,
-  /// the state and probabilities vector correspond to the latest execution.
+  /// Specify the number of simulations.
   #[structopt(long)]
   pub shots: Option<usize>
 }

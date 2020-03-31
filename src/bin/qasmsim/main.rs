@@ -1,7 +1,7 @@
 mod output;
 mod options;
 
-use std::io::{ self, Read, Write };
+use std::io::{ self, Read };
 use std::fs;
 use std::path::PathBuf;
 
@@ -31,14 +31,15 @@ fn get_source(source: &Option<PathBuf>) -> io::Result<String> {
 }
 
 fn print_result(result: &Run, options: &options::Options) -> io::Result<()> {
-  match &options.output {
+  match &options.out {
     None => {
       let stdout = io::stdout();
       let mut handle = io::BufWriter::new(stdout.lock());
-      writeln!(handle, "{}", output::tabular::prints(result, options))?;
+      output::tabular::print(&mut handle, result, options);
     }
-    Some(_) => {
-      //output::csv::prints(result, options);
+    Some(path) => {
+      let mut path = PathBuf::from(path);
+      output::csv::print(&mut path, result, options);
     }
   }
   Ok(())
