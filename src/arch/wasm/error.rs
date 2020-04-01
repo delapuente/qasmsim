@@ -23,7 +23,6 @@ impl From<QasmSimError<'_>> for JsValue {
       },
       QasmSimError::SyntaxError {
         kind,
-        lineoffset,
         lineno,
         startpos,
         endpos,
@@ -32,7 +31,6 @@ impl From<QasmSimError<'_>> for JsValue {
       } => {
         set!(&obj,
           "type" => &format!("{:?}", kind),
-          "lineOffset" => lineoffset as f64,
           "lineNumber" => lineno as f64,
           "startPosition" => startpos as f64
         );

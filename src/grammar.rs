@@ -1,6 +1,6 @@
 use lalrpop_util::{ self, lalrpop_mod };
 
-mod lexer;
+pub mod lexer;
 pub mod ast;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
@@ -12,84 +12,11 @@ use crate::error::{
 };
 
 pub use lexer::{
-   Lexer,
-   Location,
-   Tok,
-   LexicalError
+  Lexer,
+  Location,
+  Tok,
+  LexicalError
 };
-
-pub type ParseError =
-  lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;
-
-type ErrAndSrc<'src> = (ParseError, &'src str);
-
-impl<'src> convert::From<ErrAndSrc<'src>> for QasmSimError<'src> {
-  fn from(err_and_src: ErrAndSrc<'src>) -> Self {
-    let (error, source) = err_and_src;
-    match error {
-      ParseError::InvalidToken { location } => {
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::InvalidToken,
-          source,
-          lineoffset: location.lineoffset,
-          lineno: location.lineno,
-          startpos: location.linepos,
-          endpos: None,
-          token: None,
-          expected: Vec::new(),
-        }
-      }
-      ParseError::UnrecognizedEOF { location, expected } => {
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::UnexpectedEOF,
-          source,
-          lineoffset: location.lineoffset,
-          lineno: location.lineno,
-          startpos: location.linepos,
-          endpos: None,
-          token: None,
-          expected
-        }
-      }
-      ParseError::UnrecognizedToken { token, expected } => {
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::UnexpectedToken,
-          source,
-          lineoffset: token.0.lineoffset,
-          lineno: token.0.lineno,
-          startpos: token.0.linepos,
-          endpos: Some(token.2.linepos),
-          token: Some(token.1),
-          expected
-        }
-      }
-      ParseError::ExtraToken { token } => {
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::UnexpectedToken,
-          source,
-          lineoffset: token.0.lineoffset,
-          lineno: token.0.lineno,
-          startpos: token.0.linepos,
-          endpos: Some(token.2.linepos),
-          token: Some(token.1),
-          expected: Vec::new()
-        }
-      }
-      ParseError::User { error: lexer_error } => {
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::InvalidToken, // XXX: Actually, this should be "InvalidInput"
-          source,
-          lineoffset: lexer_error.location.lineoffset,
-          lineno: lexer_error.location.lineno,
-          startpos: lexer_error.location.linepos,
-          endpos: None,
-          token: None,
-          expected: Vec::new()
-        }
-      }
-    }
-  }
-}
 
 #[cfg(test)]
 mod tests {

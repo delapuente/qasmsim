@@ -7,15 +7,11 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Location {
-  pub lineno: usize,
-  pub linepos: usize,
-  pub lineoffset: usize
-}
+pub struct Location(pub usize);
 
 impl fmt::Display for Location {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "L{}C{}", self.lineno, self.lineoffset)
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "character {}", self.0)
   }
 }
 
@@ -193,11 +189,7 @@ impl<'input> Lexer<'input> {
   }
 
   fn location(&self, offset: usize) -> Location {
-    Location {
-      lineno: self.lineno,
-      linepos: offset - self.lineoffset,
-      lineoffset: self.lineoffset
-    }
+    Location(offset)
   }
 }
 
@@ -432,39 +424,39 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Location(0),
         Tok::Int { repr: String::from("0") },
-        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+        Location(1)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Location(2),
         Tok::Int { repr: String::from("1") },
-        Location{ lineno: 1, linepos: 3, lineoffset: 0 },
+        Location(3),
       )),
       Ok((
-        Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+        Location(4),
         Tok::Int { repr: String::from("20") },
-        Location{ lineno: 1, linepos: 6, lineoffset: 0 },
+        Location(6),
       )),
       Ok((
-        Location{ lineno: 1, linepos: 7, lineoffset: 0 },
+        Location(7),
         Tok::Real { repr: String::from(".3") },
-        Location{ lineno: 1, linepos: 9, lineoffset: 0 },
+        Location(9),
       )),
       Ok((
-        Location{ lineno: 1, linepos: 10, lineoffset: 0 },
+        Location(10),
         Tok::Real { repr: String::from(".4e5") },
-        Location{ lineno: 1, linepos: 14, lineoffset: 0 }
+        Location(14)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 15, lineoffset: 0 },
+        Location(15),
         Tok::Real { repr: String::from("0.6E-7") },
-        Location{ lineno: 1, linepos: 21, lineoffset: 0 }
+        Location(21)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 22, lineoffset: 0 },
+        Location(22),
         Tok::Str { repr: String::from("8910") },
-        Location{ lineno: 1, linepos: 28, lineoffset: 0 }
+        Location(28)
       )),
     ]);
   }
@@ -479,9 +471,9 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 3, linepos: 4, lineoffset: 2 },
+        Location(4+2),
         Tok::QASMHeader,
-        Location{ lineno: 3, linepos: 12, lineoffset: 2 }
+        Location(12+2)
       )),
     ]);
   }
@@ -494,19 +486,19 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 2, linepos: 4, lineoffset: 1 },
+        Location(4+1),
         Tok::QASMHeader,
-        Location{ lineno: 2, linepos: 12, lineoffset: 1 }
+        Location(12+1)
       )),
       Ok((
-        Location{ lineno: 2, linepos: 13, lineoffset: 1 },
+        Location(13+1),
         Tok::Version{ repr: String::from("2.0") },
-        Location{ lineno: 2, linepos: 16, lineoffset: 1 }
+        Location(16+1)
       )),
       Ok((
-        Location{ lineno: 2, linepos: 16, lineoffset: 1 },
+        Location(16+1),
         Tok::Semi,
-        Location{ lineno: 2, linepos: 17, lineoffset: 1 }
+        Location(17+1)
       ))
     ]);
   }
@@ -517,69 +509,69 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Location(0),
         Tok::Add,
-        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+        Location(1)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 1, lineoffset: 0 },
+        Location(1),
         Tok::Minus,
-        Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+        Location(2)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Location(2),
         Tok::Mult,
-        Location{ lineno: 1, linepos: 3, lineoffset: 0 }
+        Location(3)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 3, lineoffset: 0 },
+        Location(3),
         Tok::Div,
-        Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+        Location(4)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+        Location(4),
         Tok::LBracket,
-        Location{ lineno: 1, linepos: 5, lineoffset: 0 }
+        Location(5)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 5, lineoffset: 0 },
+        Location(5),
         Tok::RBracket,
-        Location{ lineno: 1, linepos: 6, lineoffset: 0 }
+        Location(6)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 6, lineoffset: 0 },
+        Location(6),
         Tok::LBrace,
-        Location{ lineno: 1, linepos: 7, lineoffset: 0 }
+        Location(7)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 7, lineoffset: 0 },
+        Location(7),
         Tok::RBrace,
-        Location{ lineno: 1, linepos: 8, lineoffset: 0 }
+        Location(8)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 8, lineoffset: 0 },
+        Location(8),
         Tok::LParent,
-        Location{ lineno: 1, linepos: 9, lineoffset: 0 }
+        Location(9)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 9, lineoffset: 0 },
+        Location(9),
         Tok::RParent,
-        Location{ lineno: 1, linepos: 10, lineoffset: 0 }
+        Location(10)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 10, lineoffset: 0 },
+        Location(10),
         Tok::Semi,
-        Location{ lineno: 1, linepos: 11, lineoffset: 0 }
+        Location(11)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 11, lineoffset: 0 },
+        Location(11),
         Tok::Comma,
-        Location{ lineno: 1, linepos: 12, lineoffset: 0 }
+        Location(12)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 12, lineoffset: 0 },
+        Location(12),
         Tok::Pow,
-        Location{ lineno: 1, linepos: 13, lineoffset: 0 }
+        Location(13)
       ))
     ]);
   }
@@ -590,14 +582,14 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Location(0),
         Tok::Arrow,
-        Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+        Location(2)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Location(2),
         Tok::Equal,
-        Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+        Location(4)
       ))
     ]);
   }
@@ -609,9 +601,9 @@ mod tests {
       assert_eq!(
         lexer.collect::<Vec<_>>(), vec![
           Ok((
-            Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+            Location(0),
             token,
-            Location{ lineno: 1, linepos: keyword.len(), lineoffset: 0 }
+            Location(keyword.len())
           ))
         ]);
     }
@@ -623,14 +615,14 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Location(0),
         Tok::CX,
-        Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+        Location(2)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 3, lineoffset: 0 },
+        Location(3),
         Tok::U,
-        Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+        Location(4)
       ))
     ]);
   }
@@ -641,19 +633,19 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Location(0),
         Tok::Id { repr: "a".into() },
-        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+        Location(1)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+        Location(2),
         Tok::Id { repr: "b".into() },
-        Location{ lineno: 1, linepos: 3, lineoffset: 0 }
+        Location(3)
       )),
       Ok((
-        Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+        Location(4),
         Tok::Id { repr: "c".into() },
-        Location{ lineno: 1, linepos: 5, lineoffset: 0 }
+        Location(5)
       ))
     ]);
   }
@@ -664,15 +656,11 @@ mod tests {
     let lexer = Lexer::new(source);
     assert_eq!(lexer.collect::<Vec<_>>(), vec![
       Ok((
-        Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+        Location(0),
         Tok::Id { repr: "a".into() },
-        Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+        Location(1)
       )),
-      Err(LexicalError { location: Location {
-        lineno: 1,
-        linepos: 2,
-        lineoffset: 0
-      }})
+      Err(LexicalError { location: Location(2) })
     ]);
   }
 
@@ -685,64 +673,64 @@ mod tests {
       let lexer = Lexer::new(source);
       assert_eq!(lexer.collect::<Vec<_>>(), vec![
         Ok((
-          Location{ lineno: 1, linepos: 0, lineoffset: 0 },
+          Location(0),
           Tok::U,
-          Location{ lineno: 1, linepos: 1, lineoffset: 0 }
+          Location(1)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 1, lineoffset: 0 },
+          Location(1),
           Tok::LParent,
-          Location{ lineno: 1, linepos: 2, lineoffset: 0 }
+          Location(2)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 2, lineoffset: 0 },
+          Location(2),
           Tok::ConstPi,
-          Location{ lineno: 1, linepos: 4, lineoffset: 0 }
+          Location(4)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 4, lineoffset: 0 },
+          Location(4),
           Tok::Div,
-          Location{ lineno: 1, linepos: 5, lineoffset: 0 }
+          Location(5)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 5, lineoffset: 0 },
+          Location(5),
           Tok::Int { repr: String::from("2")},
-          Location{ lineno: 1, linepos: 6, lineoffset: 0 }
+          Location(6)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 6, lineoffset: 0 },
+          Location(6),
           Tok::Comma,
-          Location{ lineno: 1, linepos: 7, lineoffset: 0 }
+          Location(7)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 8, lineoffset: 0 },
+          Location(8),
           Tok::Int { repr: String::from("0")},
-          Location{ lineno: 1, linepos: 9, lineoffset: 0 }
+          Location(9)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 9, lineoffset: 0 },
+          Location(9),
           Tok::Comma,
-          Location{ lineno: 1, linepos: 10, lineoffset: 0 }
+          Location(10)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 11, lineoffset: 0 },
+          Location(11),
           Tok::ConstPi,
-          Location{ lineno: 1, linepos: 13, lineoffset: 0 }
+          Location(13)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 13, lineoffset: 0 },
+          Location(13),
           Tok::RParent,
-          Location{ lineno: 1, linepos: 14, lineoffset: 0 }
+          Location(14)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 15, lineoffset: 0 },
+          Location(15),
           Tok::Id { repr: String::from("q") },
-          Location{ lineno: 1, linepos: 16, lineoffset: 0 }
+          Location(16)
         )),
         Ok((
-          Location{ lineno: 1, linepos: 16, lineoffset: 0 },
+          Location(16),
           Tok::Semi,
-          Location{ lineno: 1, linepos: 17, lineoffset: 0 }
+          Location(17)
         )),
       ]);
     }
@@ -752,11 +740,7 @@ mod tests {
       let source = "XXX"; // unrecognized ID (all caps), and not a keyword.
       let lexer = Lexer::new(source);
       assert_eq!(lexer.collect::<Vec<_>>(), vec![
-        Err(LexicalError { location: Location {
-          lineno: 1,
-          linepos: 0,
-          lineoffset: 0
-        }})
+        Err(LexicalError { location: Location(0) })
       ]);
     }
   }

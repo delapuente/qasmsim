@@ -15,8 +15,7 @@ fn test_missing_semicolon_at_eof() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedEOF,
-    source: &source,
-    lineoffset: 14,
+    source: "qreg q[10]\n",
     lineno: 2,
     startpos: 10,
     endpos: None,
@@ -34,8 +33,7 @@ fn test_missing_semicolon_almost_at_eof() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedEOF,
-    source: &source,
-    lineoffset: 14,
+    source: "qreg q[10]\n",
     lineno: 2,
     startpos: 10,
     endpos: None,
@@ -54,8 +52,7 @@ fn test_missing_semicolon_between_two_instructions() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedToken,
-    source: &source,
-    lineoffset: 25,
+    source: "qreg r[10];\n",
     lineno: 3,
     startpos: 0,
     endpos: Some(4),
@@ -73,8 +70,7 @@ fn test_missing_bracket() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedToken,
-    source: &source,
-    lineoffset: 14,
+    source: "qreg q[10;\n",
     lineno: 2,
     startpos: 9,
     endpos: Some(10),
@@ -91,8 +87,7 @@ fn test_missing_openqasm_header() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedToken,
-    source: &source,
-    lineoffset: 0,
+    source: "qreg q[10];\n",
     lineno: 1,
     startpos: 0,
     endpos: Some(4),
@@ -110,8 +105,7 @@ fn test_misspelling_openqasm_header() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::InvalidToken,
-    source: &source,
-    lineoffset: 0,
+    source: "OEPNQASM 2.0;\n",
     lineno: 1,
     startpos: 0,
     endpos: None,
@@ -129,8 +123,7 @@ fn test_missing_openqasm_version() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedToken,
-    source: &source,
-    lineoffset: 0,
+    source: "OPENQASM;\n",
     lineno: 1,
     startpos: 8,
     endpos: Some(9),
@@ -153,8 +146,7 @@ fn test_missing_arrow() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedToken,
-    source: &source,
-    lineoffset: 36,
+    source: "measure q c;\n",
     lineno: 4,
     startpos: 10,
     endpos: Some(11),

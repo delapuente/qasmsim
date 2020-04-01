@@ -30,7 +30,6 @@ pub enum QasmSimError<'src> {
   SyntaxError {
     kind: ErrorKind,
     source: &'src str,
-    lineoffset: usize,
     lineno: usize,
     startpos: usize,
     endpos: Option<usize>,

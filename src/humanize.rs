@@ -8,7 +8,7 @@ pub struct HumanDescription {
   lineno: usize,
   startpos: usize,
   endpos: Option<usize>,
-  linesrc: Option<String>,
+  linesrc: String,
   help: Option<String>
 }
 
@@ -17,7 +17,6 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
     QasmSimError::SyntaxError {
       kind,
       source,
-      lineoffset,
       lineno,
       startpos,
       endpos,
@@ -26,32 +25,29 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
     } =>
     match kind {
       ErrorKind::InvalidToken => {
-        let linesrc = get_line_src(*lineoffset, source);
         Some(HumanDescription {
           msg: "invalid token".into(),
           lineno: *lineno,
           startpos: *startpos,
           endpos: *endpos,
-          linesrc: Some(linesrc.into()),
+          linesrc: (*source).into(),
           help: None
         })
       }
       ErrorKind::UnexpectedEOF => {
         let expectation = expectation(&expected);
-        let linesrc = get_line_src(*lineoffset, source);
         Some(HumanDescription {
           msg: format!("{}, found EOF", &expectation),
           lineno: *lineno,
           startpos: *startpos,
           endpos: *endpos,
-          linesrc: Some(linesrc.into()),
+          linesrc: (*source).into(),
           help: Some(format!("{} here", hint(&expected)))
         })
       }
       ErrorKind::UnexpectedToken => {
         let token = token.as_ref().unwrap();
-        let linesrc = get_line_src(*lineoffset, source);
-        let endpos = std::cmp::min(endpos.unwrap(), linesrc.len());
+        let endpos = std::cmp::min(endpos.unwrap(), source.len());
 
         let mut msg = format!("unexpected \"{}\" found", &token);
         let mut help = None;
@@ -66,7 +62,7 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
           lineno: *lineno,
           startpos: *startpos,
           endpos: Some(endpos),
-          linesrc: Some(linesrc.into()),
+          linesrc: (*source).into(),
           help
         })
       }
@@ -75,7 +71,7 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
   }
 }
 
-pub fn humanize_error(buffer: &mut String, error: &QasmSimError) -> fmt::Result {
+pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Result {
   match error {
     QasmSimError::UnknownError(msg) => write!(buffer, "{}", msg),
     QasmSimError::SyntaxError { .. } => {
@@ -117,12 +113,12 @@ pub fn humanize_error(buffer: &mut String, error: &QasmSimError) -> fmt::Result 
   }
 }
 
-fn humanize(buffer: &mut String, descripition: &HumanDescription) -> fmt::Result {
+fn humanize<W: Write>(buffer: &mut W, descripition: &HumanDescription) -> fmt::Result {
   match descripition {
     HumanDescription { msg, lineno, startpos, endpos, linesrc, help } => {
       let lineno_str = format!("{} ", lineno);
       let lineno_len = lineno_str.len();
-      let linesrc_str = linesrc.clone().unwrap_or("".into());
+      let linesrc_str: String = linesrc.into();
       let linesrc_str_trimmed = linesrc_str.trim_end();
       let help_str = help.clone().unwrap_or(msg.clone());
       let indicator_width = if let Some(pos) = endpos { pos - startpos } else { 1 };
@@ -138,25 +134,6 @@ fn humanize(buffer: &mut String, descripition: &HumanDescription) -> fmt::Result
       fmt::Result::Ok(())
     }
   }
-}
-
-fn get_line_src(linestart: usize, doc: &str) -> &str {
-  assert!(linestart <= doc.len(),
-    "linestart={} must in the range 0..=doc.len()={}", linestart, doc.len());
-
-  let mut lineend = linestart + 1;
-  for c in doc[linestart..].chars() {
-    if c == '\n' {
-      break;
-    }
-    lineend += 1;
-  }
-
-  if lineend > doc.len() {
-    lineend = doc.len();
-  }
-
-  &doc[linestart..lineend]
 }
 
 fn expectation(expected: &Vec<String>) -> String {
@@ -197,7 +174,7 @@ mod test_humanize_error {
       lineno: 777,
       startpos: 10,
       endpos: None,
-      linesrc: Some("qreg q[10]".into()),
+      linesrc: "qreg q[10]".into(),
       help: Some(r#"add ";" here"#.into())
     };
     let mut buffer = String::new();
@@ -217,7 +194,7 @@ mod test_humanize_error {
       lineno: 778,
       startpos: 0,
       endpos: Some(4),
-      linesrc: Some("qreg r[10]\n".into()),
+      linesrc: "qreg r[10]\n".into(),
       help: Some(r#"add ";" at the end of the previous line"#.into())
     };
     let mut buffer = String::new();
@@ -237,7 +214,7 @@ mod test_humanize_error {
       lineno: 778,
       startpos: 0,
       endpos: Some(4),
-      linesrc: Some("qreg r[10]\n".into()),
+      linesrc: "qreg r[10]\n".into(),
       help: None
     };
     let mut buffer = String::new();
@@ -257,7 +234,7 @@ mod test_humanize_error {
       lineno: 778,
       startpos: 0,
       endpos: Some(4),
-      linesrc: Some("qreg r[10]    \n".into()),
+      linesrc: "qreg r[10]    \n".into(),
       help: None
     };
     let mut buffer = String::new();
@@ -277,7 +254,7 @@ mod test_humanize_error {
       lineno: 778,
       startpos: 2,
       endpos: Some(6),
-      linesrc: Some("  qreg r[10]    \n".into()),
+      linesrc: "  qreg r[10]    \n".into(),
       help: None
     };
     let mut buffer = String::new();
@@ -289,32 +266,4 @@ mod test_humanize_error {
           |   ^^^^ help: unexpected keyword `qreg` found
     "#));
   }
-}
-
-#[cfg(test)]
-mod test_into_doc_coords {
-  use indoc::indoc;
-
-  use super::get_line_src;
-
-  macro_rules! test_get_line_src {
-    ($source:expr, $( $name:ident: $offset:expr => $expected:expr ),*) => {
-      $(
-        #[test]
-        fn $name() {
-          assert_eq!(get_line_src($offset, &$source), $expected);
-        }
-      )*
-    };
-  }
-
-  test_get_line_src!(indoc!("
-      line 1
-      line 2
-      line 3"
-    ),
-    test_beginning_of_source: 0 => "line 1\n",
-    test_middle_of_source: 7 => "line 2\n",
-    test_last_character: 14 => "line 3"
-  );
 }
