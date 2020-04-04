@@ -138,8 +138,8 @@ impl<'src> SemanticsBuilder {
 pub fn extract_semantics<'src, 'program>(tree: &'program ast::OpenQasmProgram)
 -> Result<'src, Semantics> {
   let mut builder = SemanticsBuilder::new();
-  for statement in &tree.program {
-    match statement {
+  for span in &tree.program {
+    match &*span.node {
       ast::Statement::QRegDecl(name, size) =>
         builder.new_quantum_register(name.clone(), *size)?,
       ast::Statement::CRegDecl(name, size) =>

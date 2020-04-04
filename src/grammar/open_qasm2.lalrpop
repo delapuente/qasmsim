@@ -12,10 +12,21 @@ pub OpenQasmLibrary: ast::OpenQasmLibrary = {
   <definitions:GateDefinitionList> => ast::OpenQasmLibrary{<>}
 }
 
-pub Program: Vec<ast::Statement> = {
-  Statement => vec![<>],
-  <program:Program> <s:Statement> => {
-    let mut program = program; program.push(s); program }
+pub Program: Vec<ast::Span<ast::Statement>> = {
+  <left:@L> <statement:Statement> <right:@R> => {
+    vec![ast::Span {
+      boundaries: (left, right),
+      node: Box::new(statement)
+    }]
+  },
+  <program:Program> <left:@L> <statement:Statement> <right:@R> => {
+    let mut program = program;
+    program.push(ast::Span {
+      boundaries: (left, right),
+      node: Box::new(statement)
+    });
+    program
+  }
 };
 
 pub Statement: ast::Statement = {

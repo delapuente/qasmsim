@@ -1,8 +1,10 @@
 
+use crate::grammar::Location;
+
 #[derive(Debug, PartialEq)]
 pub struct OpenQasmProgram {
   pub version: String,
-  pub program: Vec<Statement>
+  pub program: Vec<Span<Statement>>
 }
 
 #[derive(Debug, PartialEq)]
@@ -25,6 +27,12 @@ pub enum Statement {
   OpaqueGateDecl(String, Vec<String>, Vec<String>),
   QuantumOperation(QuantumOperation),
   Conditional(Argument, u64, QuantumOperation)
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Span<S> {
+  pub boundaries: (Location, Location),
+  pub node: Box<S>
 }
 
 #[derive(Debug, PartialEq, Clone)]

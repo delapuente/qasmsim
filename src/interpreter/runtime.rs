@@ -49,14 +49,14 @@ impl<'src> Runtime {
     }
   }
 
-  fn apply_gates(&mut self, statements: &Vec<ast::Statement>) -> api::Result<'src, ()> {
-    for statement in statements {
-      match statement {
+  fn apply_gates(&mut self, statements: &Vec<ast::Span<ast::Statement>>) -> api::Result<'src, ()> {
+    for span in statements {
+      match &*span.node {
         ast::Statement::QuantumOperation(operation) => {
-          self.apply_quantum_operation(operation)?;
+          self.apply_quantum_operation(&operation)?;
         }
         ast::Statement::Conditional(register, test, operation) => {
-          let actual_register = (*register).clone();
+          let actual_register = (register).clone();
           let register_name = self.get_register_name(&actual_register);
           self.assert_is_classical_register(register_name)?;
 
@@ -65,7 +65,7 @@ impl<'src> Runtime {
             _ => unreachable!("cannot index a register inside the condition")
           };
           if value == test {
-            self.apply_quantum_operation(operation)?;
+            self.apply_quantum_operation(&operation)?;
           }
         }
         _ => ()

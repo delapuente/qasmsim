@@ -15,7 +15,7 @@ fn test_missing_semicolon_at_eof() {
   let err = qasmsim::run(&source, None).unwrap_err();
   assert_eq!(err, QasmSimError::SyntaxError {
     kind: ErrorKind::UnexpectedEOF,
-    source: "qreg q[10]\n",
+    source: "qreg q[10]",
     lineno: 2,
     startpos: 10,
     endpos: None,

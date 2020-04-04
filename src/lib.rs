@@ -2,6 +2,7 @@ mod api;
 mod error;
 mod humanize;
 mod arch;
+#[macro_use]
 pub mod grammar;
 mod linker;
 mod semantics;
