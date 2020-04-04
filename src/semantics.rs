@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::grammar::ast;
+use crate::grammar::Location;
 use crate::error::QasmSimError;
 use crate::api::Result;
 
@@ -11,17 +12,17 @@ pub enum RegisterType {
   C
 }
 
-/// Register name, type and size.
+/// Register name, type, size and definition location.
 #[derive(Debug, PartialEq)]
-pub struct RegisterEntry(pub String, pub RegisterType, pub usize);
+pub struct RegisterEntry(pub String, pub RegisterType, pub usize, pub Location);
 
 /// Register name, start index, end index.
 #[derive(Debug, PartialEq)]
 pub struct MemoryMapEntry(pub String, pub usize, pub usize);
 
-/// Macro name, real arguments, register arguments, list of statements.
+/// Macro name, real arguments, register arguments, list of statements and definition location.
 #[derive(Debug, PartialEq, Clone)]
-pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec<ast::GateOperation>);
+pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec<ast::GateOperation>, pub Location);
 
 #[derive(Debug, PartialEq)]
 pub struct Semantics {
@@ -61,25 +62,28 @@ impl<'src> SemanticsBuilder {
     }
   }
 
-  pub fn new_quantum_register(&mut self, name: String, size: usize)
+  pub fn new_quantum_register(&mut self, name: String, size: usize, location: Location)
   -> Result<'src, ()> {
-    self.new_register(name.clone(), RegisterType::Q, size)?;
+    self.new_register(name.clone(), RegisterType::Q, size, location)?;
     self.map_register(name.clone(), RegisterType::Q, size);
     self.semantics.quantum_memory_size += size;
     self.last_quantum_register = Some(name);
     Ok(())
   }
 
-  pub fn new_classical_register(&mut self, name: String, size: usize)
+  pub fn new_classical_register(&mut self, name: String, size: usize, location: Location)
   -> Result<'src, ()> {
-    self.new_register(name.clone(), RegisterType::C, size)?;
+    self.new_register(name.clone(), RegisterType::C, size, location)?;
     self.map_register(name.clone(), RegisterType::C, size);
     self.semantics.classical_memory_size += size;
     self.last_classical_register = Some(name);
     Ok(())
   }
 
-  pub fn new_gate(&mut self, name: String, real_args: Vec<String>, args: Vec<String>, body: Vec<ast::GateOperation>)
+  pub fn new_gate(&mut self, name: String,
+    real_args: Vec<String>, args: Vec<String>, body: Vec<ast::GateOperation>,
+    location: Location
+  )
   -> Result<'src, ()> {
     if self.semantics.macro_definitions.contains_key(&name) {
       return Err(QasmSimError::SemanticError {
@@ -89,13 +93,13 @@ impl<'src> SemanticsBuilder {
 
     self.semantics.macro_definitions.insert(
       name.clone(),
-      MacroDefinition(name, real_args, args, body)
+      MacroDefinition(name, real_args, args, body, location)
     );
 
     Ok(())
   }
 
-  fn new_register(&mut self, name: String, kind: RegisterType, size: usize)
+  fn new_register(&mut self, name: String, kind: RegisterType, size: usize, location: Location)
   -> Result<'src, ()> {
     if self.semantics.register_table.contains_key(&name) {
       return Err(QasmSimError::SemanticError {
@@ -103,7 +107,7 @@ impl<'src> SemanticsBuilder {
       })
     }
 
-    self.semantics.register_table.insert(name.clone(), RegisterEntry(name, kind, size));
+    self.semantics.register_table.insert(name.clone(), RegisterEntry(name, kind, size, location));
 
     Ok(())
   }
@@ -139,17 +143,19 @@ pub fn extract_semantics<'src, 'program>(tree: &'program ast::OpenQasmProgram)
 -> Result<'src, Semantics> {
   let mut builder = SemanticsBuilder::new();
   for span in &tree.program {
+    let location = span.boundaries.0.clone();
     match &*span.node {
       ast::Statement::QRegDecl(name, size) =>
-        builder.new_quantum_register(name.clone(), *size)?,
+        builder.new_quantum_register(name.clone(), *size, location)?,
       ast::Statement::CRegDecl(name, size) =>
-        builder.new_classical_register(name.clone(), *size)?,
-      ast::Statement::GateDecl(name, real_args, args, operations) =>
+        builder.new_classical_register(name.clone(), *size, location)?,
+      ast::Statement::GateDecl(name, real_args, args, operations,) =>
         builder.new_gate(
           name.clone(),
           real_args.to_vec(),
           args.to_vec(),
-          operations.to_vec()
+          operations.to_vec(),
+          location
         )?,
       _ => ()
     }
@@ -159,6 +165,8 @@ pub fn extract_semantics<'src, 'program>(tree: &'program ast::OpenQasmProgram)
 
 #[cfg(test)]
 mod test {
+  use indoc::indoc;
+
   use super::*;
   use std::iter::FromIterator;
 
@@ -166,23 +174,23 @@ mod test {
 
   #[test]
   fn test_symbol_table_stores_register_info() {
-    let source = "
+    let source = indoc!("
     OPENQASM 2.0;
     qreg q[2];
     creg c[2];
     qreg r[10];
     creg d[10];
-    ";
+    ");
     let lexer = Lexer::new(source);
     let tree = open_qasm2::OpenQasmProgramParser::new().parse(lexer).unwrap();
     let semantics_result = extract_semantics(&tree);
     assert!(semantics_result.is_ok());
 
     let expected_register_table = HashMap::from_iter(vec![
-      ("q".to_owned(), RegisterEntry("q".to_owned(), RegisterType::Q, 2)),
-      ("r".to_owned(), RegisterEntry("r".to_owned(), RegisterType::Q, 10)),
-      ("c".to_owned(), RegisterEntry("c".to_owned(), RegisterType::C, 2)),
-      ("d".to_owned(), RegisterEntry("d".to_owned(), RegisterType::C, 10))
+      ("q".to_owned(), RegisterEntry("q".to_owned(), RegisterType::Q, 2, Location(14))),
+      ("r".to_owned(), RegisterEntry("r".to_owned(), RegisterType::Q, 10, Location(36))),
+      ("c".to_owned(), RegisterEntry("c".to_owned(), RegisterType::C, 2, Location(25))),
+      ("d".to_owned(), RegisterEntry("d".to_owned(), RegisterType::C, 10, Location(48)))
     ]);
     if let Ok(semantics) = semantics_result {
       assert_eq!(semantics.register_table, expected_register_table);
@@ -296,7 +304,7 @@ mod test {
 
   #[test]
   fn test_macro_definitions() {
-    let source = "
+    let source = indoc!("
     OPENQASM 2.0;
     gate only_qubits q {
       h q;
@@ -306,7 +314,7 @@ mod test {
     gate reals_and_qubits (a, b) q, r {
       U(a/b, 0, 0) q;
     }
-    ";
+    ");
     let lexer = Lexer::new(source);
     let tree = open_qasm2::OpenQasmProgramParser::new().parse(lexer).unwrap();
     let semantics_result = extract_semantics(&tree);
@@ -324,7 +332,8 @@ mod test {
               vec![],
               vec![ast::Argument::Id("q".to_owned())]
             )
-          )]
+          )],
+          Location(14)
         )
       ),
       (
@@ -347,7 +356,8 @@ mod test {
               ],
               vec![ast::Argument::Id("q".to_owned())]
             )
-          )]
+          )],
+          Location(69)
         )
       )
     ]);
