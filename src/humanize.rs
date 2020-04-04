@@ -66,6 +66,21 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
           help
         })
       }
+    },
+    QasmSimError::SemanticError {
+      source,
+      lineno,
+      previous_lineno,
+      symbol_name
+    } => {
+      Some(HumanDescription {
+        msg: format!("cannot declare symbol `{}` twice", symbol_name),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
+        linesrc: (*source).into(),
+        help: Some(format!("first declaration happens in line {}", *previous_lineno))
+      })
     }
     _ => None
   }
@@ -74,13 +89,6 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
 pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Result {
   match error {
     QasmSimError::UnknownError(msg) => write!(buffer, "{}", msg),
-    QasmSimError::SyntaxError { .. } => {
-      let description: HumanDescription = get_human_description(error).expect("some human description");
-      humanize(buffer, &description)
-    }
-    QasmSimError::SemanticError { symbol_name } => {
-      write!(buffer, "symbol `{}` is declared twice", &symbol_name)
-    }
     QasmSimError::LinkerError { libpath } => {
       write!(buffer, "cannot find library `{}`", &libpath)
     }
@@ -109,6 +117,10 @@ pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Re
       RuntimeKind::DifferentSizeRegisters => {
         write!(buffer, "cannot apply gate to registers of different size")
       }
+    },
+    _ => {
+      let description: HumanDescription = get_human_description(error).expect("some human description");
+      humanize(buffer, &description)
     }
   }
 }

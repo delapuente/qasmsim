@@ -3,10 +3,11 @@ use std::iter::FromIterator;
 
 use crate::grammar::{ ast, Lexer };
 use crate::linker::Linker;
-use crate::interpreter;
+use crate::interpreter::{ self, Computation, runtime::RuntimeError };
 use crate::grammar::{ open_qasm2, Location };
 use crate::grammar::lexer;
 use crate::qe;
+use crate::semantics::SemanticError;
 pub use crate::error::{ Result, ErrorKind, QasmSimError };
 
 #[derive(Debug, Clone)]
@@ -101,6 +102,29 @@ impl<'src> std::convert::From<CompilerError<'src>> for QasmSimError<'src> {
           endpos,
           token: None,
           expected: Vec::new()
+        }
+      }
+    }
+  }
+}
+
+impl<'src> std::convert::From<(&'src str, RuntimeError)> for QasmSimError<'src> {
+  fn from(source_and_error: (&'src str, RuntimeError)) -> Self {
+    let (input, error) = source_and_error;
+    match error {
+      RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", error)),
+      RuntimeError::SemanticError(semantic_error) => {
+        match semantic_error {
+          SemanticError::RedefinitionError { symbol_name, location, previous_location } => {
+            let (source, lineno, _, _) = extract_line(location.0, None, input);
+            let (_, previous_lineno, _, _) = extract_line(previous_location.0, None, input);
+            QasmSimError::SemanticError {
+              source: source.into(),
+              symbol_name,
+              lineno,
+              previous_lineno
+            }
+          }
         }
       }
     }

@@ -61,7 +61,7 @@ impl convert::From<(Computation, u128, u128)> for Run {
 
 }
 
-pub fn run(input: &str, shots: Option<usize>) -> api::Result<Run> {
+pub fn run<'src>(input: &'src str, shots: Option<usize>) -> api::Result<'src, Run> {
   let (linked, parsing_time) = measure!({
     compile_with_linker(input, api::default_linker())
   });
@@ -71,5 +71,6 @@ pub fn run(input: &str, shots: Option<usize>) -> api::Result<Run> {
       Some(shots) => execute_with_shots(&linked?, shots)
     }
   });
+  let out = out.map_err(|err| api::QasmSimError::from((input, err)));
   Ok(Run::from((out?, parsing_time, simulation_time)))
 }

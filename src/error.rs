@@ -39,7 +39,10 @@ pub enum QasmSimError<'src> {
     expected: Vec<String>,
   },
   SemanticError {
-    symbol_name: String
+    source: &'src str,
+    symbol_name: String,
+    lineno: usize,
+    previous_lineno: usize
   },
   LinkerError {
     libpath: String
@@ -65,20 +68,5 @@ impl error::Error for QasmSimError<'_> { }
 impl convert::From<String> for QasmSimError<'_> {
   fn from(err: String) -> Self {
     QasmSimError::UnknownError(err)
-  }
-}
-
-impl convert::From<RuntimeError> for QasmSimError<'_> {
-  fn from(err: RuntimeError) -> Self {
-    match err {
-      RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", err)),
-      RuntimeError::SemanticError(semantic_error) => {
-        match semantic_error {
-          semantics::SemanticError::RedefinitionError { symbol_name, .. } => {
-            QasmSimError::SemanticError { symbol_name }
-          }
-        }
-      }
-    }
   }
 }
