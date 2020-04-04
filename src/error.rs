@@ -4,6 +4,8 @@ use std::fmt;
 
 use crate::humanize::humanize_error;
 use crate::grammar::Tok;
+use crate::interpreter::runtime::RuntimeError;
+use crate::semantics;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErrorKind {
@@ -63,5 +65,20 @@ impl error::Error for QasmSimError<'_> { }
 impl convert::From<String> for QasmSimError<'_> {
   fn from(err: String) -> Self {
     QasmSimError::UnknownError(err)
+  }
+}
+
+impl convert::From<RuntimeError> for QasmSimError<'_> {
+  fn from(err: RuntimeError) -> Self {
+    match err {
+      RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", err)),
+      RuntimeError::SemanticError(semantic_error) => {
+        match semantic_error {
+          semantics::SemanticError::RedefinitionError { symbol_name, .. } => {
+            QasmSimError::SemanticError { symbol_name }
+          }
+        }
+      }
+    }
   }
 }

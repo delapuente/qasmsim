@@ -2,15 +2,23 @@ use std::collections::HashMap;
 
 use crate::grammar::ast;
 use crate::grammar::Location;
-use crate::error::QasmSimError;
-use crate::api::Result;
-
 
 #[derive(Debug, PartialEq)]
 pub enum RegisterType {
   Q,
   C
 }
+
+#[derive(Debug, PartialEq)]
+pub enum SemanticError {
+  RedefinitionError {
+    symbol_name: String,
+    location: Location,
+    previous_location: Location
+  }
+}
+
+pub type Result<T> = std::result::Result<T, SemanticError>;
 
 /// Register name, type, size and definition location.
 #[derive(Debug, PartialEq)]
@@ -53,7 +61,7 @@ struct SemanticsBuilder {
   last_classical_register: Option<String>
 }
 
-impl<'src> SemanticsBuilder {
+impl SemanticsBuilder {
   pub fn new() -> Self {
     SemanticsBuilder {
       semantics: Semantics::new(),
@@ -63,7 +71,7 @@ impl<'src> SemanticsBuilder {
   }
 
   pub fn new_quantum_register(&mut self, name: String, size: usize, location: Location)
-  -> Result<'src, ()> {
+  -> Result<()> {
     self.new_register(name.clone(), RegisterType::Q, size, location)?;
     self.map_register(name.clone(), RegisterType::Q, size);
     self.semantics.quantum_memory_size += size;
@@ -72,7 +80,7 @@ impl<'src> SemanticsBuilder {
   }
 
   pub fn new_classical_register(&mut self, name: String, size: usize, location: Location)
-  -> Result<'src, ()> {
+  -> Result<()> {
     self.new_register(name.clone(), RegisterType::C, size, location)?;
     self.map_register(name.clone(), RegisterType::C, size);
     self.semantics.classical_memory_size += size;
@@ -84,10 +92,13 @@ impl<'src> SemanticsBuilder {
     real_args: Vec<String>, args: Vec<String>, body: Vec<ast::GateOperation>,
     location: Location
   )
-  -> Result<'src, ()> {
-    if self.semantics.macro_definitions.contains_key(&name) {
-      return Err(QasmSimError::SemanticError {
-        symbol_name: name
+  -> Result<()> {
+    let entry = self.semantics.macro_definitions.get(&name);
+    if let Some(MacroDefinition(_, _, _, _, previous_location)) = entry {
+      return Err(SemanticError::RedefinitionError {
+        symbol_name: name,
+        location,
+        previous_location: previous_location.clone()
       })
     }
 
@@ -100,10 +111,13 @@ impl<'src> SemanticsBuilder {
   }
 
   fn new_register(&mut self, name: String, kind: RegisterType, size: usize, location: Location)
-  -> Result<'src, ()> {
-    if self.semantics.register_table.contains_key(&name) {
-      return Err(QasmSimError::SemanticError {
-        symbol_name: name
+  -> Result<()> {
+    let entry = self.semantics.register_table.get(&name);
+    if let Some(RegisterEntry(_, _, _, previous_location)) = entry {
+      return Err(SemanticError::RedefinitionError {
+        symbol_name: name,
+        location,
+        previous_location: previous_location.clone()
       })
     }
 
@@ -139,8 +153,8 @@ impl<'src> SemanticsBuilder {
   }
 }
 
-pub fn extract_semantics<'src, 'program>(tree: &'program ast::OpenQasmProgram)
--> Result<'src, Semantics> {
+pub fn extract_semantics(tree: &ast::OpenQasmProgram)
+-> Result<Semantics> {
   let mut builder = SemanticsBuilder::new();
   for span in &tree.program {
     let location = span.boundaries.0.clone();
@@ -236,44 +250,46 @@ mod test {
   #[test]
   fn test_cannot_redeclare_a_register() {
     let sources = vec![
-      "
+      indoc!("
       OPENQASM 2.0;
       qreg r[2];
       qreg r[2];
-      ",
-      "
+      "),
+      indoc!("
       OPENQASM 2.0;
       qreg r[2];
       creg r[2];
-      ",
-      "
+      "),
+      indoc!("
       OPENQASM 2.0;
       creg r[2];
       creg r[2];
-      ",
-      "
+      "),
+      indoc!("
       OPENQASM 2.0;
       creg r[2];
       qreg r[2];
-      ",
-      "
+      "),
+      indoc!("
       OPENQASM 2.0;
       qreg r[2];
       qreg r[20];
-      ",
-      "
+      "),
+      indoc!("
       OPENQASM 2.0;
       creg r[2];
       creg r[20];
-      "
+      ")
     ];
     for (index, source) in sources.iter().enumerate() {
       let lexer = Lexer::new(source);
       let tree = open_qasm2::OpenQasmProgramParser::new().parse(lexer).expect("successful parsing");
       let error = extract_semantics(&tree).expect_err("should be a redeclaration error");
       println!("Using source sample #{}", index);
-      assert_eq!(error, QasmSimError::SemanticError {
-        symbol_name: "r".into()
+      assert_eq!(error, SemanticError::RedefinitionError {
+        symbol_name: "r".into(),
+        location: Location(25),
+        previous_location: Location(14)
       });
     }
   }

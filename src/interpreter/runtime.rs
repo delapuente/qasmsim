@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 
 use crate::api;
 use crate::error::{ QasmSimError, RuntimeKind };
-use crate::semantics::{ Semantics, RegisterType, extract_semantics };
+use crate::semantics::{ Semantics, RegisterType, extract_semantics, SemanticError };
 use crate::statevector::StateVector;
 use crate::grammar::ast;
 use crate::interpreter::expression_solver::ExpressionSolver;
@@ -11,6 +11,28 @@ use crate::interpreter::argument_solver::ArgumentSolver;
 use crate::interpreter::computation::{ Computation, HistogramBuilder };
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
+
+#[derive(Debug, PartialEq)]
+pub enum RuntimeError {
+  /* ClassicalRegisterNotFound,
+  QuantumRegisterNotFound,
+  SymbolNotFound,
+  UndefinedGate,
+  WrongNumberOfRealParameters,
+  WrongNumberOfQuantumParameters,
+  IndexOutOfBounds,
+  DifferentSizeRegisters, */
+  Other,
+  SemanticError(SemanticError)
+}
+
+type Result<T> = std::result::Result<T, RuntimeError>;
+
+impl From<SemanticError> for RuntimeError {
+  fn from(semantic_error: SemanticError) -> Self {
+    RuntimeError::SemanticError(semantic_error)
+  }
+}
 
 struct Runtime {
   macro_stack: VecDeque<BindingMappings>,
@@ -49,7 +71,7 @@ impl<'src> Runtime {
     }
   }
 
-  fn apply_gates(&mut self, statements: &Vec<ast::Span<ast::Statement>>) -> api::Result<'src, ()> {
+  fn apply_gates(&mut self, statements: &Vec<ast::Span<ast::Statement>>) -> Result<()> {
     for span in statements {
       match &*span.node {
         ast::Statement::QuantumOperation(operation) => {
@@ -74,7 +96,7 @@ impl<'src> Runtime {
     Ok(())
   }
 
-  fn apply_quantum_operation(&mut self, operation: &ast::QuantumOperation) -> api::Result<'src, ()> {
+  fn apply_quantum_operation(&mut self, operation: &ast::QuantumOperation) -> Result<()> {
     match operation {
       ast::QuantumOperation::Unitary(unitary) => {
         self.apply_unitary(unitary)
@@ -86,7 +108,7 @@ impl<'src> Runtime {
     }
   }
 
-  fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) -> api::Result<'src, ()> {
+  fn apply_unitary(&mut self, unitary: &ast::UnitaryOperation) -> Result<()> {
     let name = &unitary.0;
     let real_args = &unitary.1;
     let args = &unitary.2;
@@ -103,7 +125,7 @@ impl<'src> Runtime {
     Ok(())
   }
 
-  fn resolve_actual_args(&self, args: &Vec<ast::Argument>) -> api::Result<'src, Vec<ast::Argument>> {
+  fn resolve_actual_args(&self, args: &Vec<ast::Argument>) -> Result<Vec<ast::Argument>> {
     let mut actual = Vec::new();
     if !self.is_running_macro() {
       actual = args.iter().cloned().collect();
@@ -113,14 +135,14 @@ impl<'src> Runtime {
       let arg_bindings = &stack_entry.1;
       let argument_solver = ArgumentSolver::new(arg_bindings);
       for argument in args {
-        let actual_argument = argument_solver.solve(argument)?;
+        let actual_argument = argument_solver.solve(argument).map_err(|_| RuntimeError::Other)?;
         actual.push(actual_argument)
       }
     }
     Ok(actual)
   }
 
-  fn resolve_real_expressions(&self, exprs: &Vec<ast::Expression>) -> api::Result<'src, Vec<f64>> {
+  fn resolve_real_expressions(&self, exprs: &Vec<ast::Expression>) -> Result<Vec<f64>> {
     let mut real_bindings = &HashMap::new();
     if self.is_running_macro() {
       let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get first stack entry");
@@ -129,7 +151,7 @@ impl<'src> Runtime {
     let expression_solver = ExpressionSolver::new(real_bindings);
     let mut solved = Vec::new();
     for expression in exprs {
-      let value = expression_solver.solve(&expression)?;
+      let value = expression_solver.solve(&expression).map_err(|_| RuntimeError::Other)?;
       solved.push(value);
     }
     Ok(solved)
@@ -139,7 +161,7 @@ impl<'src> Runtime {
     self.macro_stack.len() > 0
   }
 
-  fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<'src, ()> {
+  fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> Result<()> {
     self.assert_is_quantum_register(self.get_register_name(&args[0]))?;
     self.assert_is_classical_register(self.get_register_name(&args[1]))?;
     for argument_expansion in self.expand_arguments(&args)? {
@@ -148,7 +170,7 @@ impl<'src> Runtime {
     Ok(())
   }
 
-  fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) -> api::Result<'src, ()> {
+  fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) -> Result<()> {
     let classical_register_name = self.get_register_name(&args[1]);
     let source = self.get_bit_mapping(&args[0])?;
     let measurement = self.statevector.measure(source) as u64;
@@ -162,7 +184,7 @@ impl<'src> Runtime {
   }
 
   fn apply_one_gate(&mut self, name: &str, real_args: &Vec<f64>,
-  args: &Vec<ast::Argument>) -> api::Result<'src, ()> {
+  args: &Vec<ast::Argument>) -> Result<()> {
     match name {
       "U" => {
         let theta = real_args[0];
@@ -184,7 +206,7 @@ impl<'src> Runtime {
     Ok(())
   }
 
-  fn check_all_are_quantum_registers(&self, args: &Vec<ast::Argument>) -> api::Result<'src, ()> {
+  fn check_all_are_quantum_registers(&self, args: &Vec<ast::Argument>) -> Result<()> {
     for argument in args {
       let register_name = self.get_register_name(argument);
       self.assert_is_quantum_register(register_name)?;
@@ -199,22 +221,22 @@ impl<'src> Runtime {
     }
   }
 
-  fn assert_is_quantum_register(&self, name: &str) -> api::Result<'src, ()> {
+  fn assert_is_quantum_register(&self, name: &str) -> Result<()> {
     if !self.is_register_of_type(RegisterType::Q, name) {
-      return Err(QasmSimError::RuntimeError {
+      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
         kind: RuntimeKind::QuantumRegisterNotFound,
         symbol_name: name.into()
-      });
+      } */);
     }
     Ok(())
   }
 
-  fn assert_is_classical_register(&self, name: &str) -> api::Result<'src, ()> {
+  fn assert_is_classical_register(&self, name: &str) -> Result<()> {
     if !self.is_register_of_type(RegisterType::C, name) {
-      return Err(QasmSimError::RuntimeError {
+      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
         kind: RuntimeKind::ClassicalRegisterNotFound,
         symbol_name: name.into()
-      });
+      } */);
     }
     Ok(())
   }
@@ -227,7 +249,7 @@ impl<'src> Runtime {
   }
 
   fn apply_gate_operations(&mut self, operations: &Vec<ast::GateOperation>)
-  -> api::Result<'src, ()> {
+  -> Result<()> {
     for one_operation in operations {
       match one_operation {
         ast::GateOperation::Unitary(unitary) => self.apply_unitary(unitary)?,
@@ -238,27 +260,27 @@ impl<'src> Runtime {
   }
 
   fn expand_arguments(&self, args: &Vec<ast::Argument>)
-  -> api::Result<'src, Vec<Vec<ast::Argument>>> {
+  -> Result<Vec<Vec<ast::Argument>>> {
     let range = self.get_range(args)?;
     Ok(range.map(|index| Runtime::specify(args, index)).collect())
   }
 
   // TODO: Add index boundaries control
-  fn get_bit_mapping(&self, argument: &ast::Argument) -> api::Result<'src, usize> {
+  fn get_bit_mapping(&self, argument: &ast::Argument) -> Result<usize> {
     match argument {
       ast::Argument::Item(name, index) => {
         match self.semantics.memory_map.get(name) {
-          None => Err(QasmSimError::RuntimeError {
+          None => Err(RuntimeError::Other/* QasmSimError::RuntimeError {
             kind: RuntimeKind::QuantumRegisterNotFound,
             symbol_name: name.into()
-          }),
+          } */),
           Some(mapping) => {
             let size = mapping.2 - mapping.1 + 1;
             if *index >= size {
-              return Err(QasmSimError::RuntimeError {
+              return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
                 kind: RuntimeKind::IndexOutOfBounds,
                 symbol_name: name.into()
-              });
+              } */);
             }
             Ok(mapping.1 + *index)
           }
@@ -268,7 +290,7 @@ impl<'src> Runtime {
     }
   }
 
-  fn get_range(&self, args: &Vec<ast::Argument>) -> api::Result<'src, std::ops::Range<usize>> {
+  fn get_range(&self, args: &Vec<ast::Argument>) -> Result<std::ops::Range<usize>> {
     // XXX: This is performed after validating the type of args.
 
     let whole_registers: Vec<&ast::Argument> = args.iter()
@@ -295,10 +317,10 @@ impl<'src> Runtime {
       return Ok(0..reference_size);
     }
 
-    return Err(QasmSimError::RuntimeError {
+    return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
       kind: RuntimeKind::DifferentSizeRegisters,
       symbol_name: self.get_register_name(whole_registers[0]).into()
-    });
+    } */);
   }
 
   fn specify(args: &Vec<ast::Argument>, index: usize) -> Vec<ast::Argument> {
@@ -313,22 +335,22 @@ impl<'src> Runtime {
   }
 
   fn bind(&mut self, macro_name: String, real_args: &Vec<f64>, args: &Vec<ast::Argument>)
-  -> api::Result<'src, BindingMappings> {
+  -> Result<BindingMappings> {
     let definition = match self.semantics.macro_definitions.get(&macro_name) {
       None => {
-        return Err(QasmSimError::RuntimeError {
+        return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
           kind: RuntimeKind::UndefinedGate,
           symbol_name: macro_name
-        });
+        } */);
       }
       Some(definition) => definition
     };
 
     if real_args.len() != definition.1.len() {
-      return Err(QasmSimError::RuntimeError {
+      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
         kind: RuntimeKind::WrongNumberOfRealParameters,
         symbol_name: macro_name
-      });
+      } */);
     }
     let real_args_mapping = HashMap::from_iter(
       definition.1.iter()
@@ -337,10 +359,10 @@ impl<'src> Runtime {
     );
 
     if args.len() != definition.2.len() {
-      return Err(QasmSimError::RuntimeError {
+      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
         kind: RuntimeKind::WrongNumberOfQuantumParameters,
         symbol_name: macro_name
-      });
+      } */);
     }
     let args_mapping = HashMap::from_iter(
       definition.2.iter()
@@ -352,7 +374,7 @@ impl<'src> Runtime {
   }
 
   fn call(&mut self, macro_name: String, bindings: BindingMappings)
-  -> api::Result<'src, ()> {
+  -> Result<()> {
     // XXX: Why clonning is necessary??
     let definition = (*self.semantics.macro_definitions.get(&macro_name).unwrap()).clone();
     self.macro_stack.push_front(bindings);
@@ -362,16 +384,14 @@ impl<'src> Runtime {
   }
 }
 
-pub fn execute<'src, 'program>(program: &'program ast::OpenQasmProgram)
--> api::Result<'src, Computation> {
+pub fn execute(program: &ast::OpenQasmProgram) -> Result<Computation> {
   let semantics = extract_semantics(program)?;
   let mut runtime = Runtime::new(semantics);
   runtime.apply_gates(&program.program)?;
   Ok(Computation::new(runtime.memory, runtime.statevector, None))
 }
 
-pub fn execute_with_shots<'src, 'program>(program: &'program ast::OpenQasmProgram, shots: usize)
--> api::Result<'src, Computation> {
+pub fn execute_with_shots(program: &ast::OpenQasmProgram, shots: usize) -> Result<Computation> {
   let semantics = extract_semantics(program)?;
   let mut runtime = Runtime::new(semantics);
   let mut histogram_builder = HistogramBuilder::new();
