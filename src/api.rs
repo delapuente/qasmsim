@@ -3,41 +3,21 @@ use std::iter::FromIterator;
 
 use crate::grammar::{ ast, Lexer };
 use crate::linker::Linker;
-use crate::interpreter::{ self, Computation, runtime::RuntimeError };
+use crate::interpreter::{ self, runtime::RuntimeError };
 use crate::grammar::{ open_qasm2, Location };
 use crate::grammar::lexer;
 use crate::qe;
 use crate::semantics::SemanticError;
 pub use crate::error::{ Result, ErrorKind, QasmSimError };
 
-#[derive(Debug, Clone)]
-struct CompilerError<'source> {
-  source: &'source str,
-  parser_error: ParseError,
-}
-
-use crate::humanize::humanize_error;
-
-impl std::fmt::Display for CompilerError<'_> {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    let qasmsimerror = QasmSimError::from(self.clone());
-    humanize_error(f, &qasmsimerror)
-  }
-}
-
-impl std::error::Error for CompilerError<'_> {
-  fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-    Some(&self.parser_error)
-  }
-}
-
 pub type ParseError =
   lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;
 
-impl<'src> std::convert::From<CompilerError<'src>> for QasmSimError<'src> {
-  fn from(compiler_error: CompilerError<'src>) -> Self {
-    let error = compiler_error.parser_error;
-    let input = compiler_error.source;
+type SrcAndErr<'src, E> = (&'src str, E);
+
+impl<'src> From<SrcAndErr<'src, ParseError>> for QasmSimError<'src> {
+  fn from(src_and_err: SrcAndErr<'src, ParseError>) -> Self {
+    let (input, error) = src_and_err;
     match error {
       ParseError::InvalidToken { location } => {
         let (source, lineno, startpos, endpos) = extract_line(location.0, None, input);
@@ -108,8 +88,8 @@ impl<'src> std::convert::From<CompilerError<'src>> for QasmSimError<'src> {
   }
 }
 
-impl<'src> std::convert::From<(&'src str, RuntimeError)> for QasmSimError<'src> {
-  fn from(source_and_error: (&'src str, RuntimeError)) -> Self {
+impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
+  fn from(source_and_error: SrcAndErr<'src, RuntimeError>) -> Self {
     let (input, error) = source_and_error;
     match error {
       RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", error)),
@@ -171,10 +151,7 @@ pub fn default_linker() -> Linker {
 pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
   let lexer = Lexer::new(&input);
   let parser = open_qasm2::OpenQasmProgramParser::new();
-  parser.parse(lexer).map_err(|err| CompilerError{
-    source: input,
-    parser_error: err
-  }.into())
+  parser.parse(lexer).map_err(|err| QasmSimError::from((input, err)))
 }
 
 pub fn compile_with_linker<'src>(input: &'src str, linker: Linker) -> Result<'src, ast::OpenQasmProgram> {
