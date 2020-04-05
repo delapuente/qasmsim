@@ -5,7 +5,7 @@ use crate::api;
 use crate::error::{ QasmSimError, RuntimeKind };
 use crate::semantics::{ Semantics, RegisterType, extract_semantics, SemanticError };
 use crate::statevector::StateVector;
-use crate::grammar::ast;
+use crate::grammar::{ Location, ast };
 use crate::interpreter::expression_solver::ExpressionSolver;
 use crate::interpreter::argument_solver::ArgumentSolver;
 use crate::interpreter::computation::{ Computation, HistogramBuilder };
@@ -20,10 +20,15 @@ pub enum RuntimeError {
   UndefinedGate,
   WrongNumberOfRealParameters,
   WrongNumberOfQuantumParameters,
-  IndexOutOfBounds,
   DifferentSizeRegisters, */
   Other,
-  SemanticError(SemanticError)
+  SemanticError(SemanticError),
+  IndexOutOfBounds {
+    location: Location,
+    symbol_name: String,
+    index: usize,
+    size: usize
+  }
 }
 
 type Result<T> = std::result::Result<T, RuntimeError>;
@@ -34,14 +39,15 @@ impl From<SemanticError> for RuntimeError {
   }
 }
 
-struct Runtime {
+struct Runtime<'program> {
   macro_stack: VecDeque<BindingMappings>,
   semantics: Semantics,
   statevector: StateVector,
-  memory: HashMap<String, u64>
+  memory: HashMap<String, u64>,
+  location: Option<&'program Location>
 }
 
-impl<'src> Runtime {
+impl<'src, 'program> Runtime<'program> {
   pub fn new(semantics: Semantics) -> Self {
     let memory_size = semantics.quantum_memory_size;
 
@@ -49,7 +55,8 @@ impl<'src> Runtime {
       macro_stack: VecDeque::new(),
       semantics,
       statevector: StateVector::new(memory_size),
-      memory: HashMap::new()
+      memory: HashMap::new(),
+      location: None
     };
 
     runtime.reset();
@@ -71,8 +78,9 @@ impl<'src> Runtime {
     }
   }
 
-  fn apply_gates(&mut self, statements: &Vec<ast::Span<ast::Statement>>) -> Result<()> {
+  fn apply_gates(&mut self, statements: &'program Vec<ast::Span<ast::Statement>>) -> Result<()> {
     for span in statements {
+      self.location = Some(&span.boundaries.0);
       match &*span.node {
         ast::Statement::QuantumOperation(operation) => {
           self.apply_quantum_operation(&operation)?;
@@ -277,10 +285,12 @@ impl<'src> Runtime {
           Some(mapping) => {
             let size = mapping.2 - mapping.1 + 1;
             if *index >= size {
-              return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-                kind: RuntimeKind::IndexOutOfBounds,
-                symbol_name: name.into()
-              } */);
+              return Err(RuntimeError::IndexOutOfBounds {
+                location: self.location.expect("after `apply_gates()`, location is something").clone(),
+                symbol_name: name.into(),
+                index: *index,
+                size: size
+              });
             }
             Ok(mapping.1 + *index)
           }

@@ -66,7 +66,7 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
           help
         })
       }
-    },
+    }
     QasmSimError::SemanticError {
       source,
       lineno,
@@ -80,6 +80,22 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
         endpos: None,
         linesrc: (*source).into(),
         help: Some(format!("first declaration happens in line {}", *previous_lineno))
+      })
+    }
+    QasmSimError::IndexOutOfBounds {
+      symbol_name,
+      source,
+      lineno,
+      index,
+      size
+    } => {
+      Some(HumanDescription {
+        msg: format!("index out of bounds"),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
+        linesrc: (*source).into(),
+        help: Some(format!("indices of register `{}` range from 0 to {} but the index is {}", symbol_name, size - 1, index))
       })
     }
     _ => None

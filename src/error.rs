@@ -27,6 +27,7 @@ pub enum RuntimeKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum QasmSimError<'src> {
   UnknownError (String),
   SyntaxError {
@@ -50,6 +51,13 @@ pub enum QasmSimError<'src> {
   RuntimeError {
     kind: RuntimeKind,
     symbol_name: String,
+  },
+  IndexOutOfBounds {
+    source: &'src str,
+    lineno: usize,
+    symbol_name: String,
+    index: usize,
+    size: usize,
   }
 }
 

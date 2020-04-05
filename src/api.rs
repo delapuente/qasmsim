@@ -93,6 +93,21 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
     let (input, error) = source_and_error;
     match error {
       RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", error)),
+      RuntimeError::IndexOutOfBounds {
+        location,
+        symbol_name,
+        index,
+        size
+      } => {
+        let (source, lineno, _, _) = extract_line(location.0, None, input);
+        QasmSimError::IndexOutOfBounds {
+          source: source.into(),
+          symbol_name,
+          lineno,
+          size,
+          index
+        }
+      }
       RuntimeError::SemanticError(semantic_error) => {
         match semantic_error {
           SemanticError::RedefinitionError { symbol_name, location, previous_location } => {
