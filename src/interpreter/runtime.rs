@@ -12,8 +12,7 @@ type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
-  /* ClassicalRegisterNotFound,
-  QuantumRegisterNotFound,
+  /*
   DifferentSizeRegisters, */
   Other,
   SemanticError(SemanticError),
@@ -25,7 +24,8 @@ pub enum RuntimeError {
   },
   SymbolNotFound {
     location: Location,
-    symbol_name: String
+    symbol_name: String,
+    expected: QasmType
   },
   WrongNumberOfParameters {
     are_registers: bool,
@@ -37,7 +37,20 @@ pub enum RuntimeError {
   UndefinedGate {
     location: Location,
     symbol_name: String
+  },
+  TypeMismatch {
+    location: Location,
+    symbol_name: String,
+    expected: QasmType
   }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum QasmType {
+  Register,
+  QuantumRegister,
+  ClassicalRegister,
+  RealValue
 }
 
 type Result<T> = std::result::Result<T, RuntimeError>;
@@ -154,7 +167,8 @@ impl<'src, 'program> Runtime<'program> {
       for argument in args {
         let actual_argument = argument_solver.solve(argument).map_err(|symbol_name| RuntimeError::SymbolNotFound {
           location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
-          symbol_name: symbol_name
+          symbol_name: symbol_name,
+          expected: QasmType::QuantumRegister
         })?;
         actual.push(actual_argument)
       }
@@ -173,7 +187,8 @@ impl<'src, 'program> Runtime<'program> {
     for expression in exprs {
       let value = expression_solver.solve(&expression).map_err(|symbol_name| RuntimeError::SymbolNotFound {
         location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
-        symbol_name: symbol_name
+        symbol_name: symbol_name,
+        expected: QasmType::RealValue
       })?;
       solved.push(value);
     }
@@ -246,22 +261,28 @@ impl<'src, 'program> Runtime<'program> {
 
   fn assert_is_quantum_register(&self, name: &str) -> Result<()> {
     if !self.is_register_of_type(RegisterType::Q, name) {
-      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-        kind: RuntimeKind::QuantumRegisterNotFound,
-        symbol_name: name.into()
-      } */);
+      Err(RuntimeError::TypeMismatch {
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: name.into(),
+        expected: QasmType::QuantumRegister
+      })
     }
-    Ok(())
+    else {
+      Ok(())
+    }
   }
 
   fn assert_is_classical_register(&self, name: &str) -> Result<()> {
     if !self.is_register_of_type(RegisterType::C, name) {
-      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-        kind: RuntimeKind::ClassicalRegisterNotFound,
-        symbol_name: name.into()
-      } */);
+      Err(RuntimeError::TypeMismatch {
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: name.into(),
+        expected: QasmType::ClassicalRegister
+      })
     }
-    Ok(())
+    else {
+      Ok(())
+    }
   }
 
   fn is_register_of_type(&self, rtype: RegisterType, name: &str) -> bool {
@@ -288,20 +309,20 @@ impl<'src, 'program> Runtime<'program> {
     Ok(range.map(|index| Runtime::specify(args, index)).collect())
   }
 
-  // TODO: Add index boundaries control
   fn get_bit_mapping(&self, argument: &ast::Argument) -> Result<usize> {
     match argument {
       ast::Argument::Item(name, index) => {
         match self.semantics.memory_map.get(name) {
-          None => Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-            kind: RuntimeKind::QuantumRegisterNotFound,
-            symbol_name: name.into()
-          } */),
+          None => Err(RuntimeError::SymbolNotFound {
+            location: self.location.expect("after `apply_gates()`, location of the statement").clone(),
+            symbol_name: name.into(),
+            expected: QasmType::Register
+          }),
           Some(mapping) => {
             let size = mapping.2 - mapping.1 + 1;
             if *index >= size {
               return Err(RuntimeError::IndexOutOfBounds {
-                location: self.location.expect("after `apply_gates()`, location is something").clone(),
+                location: self.location.expect("after `apply_gates()`, location of the statement").clone(),
                 symbol_name: name.into(),
                 index: *index,
                 size: size

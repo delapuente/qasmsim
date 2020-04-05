@@ -4,7 +4,7 @@ extern crate qasmsim;
 
 use indoc::indoc;
 
-use qasmsim::{ QasmSimError, RuntimeKind };
+use qasmsim::{ QasmSimError, RuntimeKind, QasmType };
 
 #[test]
 fn test_calling_a_non_existing_gate() {
@@ -23,61 +23,69 @@ fn test_calling_a_non_existing_gate() {
 
 #[test]
 fn test_using_a_quantum_register_while_expecting_classical() {
-  let source = "
+  let source = indoc!("
   OPENQASM 2.0;
   qreg q[2];
   creg c[2];
   measure q -> q;
-  ";
+  ");
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::RuntimeError {
-    kind: RuntimeKind::ClassicalRegisterNotFound,
-    symbol_name: "q".into()
+  assert_eq!(error, QasmSimError::TypeMismatch {
+    source: "measure q -> q;\n",
+    lineno: 4,
+    symbol_name: "q".into(),
+    expected: QasmType::ClassicalRegister
   });
 }
 
 #[test]
 fn test_using_a_classical_register_when_expecting_quantum() {
-  let source = "
+  let source = indoc!("
   OPENQASM 2.0;
   qreg q[2];
   creg c[2];
   measure c -> c;
-  ";
+  ");
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::RuntimeError {
-    kind: RuntimeKind::QuantumRegisterNotFound,
-    symbol_name: "c".into()
+  assert_eq!(error, QasmSimError::TypeMismatch {
+    source: "measure c -> c;\n",
+    lineno: 4,
+    symbol_name: "c".into(),
+    expected: QasmType::QuantumRegister
   });
 }
 
 #[test]
 fn test_passing_a_classical_register_when_expecting_quantum() {
-  let source = r#"
+  let source = indoc!(r#"
   OPENQASM 2.0;
   include "qelib1.inc";
   creg c[2];
   h c;
-  "#;
+  "#);
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::RuntimeError {
-    kind: RuntimeKind::QuantumRegisterNotFound,
-    symbol_name: "c".into()
+  assert_eq!(error, QasmSimError::TypeMismatch {
+    source: "h c;\n",
+    lineno: 4,
+    symbol_name: "c".into(),
+    expected: QasmType::QuantumRegister
   });
 }
 
 #[test]
 fn test_passing_an_unexistent_register() {
-  let source = r#"
+  let source = indoc!(r#"
   OPENQASM 2.0;
   include "qelib1.inc";
   creg c[2];
   h t;
-  "#;
+  "#);
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::RuntimeError {
-    kind: RuntimeKind::QuantumRegisterNotFound,
-    symbol_name: "t".into()
+  assert_eq!(error, QasmSimError::TypeMismatch {
+    source: "h t;\n",
+    lineno: 4,
+    symbol_name: "t".into(),
+    expected: QasmType::QuantumRegister
   });
 }
 
@@ -93,7 +101,8 @@ fn test_passing_an_unexistent_real_parameter() {
   assert_eq!(error, QasmSimError::SymbolNotFound {
     symbol_name: "xxx".into(),
     source: "u1(xxx) q;\n",
-    lineno: 4
+    lineno: 4,
+    expected: QasmType::RealValue
   });
 }
 
@@ -109,7 +118,8 @@ fn test_passing_a_register_instead_of_real_parameter() {
   assert_eq!(error, QasmSimError::SymbolNotFound {
     symbol_name: "q".into(),
     source: "u1(q) q;\n",
-    lineno: 4
+    lineno: 4,
+    expected: QasmType::RealValue
   });
 }
 
@@ -187,33 +197,37 @@ fn test_argument_expansion_with_different_size_registers() {
 
 #[test]
 fn test_quantum_register_in_conditional() {
-  let source = r#"
+  let source = indoc!(r#"
   OPENQASM 2.0;
   include "qelib1.inc";
   qreg q[2];
   creg c[2];
   if (q==3) h q;
-  "#;
+  "#);
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::RuntimeError {
-    kind: RuntimeKind::ClassicalRegisterNotFound,
-    symbol_name: "q".into()
+  assert_eq!(error, QasmSimError::TypeMismatch {
+    source: "if (q==3) h q;\n",
+    lineno: 5,
+    symbol_name: "q".into(),
+    expected: QasmType::ClassicalRegister
   });
 }
 
 #[test]
 fn test_non_existent_register_in_conditional() {
-  let source = r#"
+  let source = indoc!(r#"
   OPENQASM 2.0;
   include "qelib1.inc";
   qreg q[2];
   creg c[2];
   if (d==3) h q;
-  "#;
+  "#);
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::RuntimeError {
-    kind: RuntimeKind::ClassicalRegisterNotFound,
-    symbol_name: "d".into()
+  assert_eq!(error, QasmSimError::TypeMismatch {
+    source: "if (d==3) h q;\n",
+    lineno: 5,
+    symbol_name: "d".into(),
+    expected: QasmType::ClassicalRegister
   });
 }
 

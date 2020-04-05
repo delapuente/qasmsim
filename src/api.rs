@@ -93,6 +93,19 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
     let (input, error) = source_and_error;
     match error {
       RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", error)),
+      RuntimeError::TypeMismatch {
+        location,
+        symbol_name,
+        expected
+      } => {
+        let (source, lineno, _, _) = extract_line(location.0, None, input);
+        QasmSimError::TypeMismatch {
+          source: source.into(),
+          lineno,
+          symbol_name,
+          expected
+        }
+      }
       RuntimeError::UndefinedGate {
         location,
         symbol_name
@@ -123,13 +136,15 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
       }
       RuntimeError::SymbolNotFound {
         location,
-        symbol_name
+        symbol_name,
+        expected
       } => {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::SymbolNotFound {
           source: source.into(),
           symbol_name,
-          lineno
+          lineno,
+          expected
         }
       }
       RuntimeError::IndexOutOfBounds {

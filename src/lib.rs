@@ -11,7 +11,7 @@ pub mod statevector;
 mod interpreter;
 mod qe;
 
-pub use crate::interpreter::{ Computation, Histogram };
+pub use crate::interpreter::{ Computation, Histogram, runtime::QasmType };
 pub use crate::error::{ QasmSimError, ErrorKind, RuntimeKind };
 
 #[cfg(not(target_arch = "wasm32"))]

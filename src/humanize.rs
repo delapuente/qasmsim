@@ -1,6 +1,7 @@
 use std::fmt::{ self, Write };
 
 use crate::error::{ QasmSimError, ErrorKind, RuntimeKind };
+use crate::interpreter::runtime::QasmType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HumanDescription {
@@ -101,14 +102,42 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
     QasmSimError::SymbolNotFound {
       source,
       symbol_name,
-      lineno
+      lineno,
+      expected
     } => {
+      let qualifier = match expected {
+        QasmType::RealValue => "real value",
+        QasmType::Register => "register",
+        QasmType::QuantumRegister => "quantum register",
+        QasmType::ClassicalRegister => "classical register"
+      };
       Some(HumanDescription {
-        msg: format!("cannot find symbol `{}` in this scope", symbol_name),
+        msg: format!("cannot find the {} `{}` in this scope", qualifier, symbol_name),
         lineno: *lineno,
         startpos: 0,
         endpos: None,
         linesrc: (*source).into(),
+        help: None
+      })
+    }
+    QasmSimError::TypeMismatch {
+      source,
+      symbol_name,
+      lineno,
+      expected
+    } => {
+      let qualifier = match expected {
+        QasmType::RealValue => "real value",
+        QasmType::Register => "register",
+        QasmType::QuantumRegister => "quantum register",
+        QasmType::ClassicalRegister => "classical register"
+      };
+      Some(HumanDescription {
+        msg: format!("mismatched types for symbol `{}`: expected \"{}\"", symbol_name, qualifier),
+        linesrc: (*source).into(),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
         help: None
       })
     }
@@ -166,12 +195,6 @@ pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Re
   match error {
     QasmSimError::UnknownError(msg) => write!(buffer, "{}", msg),
     QasmSimError::RuntimeError { kind, symbol_name } => match kind {
-      RuntimeKind::ClassicalRegisterNotFound => {
-        write!(buffer, "classical register `{}` not found in this scope", &symbol_name)
-      }
-      RuntimeKind::QuantumRegisterNotFound => {
-        write!(buffer, "quantum register `{}` not found in this scope", &symbol_name)
-      }
       RuntimeKind::DifferentSizeRegisters => {
         write!(buffer, "cannot apply gate to registers of different size")
       }

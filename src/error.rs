@@ -4,6 +4,7 @@ use std::fmt;
 
 use crate::humanize::humanize_error;
 use crate::grammar::Tok;
+use crate::interpreter::runtime::QasmType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErrorKind {
@@ -14,8 +15,6 @@ pub enum ErrorKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RuntimeKind {
-  ClassicalRegisterNotFound,
-  QuantumRegisterNotFound,
   DifferentSizeRegisters
 }
 
@@ -57,7 +56,8 @@ pub enum QasmSimError<'src> {
   SymbolNotFound {
     source: &'src str,
     lineno: usize,
-    symbol_name: String
+    symbol_name: String,
+    expected: QasmType
   },
   WrongNumberOfParameters {
     source: &'src str,
@@ -71,6 +71,12 @@ pub enum QasmSimError<'src> {
     source: &'src str,
     lineno: usize,
     symbol_name: String
+  },
+  TypeMismatch {
+    source: &'src str,
+    lineno: usize,
+    symbol_name: String,
+    expected: QasmType
   }
 }
 
