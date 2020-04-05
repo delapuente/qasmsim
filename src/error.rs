@@ -38,8 +38,10 @@ pub enum QasmSimError<'src> {
     lineno: usize,
     previous_lineno: usize
   },
-  LinkerError {
-    libpath: String
+  LibraryNotFound {
+    source: &'src str,
+    libpath: String,
+    lineno: usize
   },
   RuntimeError {
     kind: RuntimeKind,

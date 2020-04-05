@@ -1,26 +1,33 @@
 use std::collections::HashMap;
 
-use crate::api;
-use crate::error::QasmSimError;
 use crate::grammar::open_qasm2;
 use crate::grammar::ast;
-use crate::grammar::Lexer;
+use crate::grammar::{ Location, Lexer };
+
+#[derive(Debug, Clone)]
+pub enum LinkerError {
+  LibraryNotFound { location: Location, libpath: String }
+}
 
 pub struct Linker {
   embedded: HashMap<String, String>
 }
 
-impl<'src> Linker {
+type Result<T> = std::result::Result<T, LinkerError>;
+
+impl Linker {
   pub fn with_embedded(embedded: HashMap<String, String>) -> Self {
     Linker{embedded}
   }
 
-  pub fn link(&self, mut tree: ast::OpenQasmProgram) -> api::Result<'src, ast::OpenQasmProgram> {
+  pub fn link(&self, mut tree: ast::OpenQasmProgram) -> Result<ast::OpenQasmProgram> {
     let mut to_embed = vec![];
     for (index, span) in tree.program.iter().enumerate() {
       match &*span.node {
         ast::Statement::Include(libpath) => {
-          let source = self.get_sources(&libpath)?;
+          let source = self.get_sources(&libpath).map_err(|_| {
+            LinkerError::LibraryNotFound { location: span.boundaries.0.clone(), libpath: libpath.into() }
+          })?;
           let lexer = Lexer::new(&source);
           let parser = open_qasm2::OpenQasmLibraryParser::new();
           let library_tree = parser.parse(lexer).unwrap();
@@ -43,11 +50,11 @@ impl<'src> Linker {
     Ok(tree)
   }
 
-  fn get_sources(&self, libpath: &str) -> api::Result<'src, String> {
+  fn get_sources(&self, libpath: &str) -> std::result::Result<String, ()> {
     if self.embedded.contains_key(libpath) {
       return Ok(self.embedded.get(libpath).unwrap().clone());
     }
-    Err(QasmSimError::LinkerError { libpath: libpath.into() })
+    Err(())
   }
 }
 

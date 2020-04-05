@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 use crate::grammar::{ ast, Lexer };
-use crate::linker::Linker;
+use crate::linker::{ Linker, LinkerError };
 use crate::interpreter::{ self, runtime::RuntimeError };
 use crate::grammar::{ open_qasm2, Location };
 use crate::grammar::lexer;
@@ -165,6 +165,22 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
   }
 }
 
+impl<'src> From<SrcAndErr<'src, LinkerError>> for QasmSimError<'src> {
+  fn from(source_and_error: SrcAndErr<'src, LinkerError>) -> Self {
+    let (input, error) = source_and_error;
+    match error {
+      LinkerError::LibraryNotFound { location, libpath } => {
+        let (source, lineno, _, _) = extract_line(location.0, None, input);
+        QasmSimError::LibraryNotFound {
+          source: source.into(),
+          libpath,
+          lineno
+        }
+      }
+    }
+  }
+}
+
 fn extract_line(offset: usize, endoffset: Option<usize>, doc: &str) -> (&str, usize, usize, Option<usize>) {
   assert!(offset <= doc.len(),
     "linestart={} must in the range 0..=doc.len()={}", offset, doc.len());
@@ -210,7 +226,7 @@ pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
 
 pub fn compile_with_linker<'src>(input: &'src str, linker: Linker) -> Result<'src, ast::OpenQasmProgram> {
   let program = compile(&input)?;
-  linker.link(program)
+  linker.link(program).map_err(|err| QasmSimError::from((input, err)))
 }
 
 pub use interpreter::runtime::execute;

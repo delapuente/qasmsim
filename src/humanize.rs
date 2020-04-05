@@ -129,7 +129,7 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
         endpos: None,
         help: Some(format!("expected {} {}, given {}", expected, qualifier, given))
       })
-    },
+    }
     QasmSimError::UndefinedGate {
       source,
       symbol_name,
@@ -144,6 +144,20 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
         help: None
       })
     }
+    QasmSimError::LibraryNotFound {
+      source,
+      lineno,
+      libpath
+    } => {
+      Some(HumanDescription {
+        msg: format!("cannot find library `{}`", libpath),
+        linesrc: (*source).into(),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
+        help: None
+      })
+    }
     _ => None
   }
 }
@@ -151,9 +165,6 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
 pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Result {
   match error {
     QasmSimError::UnknownError(msg) => write!(buffer, "{}", msg),
-    QasmSimError::LinkerError { libpath } => {
-      write!(buffer, "cannot find library `{}`", &libpath)
-    }
     QasmSimError::RuntimeError { kind, symbol_name } => match kind {
       RuntimeKind::ClassicalRegisterNotFound => {
         write!(buffer, "classical register `{}` not found in this scope", &symbol_name)

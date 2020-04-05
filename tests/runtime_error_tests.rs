@@ -216,3 +216,17 @@ fn test_non_existent_register_in_conditional() {
     symbol_name: "d".into()
   });
 }
+
+#[test]
+fn test_include_non_existent_lib() {
+  let source = indoc!(r#"
+  OPENQASM 2.0;
+  include "nonexist.inc";
+  "#);
+  let error = qasmsim::run(source, None).expect_err("should fail");
+  assert_eq!(error, QasmSimError::LibraryNotFound {
+    source: "include \"nonexist.inc\";\n",
+    lineno: 2,
+    libpath: "nonexist.inc".into()
+  });
+}
