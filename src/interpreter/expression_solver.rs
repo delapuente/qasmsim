@@ -1,17 +1,15 @@
 use std::collections::HashMap;
 
-use crate::api;
-use crate::error::{ QasmSimError, RuntimeKind };
 use crate::grammar::ast;
 
 pub struct ExpressionSolver<'bindings>(&'bindings HashMap<String, f64>);
 
-impl<'src, 'bindings> ExpressionSolver<'bindings> {
+impl<'bindings> ExpressionSolver<'bindings> {
   pub fn new(symbol_table: &'bindings HashMap<String, f64>) -> Self {
     ExpressionSolver::<'bindings>(symbol_table)
   }
 
-  pub fn solve(&self, expression: &ast::Expression) -> api::Result<'src, f64> {
+  pub fn solve(&self, expression: &ast::Expression) -> Result<f64, String> {
     Ok(match expression {
       ast::Expression::Pi => std::f64::consts::PI,
       ast::Expression::Int(value) => *value as f64,
@@ -34,12 +32,7 @@ impl<'src, 'bindings> ExpressionSolver<'bindings> {
       },
       ast::Expression::Id(name) => {
         match self.0.get(name) {
-          None => {
-            return Err(QasmSimError::RuntimeError {
-              kind: RuntimeKind::SymbolNotFound,
-              symbol_name: name.into()
-            }
-          )}
+          None => return Err(name.into()),
           Some(value) => *value
         }
       }
@@ -148,10 +141,7 @@ mod test {
     let empty_bindings = HashMap::new();
     let solver = ExpressionSolver::new(&empty_bindings);
     let error = solver.solve(&expression).expect_err("fails at replacing `some_name`");
-    assert_eq!(error, QasmSimError::RuntimeError {
-      kind: RuntimeKind::SymbolNotFound,
-      symbol_name: "some_name".into()
-    });
+    assert_eq!(error, String::from("some_name"));
   }
 
 }

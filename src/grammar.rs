@@ -4,12 +4,6 @@ pub mod lexer;
 pub mod ast;
 lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
 
-use std::convert;
-
-use crate::error::{
-  ErrorKind,
-  QasmSimError
-};
 
 pub use lexer::{
   Lexer,

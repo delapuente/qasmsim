@@ -93,6 +93,45 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
     let (input, error) = source_and_error;
     match error {
       RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", error)),
+      RuntimeError::UndefinedGate {
+        location,
+        symbol_name
+      } => {
+        let (source, lineno, _, _) = extract_line(location.0, None, input);
+        QasmSimError::UndefinedGate {
+          source: source.into(),
+          lineno,
+          symbol_name
+        }
+      }
+      RuntimeError::WrongNumberOfParameters {
+        are_registers,
+        location,
+        symbol_name,
+        given,
+        expected
+      } => {
+        let (source, lineno, _, _) = extract_line(location.0, None, input);
+        QasmSimError::WrongNumberOfParameters {
+          are_registers,
+          source: source.into(),
+          symbol_name,
+          lineno,
+          expected,
+          given
+        }
+      }
+      RuntimeError::SymbolNotFound {
+        location,
+        symbol_name
+      } => {
+        let (source, lineno, _, _) = extract_line(location.0, None, input);
+        QasmSimError::SymbolNotFound {
+          source: source.into(),
+          symbol_name,
+          lineno
+        }
+      }
       RuntimeError::IndexOutOfBounds {
         location,
         symbol_name,

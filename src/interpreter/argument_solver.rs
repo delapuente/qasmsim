@@ -1,24 +1,19 @@
 use std::collections::HashMap;
 
-use crate::api;
-use crate::error::{ QasmSimError, RuntimeKind };
 use crate::grammar::ast;
 
 pub struct ArgumentSolver<'bindings>(&'bindings HashMap<String, ast::Argument>);
 
-impl<'src, 'bindings> ArgumentSolver<'bindings> {
+impl<'bindings> ArgumentSolver<'bindings> {
   pub fn new(argument_table: &'bindings HashMap<String, ast::Argument>) -> Self {
     ArgumentSolver::<'bindings>(argument_table)
   }
 
-  pub fn solve(&self, arg: &ast::Argument) -> api::Result<'src, ast::Argument> {
+  pub fn solve(&self, arg: &ast::Argument) -> Result<ast::Argument, String> {
     match arg {
       ast::Argument::Id(name) => {
         match self.0.get(name) {
-          None => Err(QasmSimError::RuntimeError {
-            kind: RuntimeKind::QuantumRegisterNotFound,
-            symbol_name: name.into()
-          }),
+          None => Err(name.clone()),
           Some(argument) => Ok(argument.clone())
         }
       }
@@ -53,9 +48,6 @@ mod test {
     let solver = ArgumentSolver::new(&bindings);
     let formal_argument = ast::Argument::Id("fmal".to_owned());
     let error = solver.solve(&formal_argument).expect_err("actual argument not found");
-    assert_eq!(error, QasmSimError::RuntimeError {
-      kind: RuntimeKind::QuantumRegisterNotFound,
-      symbol_name: "fmal".into()
-    });
+    assert_eq!(error, String::from("fmal"));
   }
 }

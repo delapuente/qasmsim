@@ -1,8 +1,6 @@
 use std::collections::{ HashMap, VecDeque };
 use std::iter::FromIterator;
 
-use crate::api;
-use crate::error::{ QasmSimError, RuntimeKind };
 use crate::semantics::{ Semantics, RegisterType, extract_semantics, SemanticError };
 use crate::statevector::StateVector;
 use crate::grammar::{ Location, ast };
@@ -16,10 +14,6 @@ type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 pub enum RuntimeError {
   /* ClassicalRegisterNotFound,
   QuantumRegisterNotFound,
-  SymbolNotFound,
-  UndefinedGate,
-  WrongNumberOfRealParameters,
-  WrongNumberOfQuantumParameters,
   DifferentSizeRegisters, */
   Other,
   SemanticError(SemanticError),
@@ -28,6 +22,21 @@ pub enum RuntimeError {
     symbol_name: String,
     index: usize,
     size: usize
+  },
+  SymbolNotFound {
+    location: Location,
+    symbol_name: String
+  },
+  WrongNumberOfParameters {
+    are_registers: bool,
+    location: Location,
+    symbol_name: String,
+    expected: usize,
+    given: usize
+  },
+  UndefinedGate {
+    location: Location,
+    symbol_name: String
   }
 }
 
@@ -143,7 +152,10 @@ impl<'src, 'program> Runtime<'program> {
       let arg_bindings = &stack_entry.1;
       let argument_solver = ArgumentSolver::new(arg_bindings);
       for argument in args {
-        let actual_argument = argument_solver.solve(argument).map_err(|_| RuntimeError::Other)?;
+        let actual_argument = argument_solver.solve(argument).map_err(|symbol_name| RuntimeError::SymbolNotFound {
+          location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+          symbol_name: symbol_name
+        })?;
         actual.push(actual_argument)
       }
     }
@@ -159,7 +171,10 @@ impl<'src, 'program> Runtime<'program> {
     let expression_solver = ExpressionSolver::new(real_bindings);
     let mut solved = Vec::new();
     for expression in exprs {
-      let value = expression_solver.solve(&expression).map_err(|_| RuntimeError::Other)?;
+      let value = expression_solver.solve(&expression).map_err(|symbol_name| RuntimeError::SymbolNotFound {
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: symbol_name
+      })?;
       solved.push(value);
     }
     Ok(solved)
@@ -348,19 +363,22 @@ impl<'src, 'program> Runtime<'program> {
   -> Result<BindingMappings> {
     let definition = match self.semantics.macro_definitions.get(&macro_name) {
       None => {
-        return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-          kind: RuntimeKind::UndefinedGate,
+        return Err(RuntimeError::UndefinedGate {
+          location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
           symbol_name: macro_name
-        } */);
+        });
       }
       Some(definition) => definition
     };
 
     if real_args.len() != definition.1.len() {
-      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-        kind: RuntimeKind::WrongNumberOfRealParameters,
-        symbol_name: macro_name
-      } */);
+      return Err(RuntimeError::WrongNumberOfParameters {
+        are_registers: false,
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: macro_name,
+        given: real_args.len(),
+        expected: definition.1.len()
+      });
     }
     let real_args_mapping = HashMap::from_iter(
       definition.1.iter()
@@ -369,10 +387,13 @@ impl<'src, 'program> Runtime<'program> {
     );
 
     if args.len() != definition.2.len() {
-      return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-        kind: RuntimeKind::WrongNumberOfQuantumParameters,
-        symbol_name: macro_name
-      } */);
+      return Err(RuntimeError::WrongNumberOfParameters {
+        are_registers: true,
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: macro_name,
+        given: args.len(),
+        expected: definition.2.len()
+      });
     }
     let args_mapping = HashMap::from_iter(
       definition.2.iter()

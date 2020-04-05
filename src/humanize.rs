@@ -98,6 +98,52 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
         help: Some(format!("indices of register `{}` range from 0 to {} but the index is {}", symbol_name, size - 1, index))
       })
     }
+    QasmSimError::SymbolNotFound {
+      source,
+      symbol_name,
+      lineno
+    } => {
+      Some(HumanDescription {
+        msg: format!("cannot find symbol `{}` in this scope", symbol_name),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
+        linesrc: (*source).into(),
+        help: None
+      })
+    }
+    QasmSimError::WrongNumberOfParameters {
+      source,
+      symbol_name,
+      are_registers,
+      lineno,
+      expected,
+      given
+    } => {
+      let qualifier = if *are_registers { "quantum registers" } else { "real parameters" };
+      Some(HumanDescription {
+        msg: format!("wrong number of {} passed to gate `{}`", qualifier, symbol_name),
+        linesrc: (*source).into(),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
+        help: Some(format!("expected {} {}, given {}", expected, qualifier, given))
+      })
+    },
+    QasmSimError::UndefinedGate {
+      source,
+      symbol_name,
+      lineno,
+    } => {
+      Some(HumanDescription {
+        msg: format!("cannot find gate `{}` in this scope", symbol_name),
+        linesrc: (*source).into(),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
+        help: None
+      })
+    }
     _ => None
   }
 }
@@ -115,21 +161,6 @@ pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Re
       RuntimeKind::QuantumRegisterNotFound => {
         write!(buffer, "quantum register `{}` not found in this scope", &symbol_name)
       }
-      RuntimeKind::SymbolNotFound => {
-        write!(buffer, "symbol `{}` not found in this scope", &symbol_name)
-      }
-      RuntimeKind::UndefinedGate => {
-        write!(buffer, "error calling gate `{}`: gate not found in this scope", &symbol_name)
-      }
-      RuntimeKind::WrongNumberOfQuantumParameters => {
-        write!(buffer, "error calling gate `{}`: the number of quantum parameters is wrong", &symbol_name)
-      }
-      RuntimeKind::WrongNumberOfRealParameters => {
-        write!(buffer, "error calling gate `{}`: the number of real parameters is wrong", &symbol_name)
-      }
-      RuntimeKind::IndexOutOfBounds => {
-        write!(buffer, "index out of bounds for register `{}`", &symbol_name)
-      },
       RuntimeKind::DifferentSizeRegisters => {
         write!(buffer, "cannot apply gate to registers of different size")
       }
