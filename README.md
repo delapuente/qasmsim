@@ -17,7 +17,7 @@ The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almos
    - [X] Add --shots option + histogram output.
  - [X] Handle error paths.
    - [ ] Improve error hierarchy.
-   - [ ] Add source references to errors.
+   - [X] Add source references to errors.
 
 And planned for `1.1.0` is:
 

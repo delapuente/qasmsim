@@ -1,5 +1,6 @@
 use std::collections::{ HashMap, VecDeque };
 use std::iter::FromIterator;
+use std::fmt;
 
 use crate::semantics::{ Semantics, RegisterType, extract_semantics, SemanticError };
 use crate::statevector::StateVector;
@@ -42,6 +43,11 @@ pub enum RuntimeError {
     location: Location,
     symbol_name: String,
     expected: QasmType
+  },
+  RegisterSizeMismatch {
+    location: Location,
+    symbol_name: String,
+    sizes: Vec<usize>
   }
 }
 
@@ -51,6 +57,17 @@ pub enum QasmType {
   QuantumRegister,
   ClassicalRegister,
   RealValue
+}
+
+impl fmt::Display for QasmType {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", match self {
+      QasmType::RealValue => "real value",
+      QasmType::Register => "register",
+      QasmType::QuantumRegister => "quantum register",
+      QasmType::ClassicalRegister => "classical register"
+    })
+  }
 }
 
 type Result<T> = std::result::Result<T, RuntimeError>;
@@ -148,7 +165,14 @@ impl<'src, 'program> Runtime<'program> {
 
     let solved_real_args = self.resolve_real_expressions(real_args)?;
 
-    for argument_expansion in self.expand_arguments(&actual_args)? {
+    let expanded_arguments = self.expand_arguments(&actual_args)
+      .map_err(|sizes| RuntimeError::RegisterSizeMismatch {
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: name.clone(),
+        sizes
+      })?;
+
+    for argument_expansion in expanded_arguments {
       self.apply_one_gate(name, &solved_real_args, &argument_expansion)?;
     }
 
@@ -202,9 +226,18 @@ impl<'src, 'program> Runtime<'program> {
   fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> Result<()> {
     self.assert_is_quantum_register(self.get_register_name(&args[0]))?;
     self.assert_is_classical_register(self.get_register_name(&args[1]))?;
-    for argument_expansion in self.expand_arguments(&args)? {
+
+    let expanded_arguments = self.expand_arguments(&args)
+      .map_err(|sizes| RuntimeError::RegisterSizeMismatch {
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: "measure".into(),
+        sizes
+      })?;
+
+    for argument_expansion in expanded_arguments {
       self.apply_one_measurement(argument_expansion)?;
     }
+
     Ok(())
   }
 
@@ -311,7 +344,7 @@ impl<'src, 'program> Runtime<'program> {
   }
 
   fn expand_arguments(&self, args: &Vec<ast::Argument>)
-  -> Result<Vec<Vec<ast::Argument>>> {
+  -> std::result::Result<Vec<Vec<ast::Argument>>, Vec<usize>> {
     let range = self.get_range(args)?;
     Ok(range.map(|index| Runtime::specify(args, index)).collect())
   }
@@ -343,7 +376,7 @@ impl<'src, 'program> Runtime<'program> {
     }
   }
 
-  fn get_range(&self, args: &Vec<ast::Argument>) -> Result<std::ops::Range<usize>> {
+  fn get_range(&self, args: &Vec<ast::Argument>) -> std::result::Result<std::ops::Range<usize>, Vec<usize>> {
     // XXX: This is performed after validating the type of args.
 
     let whole_registers: Vec<&ast::Argument> = args.iter()
@@ -367,13 +400,11 @@ impl<'src, 'program> Runtime<'program> {
     let all_the_same_size = all_sizes.iter().all(|size| *size == reference_size);
 
     if all_the_same_size {
-      return Ok(0..reference_size);
+      Ok(0..reference_size)
     }
-
-    return Err(RuntimeError::Other/* QasmSimError::RuntimeError {
-      kind: RuntimeKind::DifferentSizeRegisters,
-      symbol_name: self.get_register_name(whole_registers[0]).into()
-    } */);
+    else {
+      Err(all_sizes)
+    }
   }
 
   fn specify(args: &Vec<ast::Argument>, index: usize) -> Vec<ast::Argument> {

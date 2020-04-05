@@ -93,6 +93,19 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
     let (input, error) = source_and_error;
     match error {
       RuntimeError::Other => QasmSimError::UnknownError(format!("{:?}", error)),
+      RuntimeError::RegisterSizeMismatch {
+        location,
+        symbol_name,
+        sizes
+      } => {
+        let (source, lineno, _, _) = extract_line(location.0, None, input);
+        QasmSimError::RegisterSizeMismatch {
+          source: source.into(),
+          lineno,
+          symbol_name,
+          sizes
+        }
+      }
       RuntimeError::TypeMismatch {
         location,
         symbol_name,

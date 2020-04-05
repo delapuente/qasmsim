@@ -4,7 +4,7 @@ extern crate qasmsim;
 
 use indoc::indoc;
 
-use qasmsim::{ QasmSimError, RuntimeKind, QasmType };
+use qasmsim::{ QasmSimError, QasmType };
 
 #[test]
 fn test_calling_a_non_existing_gate() {
@@ -181,17 +181,37 @@ fn test_index_out_of_bounds() {
 
 #[test]
 fn test_argument_expansion_with_different_size_registers() {
-  let source = r#"
+  let source = indoc!(r#"
   OPENQASM 2.0;
   include "qelib1.inc";
   qreg q[1];
   qreg r[2];
   cx q, r;
-  "#;
+  "#);
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::RuntimeError {
-    kind: RuntimeKind::DifferentSizeRegisters,
-    symbol_name: "q".into()
+  assert_eq!(error, QasmSimError::RegisterSizeMismatch {
+    source: "cx q, r;\n",
+    lineno: 5,
+    symbol_name: "cx".into(),
+    sizes: vec![1, 2]
+  });
+}
+
+#[test]
+fn test_argument_expansion_in_measurement_with_different_size_registers() {
+  let source = indoc!(r#"
+  OPENQASM 2.0;
+  include "qelib1.inc";
+  qreg q[1];
+  creg c[2];
+  measure q -> c;
+  "#);
+  let error = qasmsim::run(source, None).expect_err("should fail");
+  assert_eq!(error, QasmSimError::RegisterSizeMismatch {
+    source: "measure q -> c;\n",
+    lineno: 5,
+    symbol_name: "measure".into(),
+    sizes: vec![1, 2]
   });
 }
 

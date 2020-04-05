@@ -14,11 +14,6 @@ pub enum ErrorKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum RuntimeKind {
-  DifferentSizeRegisters
-}
-
-#[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum QasmSimError<'src> {
   UnknownError (String),
@@ -41,10 +36,6 @@ pub enum QasmSimError<'src> {
     source: &'src str,
     libpath: String,
     lineno: usize
-  },
-  RuntimeError {
-    kind: RuntimeKind,
-    symbol_name: String,
   },
   IndexOutOfBounds {
     source: &'src str,
@@ -77,6 +68,12 @@ pub enum QasmSimError<'src> {
     lineno: usize,
     symbol_name: String,
     expected: QasmType
+  },
+  RegisterSizeMismatch {
+    source: &'src str,
+    lineno: usize,
+    symbol_name: String,
+    sizes: Vec<usize>
   }
 }
 

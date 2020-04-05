@@ -1,7 +1,6 @@
 use std::fmt::{ self, Write };
 
-use crate::error::{ QasmSimError, ErrorKind, RuntimeKind };
-use crate::interpreter::runtime::QasmType;
+use crate::error::{ QasmSimError, ErrorKind };
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HumanDescription {
@@ -105,14 +104,8 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
       lineno,
       expected
     } => {
-      let qualifier = match expected {
-        QasmType::RealValue => "real value",
-        QasmType::Register => "register",
-        QasmType::QuantumRegister => "quantum register",
-        QasmType::ClassicalRegister => "classical register"
-      };
       Some(HumanDescription {
-        msg: format!("cannot find the {} `{}` in this scope", qualifier, symbol_name),
+        msg: format!("cannot find the {} `{}` in this scope", expected, symbol_name),
         lineno: *lineno,
         startpos: 0,
         endpos: None,
@@ -126,19 +119,35 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
       lineno,
       expected
     } => {
-      let qualifier = match expected {
-        QasmType::RealValue => "real value",
-        QasmType::Register => "register",
-        QasmType::QuantumRegister => "quantum register",
-        QasmType::ClassicalRegister => "classical register"
-      };
       Some(HumanDescription {
-        msg: format!("mismatched types for symbol `{}`: expected \"{}\"", symbol_name, qualifier),
+        msg: format!("mismatched types for symbol `{}`: expected \"{}\"", symbol_name, expected),
         linesrc: (*source).into(),
         lineno: *lineno,
         startpos: 0,
         endpos: None,
         help: None
+      })
+    }
+    QasmSimError::RegisterSizeMismatch {
+      source,
+      symbol_name,
+      lineno,
+      sizes,
+    } => {
+      let sizes_str: Vec<String> = sizes.iter().map(|size| format!("{}", size)).collect();
+      let msg = if symbol_name == "measure" {
+        "cannot apply a measurement between registers of different sizes".into()
+      }
+      else {
+        format!("cannot apply gate `{}` to registers of differen size", symbol_name)
+      };
+      Some(HumanDescription {
+        msg,
+        linesrc: (*source).into(),
+        lineno: *lineno,
+        startpos: 0,
+        endpos: None,
+        help: Some(format!("expected registers of same size, found registers of sizes {}", sizes_str.join(", ")))
       })
     }
     QasmSimError::WrongNumberOfParameters {
@@ -194,11 +203,6 @@ fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
 pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Result {
   match error {
     QasmSimError::UnknownError(msg) => write!(buffer, "{}", msg),
-    QasmSimError::RuntimeError { kind, symbol_name } => match kind {
-      RuntimeKind::DifferentSizeRegisters => {
-        write!(buffer, "cannot apply gate to registers of different size")
-      }
-    },
     _ => {
       let description: HumanDescription = get_human_description(error).expect("some human description");
       humanize(buffer, &description)
