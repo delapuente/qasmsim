@@ -260,7 +260,7 @@ impl<'src, 'program> Runtime<'program> {
   }
 
   fn assert_is_quantum_register(&self, name: &str) -> Result<()> {
-    if !self.is_register_of_type(RegisterType::Q, name) {
+    if !self.is_register_of_type(RegisterType::Q, name)? {
       Err(RuntimeError::TypeMismatch {
         location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
         symbol_name: name.into(),
@@ -273,7 +273,7 @@ impl<'src, 'program> Runtime<'program> {
   }
 
   fn assert_is_classical_register(&self, name: &str) -> Result<()> {
-    if !self.is_register_of_type(RegisterType::C, name) {
+    if !self.is_register_of_type(RegisterType::C, name)? {
       Err(RuntimeError::TypeMismatch {
         location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
         symbol_name: name.into(),
@@ -285,10 +285,17 @@ impl<'src, 'program> Runtime<'program> {
     }
   }
 
-  fn is_register_of_type(&self, rtype: RegisterType, name: &str) -> bool {
+  fn is_register_of_type(&self, rtype: RegisterType, name: &str) -> Result<bool> {
     match self.semantics.register_table.get(name) {
-      Some(entry) => entry.1 == rtype,
-      None => false
+      Some(entry) => Ok(entry.1 == rtype),
+      None => Err(RuntimeError::SymbolNotFound {
+        location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+        symbol_name: name.into(),
+        expected: match rtype {
+          RegisterType::Q => QasmType::QuantumRegister,
+          RegisterType::C => QasmType::ClassicalRegister
+        }
+      })
     }
   }
 

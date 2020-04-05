@@ -81,7 +81,7 @@ fn test_passing_an_unexistent_register() {
   h t;
   "#);
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::TypeMismatch {
+  assert_eq!(error, QasmSimError::SymbolNotFound {
     source: "h t;\n",
     lineno: 4,
     symbol_name: "t".into(),
@@ -223,7 +223,7 @@ fn test_non_existent_register_in_conditional() {
   if (d==3) h q;
   "#);
   let error = qasmsim::run(source, None).expect_err("should fail");
-  assert_eq!(error, QasmSimError::TypeMismatch {
+  assert_eq!(error, QasmSimError::SymbolNotFound {
     source: "if (d==3) h q;\n",
     lineno: 5,
     symbol_name: "d".into(),
