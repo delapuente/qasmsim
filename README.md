@@ -16,7 +16,7 @@ The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almos
    - [X] Better formatting of results.
    - [X] Add --shots option + histogram output.
  - [X] Handle error paths.
-   - [ ] Improve error hierarchy.
+   - [X] Improve error hierarchy.
    - [X] Add source references to errors.
 
 And planned for `1.1.0` is:
@@ -64,6 +64,7 @@ See more options with:
 
 ```
 $ qasmsim --help
+qasmsim 0.1.0
 qasmsim 0.1.0
 A QASM interpreter and quantum simulator in Rust.
 
