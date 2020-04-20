@@ -12,7 +12,7 @@ mod interpreter;
 mod qe;
 
 pub use crate::interpreter::{ Computation, Histogram, runtime::QasmType };
-pub use crate::error::{ QasmSimError, ErrorKind };
+pub use crate::error::QasmSimError;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::arch::native::{ Run, RunTimes };

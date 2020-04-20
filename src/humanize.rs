@@ -1,6 +1,6 @@
 use std::fmt::{ self, Write };
 
-use crate::error::{ QasmSimError, ErrorKind };
+use crate::error::QasmSimError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HumanDescription {
@@ -14,58 +14,67 @@ pub struct HumanDescription {
 
 fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
   match error {
-    QasmSimError::SyntaxError {
-      kind,
+    QasmSimError::InvalidToken {
+      source,
+      lineno,
+      startpos,
+      endpos,
+      ..
+    } => {
+      Some(HumanDescription {
+        msg: "invalid token".into(),
+        lineno: *lineno,
+        startpos: *startpos,
+        endpos: *endpos,
+        linesrc: (*source).into(),
+        help: None
+      })
+    }
+    QasmSimError::UnexpectedEOF {
+      source,
+      lineno,
+      startpos,
+      endpos,
+      expected,
+      ..
+    } => {
+      let expectation = expectation(&expected);
+      Some(HumanDescription {
+        msg: format!("{}, found EOF", &expectation),
+        lineno: *lineno,
+        startpos: *startpos,
+        endpos: *endpos,
+        linesrc: (*source).into(),
+        help: Some(format!("{} here", hint(&expected)))
+      })
+    }
+    QasmSimError::UnexpectedToken {
       source,
       lineno,
       startpos,
       endpos,
       token,
       expected
-    } =>
-    match kind {
-      ErrorKind::InvalidToken => {
-        Some(HumanDescription {
-          msg: "invalid token".into(),
-          lineno: *lineno,
-          startpos: *startpos,
-          endpos: *endpos,
-          linesrc: (*source).into(),
-          help: None
-        })
-      }
-      ErrorKind::UnexpectedEOF => {
+    } => {
+      let token = token.as_ref().unwrap();
+      let endpos = std::cmp::min(endpos.unwrap(), source.len());
+
+      let mut msg = format!("unexpected \"{}\" found", &token);
+      let mut help = None;
+      if expected.len() > 0 {
         let expectation = expectation(&expected);
-        Some(HumanDescription {
-          msg: format!("{}, found EOF", &expectation),
-          lineno: *lineno,
-          startpos: *startpos,
-          endpos: *endpos,
-          linesrc: (*source).into(),
-          help: Some(format!("{} here", hint(&expected)))
-        })
+        msg = format!("{}, found \"{}\"", &expectation, &token);
+        help =  Some(format!("{} before this", hint(&expected)));
       }
-      ErrorKind::UnexpectedToken => {
-        let token = token.as_ref().unwrap();
-        let endpos = std::cmp::min(endpos.unwrap(), source.len());
 
-        let mut msg = format!("unexpected \"{}\" found", &token);
-        let mut help = None;
-        if expected.len() > 0 {
-          let expectation = expectation(&expected);
-          msg = format!("{}, found \"{}\"", &expectation, &token);
-          help =  Some(format!("{} before this", hint(&expected)));
-        }
-
-        Some(HumanDescription {
-          msg,
-          lineno: *lineno,
-          startpos: *startpos,
-          endpos: Some(endpos),
-          linesrc: (*source).into(),
-          help
-        })
-      }
+      Some(HumanDescription {
+        msg,
+        lineno: *lineno,
+        startpos: *startpos,
+        endpos: Some(endpos),
+        linesrc: (*source).into(),
+        help
+      })
     }
     QasmSimError::SemanticError {
       source,

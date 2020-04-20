@@ -7,18 +7,26 @@ use crate::grammar::Tok;
 use crate::interpreter::runtime::QasmType;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ErrorKind {
-  InvalidToken,
-  UnexpectedEOF,
-  UnexpectedToken
-}
-
-#[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum QasmSimError<'src> {
   UnknownError (String),
-  SyntaxError {
-    kind: ErrorKind,
+  InvalidToken {
+    source: &'src str,
+    lineno: usize,
+    startpos: usize,
+    endpos: Option<usize>,
+    token: Option<Tok>,
+    expected: Vec<String>,
+  },
+  UnexpectedEOF {
+    source: &'src str,
+    lineno: usize,
+    startpos: usize,
+    endpos: Option<usize>,
+    token: Option<Tok>,
+    expected: Vec<String>,
+  },
+  UnexpectedToken {
     source: &'src str,
     lineno: usize,
     startpos: usize,

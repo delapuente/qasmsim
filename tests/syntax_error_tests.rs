@@ -4,7 +4,7 @@ extern crate qasmsim;
 extern crate indoc;
 
 use indoc::indoc;
-use qasmsim::{ QasmSimError, ErrorKind };
+use qasmsim::QasmSimError;
 use qasmsim::grammar::Tok;
 
 #[test]
@@ -13,8 +13,7 @@ fn test_missing_semicolon_at_eof() {
     OPENQASM 2.0;
     qreg q[10]");
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::UnexpectedEOF,
+  assert_eq!(err, QasmSimError::UnexpectedEOF {
     source: "qreg q[10]",
     lineno: 2,
     startpos: 10,
@@ -31,8 +30,7 @@ fn test_missing_semicolon_almost_at_eof() {
     qreg q[10]
   ");
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::UnexpectedEOF,
+  assert_eq!(err, QasmSimError::UnexpectedEOF {
     source: "qreg q[10]\n",
     lineno: 2,
     startpos: 10,
@@ -50,8 +48,7 @@ fn test_missing_semicolon_between_two_instructions() {
     qreg r[10];
   ");
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::UnexpectedToken,
+  assert_eq!(err, QasmSimError::UnexpectedToken {
     source: "qreg r[10];\n",
     lineno: 3,
     startpos: 0,
@@ -68,8 +65,7 @@ fn test_missing_bracket() {
     qreg q[10;
   ");
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::UnexpectedToken,
+  assert_eq!(err, QasmSimError::UnexpectedToken {
     source: "qreg q[10;\n",
     lineno: 2,
     startpos: 9,
@@ -85,8 +81,7 @@ fn test_missing_openqasm_header() {
     qreg q[10];
   ");
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::UnexpectedToken,
+  assert_eq!(err, QasmSimError::UnexpectedToken {
     source: "qreg q[10];\n",
     lineno: 1,
     startpos: 0,
@@ -103,8 +98,7 @@ fn test_misspelling_openqasm_header() {
     qreg q[10];
   ");
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::InvalidToken,
+  assert_eq!(err, QasmSimError::InvalidToken {
     source: "OEPNQASM 2.0;\n",
     lineno: 1,
     startpos: 0,
@@ -121,8 +115,7 @@ fn test_missing_openqasm_version() {
     qreg q[10];
   ");
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::UnexpectedToken,
+  assert_eq!(err, QasmSimError::UnexpectedToken {
     source: "OPENQASM;\n",
     lineno: 1,
     startpos: 8,
@@ -144,8 +137,7 @@ fn test_missing_arrow() {
   // XXX: I have no idea why lalrpop is expecting something different than an
   // arrow here.
   let err = qasmsim::run(&source, None).unwrap_err();
-  assert_eq!(err, QasmSimError::SyntaxError {
-    kind: ErrorKind::UnexpectedToken,
+  assert_eq!(err, QasmSimError::UnexpectedToken {
     source: "measure q c;\n",
     lineno: 4,
     startpos: 10,

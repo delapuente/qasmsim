@@ -8,7 +8,7 @@ use crate::grammar::{ open_qasm2, Location };
 use crate::grammar::lexer;
 use crate::qe;
 use crate::semantics::SemanticError;
-pub use crate::error::{ Result, ErrorKind, QasmSimError };
+pub use crate::error::{ Result, QasmSimError };
 
 pub type ParseError =
   lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;
@@ -21,8 +21,7 @@ impl<'src> From<SrcAndErr<'src, ParseError>> for QasmSimError<'src> {
     match error {
       ParseError::InvalidToken { location } => {
         let (source, lineno, startpos, endpos) = extract_line(location.0, None, input);
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::InvalidToken,
+        QasmSimError::InvalidToken {
           source,
           lineno,
           startpos,
@@ -33,8 +32,7 @@ impl<'src> From<SrcAndErr<'src, ParseError>> for QasmSimError<'src> {
       }
       ParseError::UnrecognizedEOF { location, expected } => {
         let (source, lineno, startpos, endpos) = extract_line(location.0, None, input);
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::UnexpectedEOF,
+        QasmSimError::UnexpectedEOF {
           source,
           lineno,
           startpos,
@@ -47,8 +45,7 @@ impl<'src> From<SrcAndErr<'src, ParseError>> for QasmSimError<'src> {
         let location = token.0;
         let endlocation = token.2;
         let (source, lineno, startpos, endpos) = extract_line(location.0, Some(endlocation.0), input);
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::UnexpectedToken,
+        QasmSimError::UnexpectedToken {
           source,
           lineno,
           startpos,
@@ -61,8 +58,7 @@ impl<'src> From<SrcAndErr<'src, ParseError>> for QasmSimError<'src> {
         let location = token.0;
         let endlocation = token.2;
         let (source, lineno, startpos, endpos) = extract_line(location.0, Some(endlocation.0), input);
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::UnexpectedToken,
+        QasmSimError::UnexpectedToken {
           source,
           lineno,
           startpos,
@@ -74,8 +70,7 @@ impl<'src> From<SrcAndErr<'src, ParseError>> for QasmSimError<'src> {
       ParseError::User { error: lexer_error } => {
         let location = lexer_error.location;
         let (source, lineno, startpos, endpos) = extract_line(location.0, None, input);
-        QasmSimError::SyntaxError {
-          kind: ErrorKind::InvalidToken, // XXX: Actually, this should be "InvalidInput"
+        QasmSimError::InvalidToken { // XXX: Actually, this should be "InvalidInput"
           source,
           lineno,
           startpos,
