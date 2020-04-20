@@ -25,9 +25,6 @@ pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
   let (out, serialization_time) = measure!("serialization", {
     computation.map_err(|err| api::QasmSimError::from((input, err)))?.into()
   });
-  set!(&out,
-    "parsing" => parsing_time
-  );
   let times = js_sys::Object::new();
   set!(&times,
     "parsing" => parsing_time,
