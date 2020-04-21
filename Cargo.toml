@@ -2,10 +2,14 @@
 edition = "2018"
 name = "qasmsim"
 description = "A QASM interpreter and quantum simulator in Rust"
-version = "0.1.0"
+version = "1.0.0"
 repository = "git@github.com:delapuente/qasmsim.git"
 license = "MIT"
 authors = ["Salvador de la Puente González <hola@salvadelapuente.com>"]
+homepage = "https://github.com/delapuente/qasmsim/"
+keywords = ["quantum", "qasm", "computing"]
+categories = ["simulation", "science", "command-line-utilities"]
+readme = "README.md"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
