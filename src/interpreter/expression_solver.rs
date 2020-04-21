@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::grammar::ast;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExpressionSolver<'bindings>(&'bindings HashMap<String, f64>);
 
 impl<'bindings> ExpressionSolver<'bindings> {

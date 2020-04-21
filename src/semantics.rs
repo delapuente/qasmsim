@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use crate::grammar::ast;
 use crate::grammar::Location;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RegisterType {
   Q,
   C
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SemanticError {
   RedefinitionError {
     symbol_name: String,
@@ -21,18 +21,18 @@ pub enum SemanticError {
 pub type Result<T> = std::result::Result<T, SemanticError>;
 
 /// Register name, type, size and definition location.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RegisterEntry(pub String, pub RegisterType, pub usize, pub Location);
 
 /// Register name, start index, end index.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MemoryMapEntry(pub String, pub usize, pub usize);
 
 /// Macro name, real arguments, register arguments, list of statements and definition location.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MacroDefinition(pub String, pub Vec<String>, pub Vec<String>, pub Vec<ast::GateOperation>, pub Location);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Semantics {
   pub macro_definitions: HashMap<String, MacroDefinition>,
   pub register_table: HashMap<String, RegisterEntry>,
@@ -45,16 +45,11 @@ pub struct Semantics {
 
 impl Semantics {
   pub fn new() -> Self {
-    Semantics {
-      macro_definitions: HashMap::new(),
-      register_table: HashMap::new(),
-      memory_map: HashMap::new(),
-      quantum_memory_size: 0,
-      classical_memory_size: 0
-    }
+    Default::default()
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Default)]
 struct SemanticsBuilder {
   semantics: Semantics,
   last_quantum_register: Option<String>,
@@ -63,11 +58,7 @@ struct SemanticsBuilder {
 
 impl SemanticsBuilder {
   pub fn new() -> Self {
-    SemanticsBuilder {
-      semantics: Semantics::new(),
-      last_quantum_register: None,
-      last_classical_register: None
-    }
+    Default::default()
   }
 
   pub fn new_quantum_register(&mut self, name: String, size: usize, location: Location)

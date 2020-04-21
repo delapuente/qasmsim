@@ -6,8 +6,14 @@ use std::fmt;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct Location(pub usize);
+
+impl Location {
+  pub fn new() -> Self {
+    Default::default()
+  }
+}
 
 impl fmt::Display for Location {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -17,8 +23,14 @@ impl fmt::Display for Location {
 
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LexicalError<Loc> { pub location: Loc }
+
+impl<Loc> LexicalError<Loc> where Loc: Default {
+  pub fn new(location: Loc) -> Self {
+    LexicalError{location}
+  }
+}
 
 impl<Loc> fmt::Display for LexicalError<Loc>
 where Loc: fmt::Display {
@@ -27,7 +39,7 @@ where Loc: fmt::Display {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Tok {
   Add,
   Minus,
@@ -117,7 +129,7 @@ impl fmt::Display for Tok {
   }
 }
 
-fn get_keywords() -> HashMap<String, Tok> {
+fn keywords() -> HashMap<String, Tok> {
   let mut kw = HashMap::new();
   kw.insert(String::from("sin"), Tok::Sin);
   kw.insert(String::from("cos"), Tok::Cos);
@@ -146,6 +158,7 @@ enum Mode {
   Str
 }
 
+#[derive(Debug, Clone)]
 pub struct Lexer<'input> {
   mode: VecDeque<Mode>,
   lineno: usize,
@@ -165,7 +178,7 @@ impl<'input> Lexer<'input> {
       lineoffset: 0,
       offset: 0,
       input,
-      keywords: get_keywords(),
+      keywords: keywords(),
       chars: input.char_indices().peekable(),
       errored: false
     }
@@ -596,7 +609,7 @@ mod tests {
 
   #[test]
   fn test_keywords() {
-    for (keyword, token) in get_keywords() {
+    for (keyword, token) in keywords() {
       let lexer = Lexer::new(&keyword);
       assert_eq!(
         lexer.collect::<Vec<_>>(), vec![

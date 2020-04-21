@@ -51,7 +51,7 @@ pub enum RuntimeError {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum QasmType {
   Register,
   QuantumRegister,
@@ -78,6 +78,7 @@ impl From<SemanticError> for RuntimeError {
   }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 struct Runtime<'program> {
   macro_stack: VecDeque<BindingMappings>,
   semantics: Semantics,
@@ -126,7 +127,7 @@ impl<'src, 'program> Runtime<'program> {
         }
         ast::Statement::Conditional(register, test, operation) => {
           let actual_register = (register).clone();
-          let register_name = self.get_register_name(&actual_register);
+          let register_name = self.register_name(&actual_register);
           self.assert_is_classical_register(register_name)?;
 
           let value = match actual_register {
@@ -224,8 +225,8 @@ impl<'src, 'program> Runtime<'program> {
   }
 
   fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> Result<()> {
-    self.assert_is_quantum_register(self.get_register_name(&args[0]))?;
-    self.assert_is_classical_register(self.get_register_name(&args[1]))?;
+    self.assert_is_quantum_register(self.register_name(&args[0]))?;
+    self.assert_is_classical_register(self.register_name(&args[1]))?;
 
     let expanded_arguments = self.expand_arguments(&args)
       .map_err(|sizes| RuntimeError::RegisterSizeMismatch {
@@ -242,11 +243,11 @@ impl<'src, 'program> Runtime<'program> {
   }
 
   fn apply_one_measurement(&mut self, args: Vec<ast::Argument>) -> Result<()> {
-    let classical_register_name = self.get_register_name(&args[1]);
-    let source = self.get_bit_mapping(&args[0])?;
+    let classical_register_name = self.register_name(&args[1]);
+    let source = self.bit_mapping(&args[0])?;
     let measurement = self.statevector.measure(source) as u64;
 
-    let target = self.get_bit_mapping(&args[1])?;
+    let target = self.bit_mapping(&args[1])?;
     let value = measurement * (1 << target);
     let prev_value = *(self.memory.get(classical_register_name).expect("after `apply_measurement()`, get the entry"));
     self.memory.insert(classical_register_name.into(), prev_value + value);
@@ -261,12 +262,12 @@ impl<'src, 'program> Runtime<'program> {
         let theta = real_args[0];
         let phi = real_args[1];
         let lambda = real_args[2];
-        let target = self.get_bit_mapping(&args[0])?;
+        let target = self.bit_mapping(&args[0])?;
         self.statevector.u(theta, phi, lambda, target);
       }
       "CX" => {
-        let control = self.get_bit_mapping(&args[0])?;
-        let target = self.get_bit_mapping(&args[1])?;
+        let control = self.bit_mapping(&args[0])?;
+        let target = self.bit_mapping(&args[1])?;
         self.statevector.cnot(control, target);
       }
       macro_name => {
@@ -279,13 +280,13 @@ impl<'src, 'program> Runtime<'program> {
 
   fn check_all_are_quantum_registers(&self, args: &Vec<ast::Argument>) -> Result<()> {
     for argument in args {
-      let register_name = self.get_register_name(argument);
+      let register_name = self.register_name(argument);
       self.assert_is_quantum_register(register_name)?;
     }
     Ok(())
   }
 
-  fn get_register_name<'a>(&self, arg: &'a ast::Argument) -> &'a str {
+  fn register_name<'a>(&self, arg: &'a ast::Argument) -> &'a str {
     match arg {
       ast::Argument::Id(name) => name,
       ast::Argument::Item(name, _) => name
@@ -345,11 +346,11 @@ impl<'src, 'program> Runtime<'program> {
 
   fn expand_arguments(&self, args: &Vec<ast::Argument>)
   -> std::result::Result<Vec<Vec<ast::Argument>>, Vec<usize>> {
-    let range = self.get_range(args)?;
+    let range = self.range(args)?;
     Ok(range.map(|index| Runtime::specify(args, index)).collect())
   }
 
-  fn get_bit_mapping(&self, argument: &ast::Argument) -> Result<usize> {
+  fn bit_mapping(&self, argument: &ast::Argument) -> Result<usize> {
     match argument {
       ast::Argument::Item(name, index) => {
         match self.semantics.memory_map.get(name) {
@@ -376,7 +377,7 @@ impl<'src, 'program> Runtime<'program> {
     }
   }
 
-  fn get_range(&self, args: &Vec<ast::Argument>) -> std::result::Result<std::ops::Range<usize>, Vec<usize>> {
+  fn range(&self, args: &Vec<ast::Argument>) -> std::result::Result<std::ops::Range<usize>, Vec<usize>> {
     // XXX: This is performed after validating the type of args.
 
     let whole_registers: Vec<&ast::Argument> = args.iter()
@@ -390,7 +391,7 @@ impl<'src, 'program> Runtime<'program> {
 
     let all_sizes: Vec<usize> = whole_registers.iter()
     .map(|arg| {
-      let register_name = self.get_register_name(arg);
+      let register_name = self.register_name(arg);
       let register_entry = self.semantics.register_table.get(register_name).expect("after validation, get register entry");
       register_entry.2
     })

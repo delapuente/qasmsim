@@ -28,10 +28,16 @@ macro_rules! measure {
   };
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RunTimes {
   pub parsing_time: u128,
   pub simulation_time: u128
+}
+
+impl RunTimes {
+  pub fn new(parsing_time: u128, simulation_time: u128) -> Self {
+    RunTimes{parsing_time, simulation_time}
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -41,6 +47,20 @@ pub struct Run {
   pub memory: HashMap<String, u64>,
   pub histogram: Option<Histogram>,
   pub times: RunTimes
+}
+
+impl Run {
+  pub fn new(statevector: StateVector, probabilities: Vec<f64>,
+             memory: HashMap<String, u64>, histogram: Option<Histogram>,
+             times: RunTimes) -> Self {
+    Run{
+      statevector,
+      probabilities,
+      memory,
+      histogram,
+      times
+    }
+  }
 }
 
 impl convert::From<(Computation, u128, u128)> for Run {

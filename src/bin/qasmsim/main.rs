@@ -11,7 +11,7 @@ use qasmsim::Run;
 
 fn main() -> io::Result<()> {
   let options = options::Options::from_args();
-  let source = get_source(&options.source)?;
+  let source = source(&options.source)?;
   match qasmsim::run(&source, options.shots) {
     Ok(result) => print_result(&result, &options).expect("print result"),
     Err(error) => eprintln!("{}", error)
@@ -19,7 +19,7 @@ fn main() -> io::Result<()> {
   Ok(())
 }
 
-fn get_source(source: &Option<PathBuf>) -> io::Result<String> {
+fn source(source: &Option<PathBuf>) -> io::Result<String> {
   if let Some(path) = source {
     fs::read_to_string(path)
   }

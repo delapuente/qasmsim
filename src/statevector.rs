@@ -7,12 +7,13 @@ use num::Float;
 
 use crate::complex::{ self, Complex, ComplexMargin };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct StateVector {
   pub bases: Vec<Complex>,
   pub bit_width: usize
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Measurement<'a> {
   bases: &'a mut Vec<Complex>,
   chances: [f64; 2],

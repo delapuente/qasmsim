@@ -4,7 +4,7 @@ use crate::statevector::StateVector;
 
 pub type Histogram = HashMap<String, Vec<(u64, usize)>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Computation {
   pub statevector: StateVector,
   pub memory: HashMap<String, u64>,
@@ -23,15 +23,14 @@ impl Computation {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HistogramBuilder {
   histogram: Histogram
 }
 
 impl HistogramBuilder {
   pub fn new() -> Self {
-    HistogramBuilder {
-      histogram: HashMap::new()
-    }
+    Default::default()
   }
 
   pub fn update(&mut self, memory: &HashMap<String, u64>) {

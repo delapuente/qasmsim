@@ -16,7 +16,7 @@ pub type ParseError =
 
 pub type SrcAndErr<'src, E> = (&'src str, E);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum QasmSimError<'src> {
   UnknownError (String),

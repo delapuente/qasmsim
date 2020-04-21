@@ -2,7 +2,7 @@ use std::fmt::{ self, Write };
 
 use crate::error::QasmSimError;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HumanDescription {
   msg: String,
   lineno: usize,
@@ -12,7 +12,7 @@ pub struct HumanDescription {
   help: Option<String>
 }
 
-fn get_human_description(error: &QasmSimError) -> Option<HumanDescription> {
+fn human_description(error: &QasmSimError) -> Option<HumanDescription> {
   match error {
     QasmSimError::InvalidToken {
       source,
@@ -213,7 +213,7 @@ pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Re
   match error {
     QasmSimError::UnknownError(msg) => write!(buffer, "{}", msg),
     _ => {
-      let description: HumanDescription = get_human_description(error).expect("some human description");
+      let description: HumanDescription = human_description(error).expect("some human description");
       humanize(buffer, &description)
     }
   }

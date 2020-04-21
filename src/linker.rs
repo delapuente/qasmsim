@@ -4,11 +4,12 @@ use crate::grammar::open_qasm2;
 use crate::grammar::ast;
 use crate::grammar::{ Location, Lexer };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LinkerError {
   LibraryNotFound { location: Location, libpath: String }
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct Linker {
   embedded: HashMap<String, String>
 }
@@ -16,6 +17,10 @@ pub struct Linker {
 type Result<T> = std::result::Result<T, LinkerError>;
 
 impl Linker {
+  pub fn new() -> Self {
+    Linker{embedded: Default::default()}
+  }
+
   pub fn with_embedded(embedded: HashMap<String, String>) -> Self {
     Linker{embedded}
   }
@@ -25,7 +30,7 @@ impl Linker {
     for (index, span) in tree.program.iter().enumerate() {
       match &*span.node {
         ast::Statement::Include(libpath) => {
-          let source = self.get_sources(&libpath).map_err(|_| {
+          let source = self.sources(&libpath).map_err(|_| {
             LinkerError::LibraryNotFound { location: span.boundaries.0.clone(), libpath: libpath.into() }
           })?;
           let lexer = Lexer::new(&source);
@@ -50,7 +55,7 @@ impl Linker {
     Ok(tree)
   }
 
-  fn get_sources(&self, libpath: &str) -> std::result::Result<String, ()> {
+  fn sources(&self, libpath: &str) -> std::result::Result<String, ()> {
     if self.embedded.contains_key(libpath) {
       return Ok(self.embedded.get(libpath).unwrap().clone());
     }

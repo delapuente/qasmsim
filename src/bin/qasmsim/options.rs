@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clone, PartialEq, Eq, StructOpt, Hash)]
 #[structopt(name = "qasmsim", about = "A QASM interpreter and quantum simulator in Rust.")]
 pub struct Options {
 
