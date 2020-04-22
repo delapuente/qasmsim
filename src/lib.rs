@@ -1,21 +1,21 @@
 mod api;
+mod arch;
 mod error;
 mod humanize;
-mod arch;
 #[macro_use]
 pub mod grammar;
-mod linker;
-mod semantics;
 pub mod complex;
-pub mod statevector;
 mod interpreter;
+mod linker;
 mod qe;
+mod semantics;
+pub mod statevector;
 
-pub use crate::interpreter::{ Computation, Histogram, runtime::QasmType };
 pub use crate::error::QasmSimError;
+pub use crate::interpreter::{runtime::QasmType, Computation, Histogram};
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use crate::arch::native::{ Run, RunTimes };
+pub use crate::arch::native::{Run, RunTimes};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::arch::native::run;

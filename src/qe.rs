@@ -1,4 +1,3 @@
-
 pub const QELIB1: &str = r#"
 // Quantum Experience (QE) Standard Header
 // file: qelib1.inc

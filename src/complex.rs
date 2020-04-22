@@ -1,5 +1,5 @@
-use num;
 use float_cmp;
+use num;
 
 pub type Complex = num::Complex<f64>;
 pub type ComplexMargin = float_cmp::F64Margin;

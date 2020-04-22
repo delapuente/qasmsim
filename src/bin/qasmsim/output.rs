@@ -1,2 +1,2 @@
-pub mod tabular;
 pub mod csv;
+pub mod tabular;
