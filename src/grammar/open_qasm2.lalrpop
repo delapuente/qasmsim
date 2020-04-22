@@ -189,7 +189,7 @@ List<T>: Vec<T> = {
 
 extern {
   type Location = Location;
-  type Error = LexicalError<Location>; // cannot say "Location"?
+  type Error = LexicalError<Location>;
 
   enum Tok {
     "+" => Tok::Add,

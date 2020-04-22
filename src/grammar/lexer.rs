@@ -150,7 +150,7 @@ fn keywords() -> HashMap<String, Tok> {
   kw
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Mode {
   Base,
   Version,

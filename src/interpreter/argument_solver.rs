@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::grammar::ast;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArgumentSolver<'bindings>(&'bindings HashMap<String, ast::Argument>);
 
 impl<'bindings> ArgumentSolver<'bindings> {

@@ -76,7 +76,7 @@ fn human_description(error: &QasmSimError) -> Option<HumanDescription> {
         help
       })
     }
-    QasmSimError::SemanticError {
+    QasmSimError::RedefinitionError {
       source,
       lineno,
       previous_lineno,

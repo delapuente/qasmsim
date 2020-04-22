@@ -81,7 +81,7 @@ impl convert::From<(Computation, u128, u128)> for Run {
 
 }
 
-pub fn run<'src>(input: &'src str, shots: Option<usize>) -> api::Result<'src, Run> {
+pub fn run(input: & str, shots: Option<usize>) -> api::Result<'_, Run> {
   let (linked, parsing_time) = measure!({
     compile_with_linker(input, api::default_linker())
   });

@@ -44,7 +44,7 @@ pub enum QasmSimError<'src> {
     token: Option<Tok>,
     expected: Vec<String>,
   },
-  SemanticError {
+  RedefinitionError {
     source: &'src str,
     symbol_name: String,
     lineno: usize,
@@ -273,7 +273,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
           SemanticError::RedefinitionError { symbol_name, location, previous_location } => {
             let (source, lineno, _, _) = extract_line(location.0, None, input);
             let (_, previous_lineno, _, _) = extract_line(previous_location.0, None, input);
-            QasmSimError::SemanticError {
+            QasmSimError::RedefinitionError {
               source: source.into(),
               symbol_name,
               lineno,

@@ -11,10 +11,8 @@ use crate::interpreter::computation::{ Computation, HistogramBuilder };
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RuntimeError {
-  /*
-  DifferentSizeRegisters, */
   Other,
   SemanticError(SemanticError),
   IndexOutOfBounds {

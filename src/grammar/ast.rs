@@ -51,7 +51,7 @@ pub enum QuantumOperation {
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnitaryOperation(pub String, pub Vec<Expression>, pub Vec<Argument>);
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Opcode {
   Add,
   Sub,
@@ -60,7 +60,7 @@ pub enum Opcode {
   Pow
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Funccode {
   Sin,
   Cos,
