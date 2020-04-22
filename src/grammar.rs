@@ -2,7 +2,7 @@ use lalrpop_util::{ self, lalrpop_mod };
 
 pub mod lexer;
 pub mod ast;
-lalrpop_mod!(pub open_qasm2, "/grammar/open_qasm2.rs");
+lalrpop_mod!(#[allow(clippy::all)] pub open_qasm2, "/grammar/open_qasm2.rs");
 
 
 pub use lexer::{

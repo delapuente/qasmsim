@@ -11,8 +11,8 @@ use crate::options::Options;
 
 pub fn print<W>(buffer: &mut W, result: &Run, options: &Options) where W: Write {
 
-  writeln!(buffer, "").expect("writes");
-  if let Some(_) = options.shots {
+  writeln!(buffer).expect("writes");
+  if options.shots.is_some() {
     if options.verbose > 0 {
       writeln!(buffer, "Memory histogram:").expect("writes");
     }
@@ -26,7 +26,7 @@ pub fn print<W>(buffer: &mut W, result: &Run, options: &Options) where W: Write 
     print_memory(buffer, &result.memory, options).expect("writes");
   }
   if options.verbose > 0 {
-    writeln!(buffer, "").expect("writes");
+    writeln!(buffer).expect("writes");
   }
 
   if (options.statevector || options.probabilities) && options.shots.is_none() {
@@ -36,7 +36,7 @@ pub fn print<W>(buffer: &mut W, result: &Run, options: &Options) where W: Write 
     print_state(buffer, &result.statevector, &result.probabilities, options).expect("writes");
   }
   if options.verbose > 0 {
-    writeln!(buffer, "").expect("writes");
+    writeln!(buffer).expect("writes");
   }
 
   if options.times {
@@ -46,7 +46,7 @@ pub fn print<W>(buffer: &mut W, result: &Run, options: &Options) where W: Write 
     print_times(buffer, &result.times).expect("writes");
   }
   if options.verbose > 0 {
-    writeln!(buffer, "").expect("writes");
+    writeln!(buffer).expect("writes");
   }
 }
 
@@ -94,7 +94,7 @@ fn print_memory_summary<W>(buffer: &mut W, histogram: &Histogram, options: &Opti
 }
 
 
-fn print_state<W>(buffer: &mut W, statevector: &StateVector, probabilities: &Vec<f64>, options: &Options)
+fn print_state<W>(buffer: &mut W, statevector: &StateVector, probabilities: &[f64], options: &Options)
 -> io::Result<()> where W: Write {
   assert!(
     options.statevector || options.probabilities,
@@ -114,14 +114,15 @@ fn print_state<W>(buffer: &mut W, statevector: &StateVector, probabilities: &Vec
   }
   table.set_titles(titles);
 
-  for idx in 0..statevector.bases.len() {
+  let amplitudes_and_probabilities = statevector.bases.iter().zip(probabilities).enumerate();
+  for (idx, (amplitude, probability)) in amplitudes_and_probabilities  {
     let mut row = row![idx];
     if options.statevector {
-      row.add_cell(cell!(format!("{:.6}", statevector.bases[idx].re)));
-      row.add_cell(cell!(format!("{:.6}", statevector.bases[idx].im)));
+      row.add_cell(cell!(format!("{:.6}", amplitude.re)));
+      row.add_cell(cell!(format!("{:.6}", amplitude.im)));
     }
     if options.probabilities {
-      row.add_cell(cell!(format!("{:.6}", probabilities[idx])));
+      row.add_cell(cell!(format!("{:.6}", probability)));
     }
     table.add_row(row);
   }

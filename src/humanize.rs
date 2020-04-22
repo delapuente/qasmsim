@@ -60,12 +60,15 @@ fn human_description(error: &QasmSimError) -> Option<HumanDescription> {
       let endpos = std::cmp::min(endpos.unwrap(), source.len());
 
       let mut msg = format!("unexpected \"{}\" found", &token);
-      let mut help = None;
-      if expected.len() > 0 {
-        let expectation = expectation(&expected);
-        msg = format!("{}, found \"{}\"", &expectation, &token);
-        help =  Some(format!("{} before this", hint(&expected)));
-      }
+      let help =
+        if !expected.is_empty() {
+          let expectation = expectation(&expected);
+          msg = format!("{}, found \"{}\"", &expectation, &token);
+          Some(format!("{} before this", hint(&expected)))
+        }
+        else {
+          None
+        };
 
       Some(HumanDescription {
         msg,
@@ -99,7 +102,7 @@ fn human_description(error: &QasmSimError) -> Option<HumanDescription> {
       size
     } => {
       Some(HumanDescription {
-        msg: format!("index out of bounds"),
+        msg: "index out of bounds".to_string(),
         lineno: *lineno,
         startpos: 0,
         endpos: None,
@@ -226,7 +229,7 @@ fn humanize<W: Write>(buffer: &mut W, descripition: &HumanDescription) -> fmt::R
       let lineno_len = lineno_str.len();
       let linesrc_str: String = linesrc.into();
       let linesrc_str_trimmed = linesrc_str.trim_end();
-      let help_str = help.clone().unwrap_or(msg.clone());
+      let help_str = help.clone().unwrap_or_else(|| msg.clone());
       let indicator_width = if let Some(pos) = endpos { pos - startpos } else { 1 };
 
       writeln!(buffer, "error: {}", msg)?;
@@ -242,18 +245,18 @@ fn humanize<W: Write>(buffer: &mut W, descripition: &HumanDescription) -> fmt::R
   }
 }
 
-fn expectation(expected: &Vec<String>) -> String {
+fn expectation(expected: &[String]) -> String {
   let choices = list_of_choices(expected).expect("len() is greater than 0");
   format!("expected {}", choices)
 }
 
-fn hint(expected: &Vec<String>) -> String {
+fn hint(expected: &[String]) -> String {
   let choices = list_of_choices(expected).expect("len() is greater than 0");
   format!("consider adding {}{}",
     if choices.len() == 1 { "one of " } else { "" }, choices)
 }
 
-fn list_of_choices(choices: &Vec<String>) -> Option<String> {
+fn list_of_choices(choices: &[String]) -> Option<String> {
   let len = choices.len();
   match len {
     0 => None,

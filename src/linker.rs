@@ -28,17 +28,14 @@ impl Linker {
   pub fn link(&self, mut tree: ast::OpenQasmProgram) -> Result<ast::OpenQasmProgram> {
     let mut to_embed = vec![];
     for (index, span) in tree.program.iter().enumerate() {
-      match &*span.node {
-        ast::Statement::Include(libpath) => {
-          let source = self.sources(&libpath).map_err(|_| {
-            LinkerError::LibraryNotFound { location: span.boundaries.0.clone(), libpath: libpath.into() }
-          })?;
-          let lexer = Lexer::new(&source);
-          let parser = open_qasm2::OpenQasmLibraryParser::new();
-          let library_tree = parser.parse(lexer).unwrap();
-          to_embed.push((index, span.boundaries.clone(), library_tree.definitions));
-        },
-        _ => ()
+      if let ast::Statement::Include(libpath) = &*span.node {
+        let source = self.sources(&libpath).map_err(|_| {
+          LinkerError::LibraryNotFound { location: span.boundaries.0.clone(), libpath: libpath.into() }
+        })?;
+        let lexer = Lexer::new(&source);
+        let parser = open_qasm2::OpenQasmLibraryParser::new();
+        let library_tree = parser.parse(lexer).unwrap();
+        to_embed.push((index, span.boundaries.clone(), library_tree.definitions));
       }
     }
     to_embed.reverse();
@@ -50,7 +47,7 @@ impl Linker {
           node: Box::new(one_statement)
         })
       }
-      tree.program.splice(index..index+1, inner_spans);
+      tree.program.splice(index..=index, inner_spans);
     }
     Ok(tree)
   }

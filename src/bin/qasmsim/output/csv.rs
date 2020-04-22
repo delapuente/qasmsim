@@ -21,7 +21,7 @@ pub fn print(path: &mut PathBuf, result: &Run, options: &Options) {
   let mut writer = csv::Writer::from_path(&path).expect("can open the file");
   let writer_ref = &mut writer;
 
-  if let Some(_) = options.shots {
+  if options.shots.is_some() {
     let histogram = result.histogram.as_ref().expect("there is some histogram");
     print_histogram(writer_ref, histogram, options).expect("writes");
   }
@@ -86,7 +86,8 @@ fn print_memory_summary<W>(writer: &mut csv::Writer<W>, histogram: &Histogram, o
 }
 
 
-fn print_state<W>(writer: &mut csv::Writer<W>, statevector: &StateVector, probabilities: &Vec<f64>, options: &Options)
+fn print_state<W>(writer: &mut csv::Writer<W>, statevector: &StateVector,
+                  probabilities: &[f64], options: &Options)
 -> io::Result<()> where W: Write {
   assert!(
     options.statevector || options.probabilities,
@@ -103,14 +104,15 @@ fn print_state<W>(writer: &mut csv::Writer<W>, statevector: &StateVector, probab
   }
   writer.write_record(&titles)?;
 
-  for idx in 0..statevector.bases.len() {
+  let amplitudes_and_probabilities = statevector.bases.iter().zip(probabilities).enumerate();
+  for (idx, (amplitude, probability)) in amplitudes_and_probabilities  {
     let mut record = vec![format!("{}", idx)];
     if options.statevector {
-      record.push(format!("{:.6}", statevector.bases[idx].re));
-      record.push(format!("{:.6}", statevector.bases[idx].im));
+      record.push(format!("{:.6}", amplitude.re));
+      record.push(format!("{:.6}", amplitude.im));
     }
     if options.probabilities {
-      record.push(format!("{:.6}", probabilities[idx]));
+      record.push(format!("{:.6}", probability));
     }
     writer.write_record(&record)?;
   }

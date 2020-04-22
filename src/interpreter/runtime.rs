@@ -116,7 +116,7 @@ impl<'src, 'program> Runtime<'program> {
     }
   }
 
-  fn apply_gates(&mut self, statements: &'program Vec<ast::Span<ast::Statement>>) -> Result<()> {
+  fn apply_gates(&mut self, statements: &'program [ast::Span<ast::Statement>]) -> Result<()> {
     for span in statements {
       self.location = Some(&span.boundaries.0);
       match &*span.node {
@@ -178,28 +178,27 @@ impl<'src, 'program> Runtime<'program> {
     Ok(())
   }
 
-  fn resolve_actual_args(&self, args: &Vec<ast::Argument>) -> Result<Vec<ast::Argument>> {
-    let mut actual = Vec::new();
-    if !self.is_running_macro() {
-      actual = args.iter().cloned().collect();
-    }
-    else {
-      let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get first entry of the stack");
-      let arg_bindings = &stack_entry.1;
-      let argument_solver = ArgumentSolver::new(arg_bindings);
-      for argument in args {
-        let actual_argument = argument_solver.solve(argument).map_err(|symbol_name| RuntimeError::SymbolNotFound {
-          location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
-          symbol_name: symbol_name,
-          expected: QasmType::QuantumRegister
-        })?;
-        actual.push(actual_argument)
+  fn resolve_actual_args(&self, args: &[ast::Argument]) -> Result<Vec<ast::Argument>> {
+    let actual =
+      if !self.is_running_macro() {
+        args.iter().map(|argument| Ok(argument.clone())).collect::<Result<Vec<ast::Argument>>>()
       }
-    }
+      else {
+        let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get first entry of the stack");
+        let arg_bindings = &stack_entry.1;
+        let argument_solver = ArgumentSolver::new(arg_bindings);
+        args.iter().map(|argument| {
+          argument_solver.solve(argument).map_err(|symbol_name| RuntimeError::SymbolNotFound {
+            location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
+            symbol_name,
+            expected: QasmType::QuantumRegister
+          })
+        }).collect::<Result<Vec<ast::Argument>>>()
+      }?;
     Ok(actual)
   }
 
-  fn resolve_real_expressions(&self, exprs: &Vec<ast::Expression>) -> Result<Vec<f64>> {
+  fn resolve_real_expressions(&self, exprs: &[ast::Expression]) -> Result<Vec<f64>> {
     let mut real_bindings = &HashMap::new();
     if self.is_running_macro() {
       let stack_entry = self.macro_stack.get(0).expect("if `is_running_macro()`, get first stack entry");
@@ -210,7 +209,7 @@ impl<'src, 'program> Runtime<'program> {
     for expression in exprs {
       let value = expression_solver.solve(&expression).map_err(|symbol_name| RuntimeError::SymbolNotFound {
         location: self.location.expect("after `apply_gates()`, the location of the statement").clone(),
-        symbol_name: symbol_name,
+        symbol_name,
         expected: QasmType::RealValue
       })?;
       solved.push(value);
@@ -219,7 +218,7 @@ impl<'src, 'program> Runtime<'program> {
   }
 
   fn is_running_macro(&self) -> bool {
-    self.macro_stack.len() > 0
+    !self.macro_stack.is_empty()
   }
 
   fn apply_measurement(&mut self, args: Vec<ast::Argument>) -> Result<()> {
@@ -253,8 +252,8 @@ impl<'src, 'program> Runtime<'program> {
     Ok(())
   }
 
-  fn apply_one_gate(&mut self, name: &str, real_args: &Vec<f64>,
-  args: &Vec<ast::Argument>) -> Result<()> {
+  fn apply_one_gate(&mut self, name: &str, real_args: &[f64],
+  args: &[ast::Argument]) -> Result<()> {
     match name {
       "U" => {
         let theta = real_args[0];
@@ -276,7 +275,7 @@ impl<'src, 'program> Runtime<'program> {
     Ok(())
   }
 
-  fn check_all_are_quantum_registers(&self, args: &Vec<ast::Argument>) -> Result<()> {
+  fn check_all_are_quantum_registers(&self, args: &[ast::Argument]) -> Result<()> {
     for argument in args {
       let register_name = self.register_name(argument);
       self.assert_is_quantum_register(register_name)?;
@@ -331,18 +330,17 @@ impl<'src, 'program> Runtime<'program> {
     }
   }
 
-  fn apply_gate_operations(&mut self, operations: &Vec<ast::GateOperation>)
+  fn apply_gate_operations(&mut self, operations: &[ast::GateOperation])
   -> Result<()> {
     for one_operation in operations {
-      match one_operation {
-        ast::GateOperation::Unitary(unitary) => self.apply_unitary(unitary)?,
-        _ => ()
-      };
+      if let ast::GateOperation::Unitary(unitary) = one_operation {
+        self.apply_unitary(unitary)?;
+      }
     }
     Ok(())
   }
 
-  fn expand_arguments(&self, args: &Vec<ast::Argument>)
+  fn expand_arguments(&self, args: &[ast::Argument])
   -> std::result::Result<Vec<Vec<ast::Argument>>, Vec<usize>> {
     let range = self.range(args)?;
     Ok(range.map(|index| Runtime::specify(args, index)).collect())
@@ -364,7 +362,7 @@ impl<'src, 'program> Runtime<'program> {
                 location: self.location.expect("after `apply_gates()`, location of the statement").clone(),
                 symbol_name: name.into(),
                 index: *index,
-                size: size
+                size
               });
             }
             Ok(mapping.1 + *index)
@@ -375,7 +373,7 @@ impl<'src, 'program> Runtime<'program> {
     }
   }
 
-  fn range(&self, args: &Vec<ast::Argument>) -> std::result::Result<std::ops::Range<usize>, Vec<usize>> {
+  fn range(&self, args: &[ast::Argument]) -> std::result::Result<std::ops::Range<usize>, Vec<usize>> {
     // XXX: This is performed after validating the type of args.
 
     let whole_registers: Vec<&ast::Argument> = args.iter()
@@ -383,7 +381,7 @@ impl<'src, 'program> Runtime<'program> {
     .collect();
 
     // Return a one-iteration range, `specify()` takes care of ignoring Item arugments.
-    if whole_registers.len() == 0 {
+    if whole_registers.is_empty() {
       return Ok(0..1);
     }
 
@@ -406,7 +404,7 @@ impl<'src, 'program> Runtime<'program> {
     }
   }
 
-  fn specify(args: &Vec<ast::Argument>, index: usize) -> Vec<ast::Argument> {
+  fn specify(args: &[ast::Argument], index: usize) -> Vec<ast::Argument> {
     let mut result = vec!();
     for arg in args {
       match arg {
@@ -417,7 +415,7 @@ impl<'src, 'program> Runtime<'program> {
     result
   }
 
-  fn bind(&mut self, macro_name: String, real_args: &Vec<f64>, args: &Vec<ast::Argument>)
+  fn bind(&mut self, macro_name: String, real_args: &[f64], args: &[ast::Argument])
   -> Result<BindingMappings> {
     let definition = match self.semantics.macro_definitions.get(&macro_name) {
       None => {
@@ -455,8 +453,8 @@ impl<'src, 'program> Runtime<'program> {
     }
     let args_mapping = HashMap::from_iter(
       definition.2.iter()
-      .zip(args.iter().map(|a| a.clone())) // pair formal arguments with their registers
-      .map(|(s, r)| (s.to_owned(), r.clone())) // convert them into proper copies
+      .zip(args.iter().cloned()) // pair formal arguments with their registers
+      .map(|(s, r)| (s.to_owned(), r)) // convert them into proper copies
     );
 
     Ok((real_args_mapping, args_mapping))

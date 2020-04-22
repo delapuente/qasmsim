@@ -193,7 +193,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
       } => {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::RegisterSizeMismatch {
-          source: source.into(),
+          source,
           lineno,
           symbol_name,
           sizes
@@ -206,7 +206,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
       } => {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::TypeMismatch {
-          source: source.into(),
+          source,
           lineno,
           symbol_name,
           expected
@@ -218,7 +218,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
       } => {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::UndefinedGate {
-          source: source.into(),
+          source,
           lineno,
           symbol_name
         }
@@ -233,7 +233,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::WrongNumberOfParameters {
           are_registers,
-          source: source.into(),
+          source,
           symbol_name,
           lineno,
           expected,
@@ -247,7 +247,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
       } => {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::SymbolNotFound {
-          source: source.into(),
+          source,
           symbol_name,
           lineno,
           expected
@@ -261,7 +261,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
       } => {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::IndexOutOfBounds {
-          source: source.into(),
+          source,
           symbol_name,
           lineno,
           size,
@@ -274,7 +274,7 @@ impl<'src> From<SrcAndErr<'src, RuntimeError>> for QasmSimError<'src> {
             let (source, lineno, _, _) = extract_line(location.0, None, input);
             let (_, previous_lineno, _, _) = extract_line(previous_location.0, None, input);
             QasmSimError::RedefinitionError {
-              source: source.into(),
+              source,
               symbol_name,
               lineno,
               previous_lineno
@@ -293,7 +293,7 @@ impl<'src> From<SrcAndErr<'src, LinkerError>> for QasmSimError<'src> {
       LinkerError::LibraryNotFound { location, libpath } => {
         let (source, lineno, _, _) = extract_line(location.0, None, input);
         QasmSimError::LibraryNotFound {
-          source: source.into(),
+          source,
           libpath,
           lineno
         }

@@ -191,7 +191,7 @@ impl<'input> Lexer<'input> {
         let matching = &captured.get(0).unwrap();
         let len = matching.end(); // same as length since we search from the start.
         self.advance_offset(len);
-        return Some(String::from(matching.as_str()));
+        Some(String::from(matching.as_str()))
       }
     }
   }
@@ -209,11 +209,13 @@ impl<'input> Lexer<'input> {
 impl<'input> Iterator for Lexer<'input> {
   type Item = Spanned<Tok, Location, LexicalError<Location>>;
 
-  // XXX: The function is not split since I'm trying to distinguish a pattern
+  // ! The function is not split since I'm trying to distinguish a pattern
   // for creating a macro to autogenerate a stack-based lexer with matching
   // rules specific per mode.
   //
   // Proposed syntax (if possible): #[modes(mode1, mode2,...)]
+  #[allow(clippy::single_match)]
+  #[allow(clippy::trivial_regex)]
   fn next(&mut self) -> Option<Self::Item> {
     lazy_static! {
       static ref NEW_LINE: Regex = Regex::new(r"^\n").unwrap();
@@ -291,7 +293,7 @@ impl<'input> Iterator for Lexer<'input> {
       // #[modes(Comment)]
       match self.mode.get(0) {
         Some(Mode::Comment) => {
-          if let Some(_) = self.try_pattern(&ALL_THE_LINE) {
+          if self.try_pattern(&ALL_THE_LINE).is_some() {
             self.mode.pop_front();
             continue;
           }

@@ -21,7 +21,7 @@ pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
   parser.parse(lexer).map_err(|err| QasmSimError::from((input, err)))
 }
 
-pub fn compile_with_linker<'src>(input: &'src str, linker: Linker) -> Result<'src, ast::OpenQasmProgram> {
+pub fn compile_with_linker(input: &str, linker: Linker) -> Result<'_, ast::OpenQasmProgram> {
   let program = compile(&input)?;
   linker.link(program).map_err(|err| QasmSimError::from((input, err)))
 }

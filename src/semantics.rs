@@ -43,12 +43,6 @@ pub struct Semantics {
   pub classical_memory_size: usize
 }
 
-impl Semantics {
-  pub fn new() -> Self {
-    Default::default()
-  }
-}
-
 #[derive(Debug, Clone, PartialEq, Default)]
 struct SemanticsBuilder {
   semantics: Semantics,

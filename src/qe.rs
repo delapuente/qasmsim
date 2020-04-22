@@ -1,5 +1,5 @@
 
-pub const QELIB1: &'static str = r#"
+pub const QELIB1: &str = r#"
 // Quantum Experience (QE) Standard Header
 // file: qelib1.inc
 

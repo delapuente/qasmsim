@@ -50,6 +50,7 @@ mod test {
   use crate::grammar::ast::*;
 
   #[test]
+  #[allow(clippy::float_cmp)]
   fn test_expression_solver() {
     let expression = Expression::Op(
       Opcode::Add,
@@ -79,6 +80,7 @@ mod test {
   }
 
   #[test]
+  #[allow(clippy::float_cmp)]
   fn test_expression_solver_with_functions() {
     let expression = Expression::Function(
       Funccode::Sqrt,
@@ -106,6 +108,7 @@ mod test {
   }
 
   #[test]
+  #[allow(clippy::float_cmp)]
   fn test_expression_solver_with_symbol_substitution() {
     let expression = Expression::Op(
       Opcode::Add,

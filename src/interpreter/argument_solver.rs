@@ -44,7 +44,7 @@ mod test {
   fn test_actual_parameter_not_found() {
     let actual_argument = ast::Argument::Item("actual".to_owned(), 0);
     let bindings = HashMap::from_iter(vec![
-      ("formal".to_owned(), actual_argument.clone())
+      ("formal".to_owned(), actual_argument)
     ]);
     let solver = ArgumentSolver::new(&bindings);
     let formal_argument = ast::Argument::Id("fmal".to_owned());

@@ -65,6 +65,10 @@ impl StateVector {
     self.bases.len()
   }
 
+  pub fn is_empty(&self) -> bool {
+    self.bases.is_empty()
+  }
+
   /// Apply a controlled not
   pub fn cnot(&mut self, c: usize, t: usize) {
     let exchangable_rows = find_exchangeable_rows(self.bit_width, c, t);
