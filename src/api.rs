@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
-pub use crate::error::{ParseError, QasmSimError, Result, SrcAndErr};
+use crate::error::QasmSimError;
 use crate::grammar::open_qasm2;
-use crate::grammar::{ast, Lexer};
+use crate::grammar::{ast, lexer::Lexer};
 use crate::interpreter;
 use crate::linker::Linker;
 use crate::qe;
+
+pub type Result<'src, T> = std::result::Result<T, QasmSimError<'src>>;
 
 pub fn default_linker() -> Linker {
     Linker::with_embedded(HashMap::from_iter(vec![(

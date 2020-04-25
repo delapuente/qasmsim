@@ -1,6 +1,6 @@
-pub mod argument_solver;
+mod argument_solver;
 mod computation;
-pub mod expression_solver;
+mod expression_solver;
 pub mod runtime;
 
 pub use self::computation::{Computation, Histogram};

@@ -1,4 +1,4 @@
-use crate::grammar::Location;
+use crate::grammar::lexer::Location;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpenQasmProgram {

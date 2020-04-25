@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::grammar::ast;
 use crate::grammar::open_qasm2;
-use crate::grammar::{Lexer, Location};
+use crate::grammar::lexer::{Lexer, Location};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LinkerError {
@@ -71,7 +71,8 @@ mod tests {
 
     use indoc::indoc;
 
-    use crate::grammar::{ast::Span, Location};
+    use crate::grammar::ast::Span;
+    use crate::linker::Location;
 
     use super::*;
 

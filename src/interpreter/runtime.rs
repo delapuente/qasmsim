@@ -1,12 +1,11 @@
 use std::collections::{HashMap, VecDeque};
-use std::fmt;
 use std::iter::FromIterator;
 
-use crate::grammar::{ast, Location};
+use crate::grammar::{ast, lexer::Location};
 use crate::interpreter::argument_solver::ArgumentSolver;
 use crate::interpreter::computation::{Computation, HistogramBuilder};
 use crate::interpreter::expression_solver::ExpressionSolver;
-use crate::semantics::{extract_semantics, RegisterType, SemanticError, Semantics};
+use crate::semantics::{extract_semantics, QasmType, RegisterType, SemanticError, Semantics};
 use crate::statevector::StateVector;
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
@@ -47,29 +46,6 @@ pub enum RuntimeError {
         symbol_name: String,
         sizes: Vec<usize>,
     },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum QasmType {
-    Register,
-    QuantumRegister,
-    ClassicalRegister,
-    RealValue,
-}
-
-impl fmt::Display for QasmType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                QasmType::RealValue => "real value",
-                QasmType::Register => "register",
-                QasmType::QuantumRegister => "quantum register",
-                QasmType::ClassicalRegister => "classical register",
-            }
-        )
-    }
 }
 
 type Result<T> = std::result::Result<T, RuntimeError>;

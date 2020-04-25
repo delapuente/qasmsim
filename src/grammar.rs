@@ -4,15 +4,13 @@ pub mod ast;
 pub mod lexer;
 lalrpop_mod!(#[allow(clippy::all)] pub open_qasm2, "/grammar/open_qasm2.rs");
 
-pub use lexer::{Lexer, LexicalError, Location, Tok};
-
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
 
     use crate::grammar::lexer::Lexer;
     use crate::grammar::open_qasm2;
-    use crate::grammar::{ast::*, Location};
+    use crate::grammar::{ast::*, lexer::Location};
 
     macro_rules! span {
         ($left:expr, $node:expr, $right:expr) => {
@@ -220,7 +218,7 @@ mod tests {
     "
         );
         let lexer = Lexer::new(source);
-        let parser = open_qasm2::ProgramParser::new();
+        let parser = open_qasm2::ProgramBodyParser::new();
         let tree = parser.parse(lexer).unwrap();
         assert_eq!(
             tree,
@@ -252,7 +250,7 @@ mod tests {
     "
         );
         let lexer = Lexer::new(source);
-        let parser = open_qasm2::ProgramParser::new();
+        let parser = open_qasm2::ProgramBodyParser::new();
         let tree = parser.parse(lexer).unwrap();
         assert_eq!(
             tree,

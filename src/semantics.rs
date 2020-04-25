@@ -1,7 +1,31 @@
+use std::fmt;
 use std::collections::HashMap;
 
 use crate::grammar::ast;
-use crate::grammar::Location;
+use crate::grammar::lexer::Location;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum QasmType {
+    Register,
+    QuantumRegister,
+    ClassicalRegister,
+    RealValue,
+}
+
+impl fmt::Display for QasmType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                QasmType::RealValue => "real value",
+                QasmType::Register => "register",
+                QasmType::QuantumRegister => "quantum register",
+                QasmType::ClassicalRegister => "classical register",
+            }
+        )
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RegisterType {
@@ -18,7 +42,7 @@ pub enum SemanticError {
     },
 }
 
-pub type Result<T> = std::result::Result<T, SemanticError>;
+type Result<T> = std::result::Result<T, SemanticError>;
 
 /// Register name, type, size and definition location.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -196,7 +220,8 @@ mod test {
     use super::*;
     use std::iter::FromIterator;
 
-    use crate::grammar::{open_qasm2, Lexer};
+    use crate::grammar::open_qasm2;
+    use crate::grammar::lexer::Lexer;
 
     #[test]
     fn test_symbol_table_stores_register_info() {

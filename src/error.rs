@@ -1,14 +1,14 @@
+mod humanize;
+
 use std::convert;
 use std::error;
 use std::fmt;
 
-use crate::grammar::lexer;
-use crate::grammar::{Location, Tok};
-use crate::humanize::humanize_error;
-use crate::interpreter::runtime::QasmType;
+use crate::grammar::lexer::{self, Location, Tok};
 use crate::interpreter::runtime::RuntimeError;
 use crate::linker::LinkerError;
-use crate::semantics::SemanticError;
+use crate::semantics::{QasmType, SemanticError};
+use self::humanize::humanize_error;
 
 pub type ParseError = lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;
 
@@ -92,8 +92,6 @@ pub enum QasmSimError<'src> {
         sizes: Vec<usize>,
     },
 }
-
-pub type Result<'src, T> = std::result::Result<T, QasmSimError<'src>>;
 
 impl fmt::Display for QasmSimError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

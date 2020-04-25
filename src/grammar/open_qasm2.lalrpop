@@ -1,170 +1,172 @@
 use std::str::FromStr;
 
-use crate::grammar::{ Location, ast, Tok, LexicalError };
+use crate::grammar::{ast, lexer::{Location, Tok, LexicalError}};
 
 grammar;
 
 pub OpenQasmProgram: ast::OpenQasmProgram = {
-  "OPENQASM" <version:Version> ";" <program:Program> => ast::OpenQasmProgram{<>}
+    "OPENQASM" <version:Version> ";" <program:ProgramBody> => ast::OpenQasmProgram{<>}
 };
 
 pub OpenQasmLibrary: ast::OpenQasmLibrary = {
-  <definitions:GateDefinitionList> => ast::OpenQasmLibrary{<>}
+    <definitions:GateDefinitionList> => ast::OpenQasmLibrary{<>}
 }
 
-pub Program: Vec<ast::Span<ast::Statement>> = {
-  <left:@L> <statement:Statement> <right:@R> => {
-    vec![ast::Span {
-      boundaries: (left, right),
-      node: Box::new(statement)
-    }]
-  },
-  <program:Program> <left:@L> <statement:Statement> <right:@R> => {
-    let mut program = program;
-    program.push(ast::Span {
-      boundaries: (left, right),
-      node: Box::new(statement)
-    });
-    program
-  }
+pub ProgramBody: Vec<ast::Span<ast::Statement>> = {
+    <left:@L> <statement:Statement> <right:@R> => {
+        vec![ast::Span {
+            boundaries: (left, right),
+            node: Box::new(statement)
+        }]
+    },
+    <program:ProgramBody> <left:@L> <statement:Statement> <right:@R> => {
+        let mut program = program;
+        program.push(ast::Span {
+            boundaries: (left, right),
+            node: Box::new(statement)
+        });
+        program
+    }
 };
 
 pub Statement: ast::Statement = {
-  RegisterDeclaration,
-  GateDefinition,
-  Include,
-  Barrier => ast::Statement::Barrier(<>),
-  If,
-  QuantumOperation => ast::Statement::QuantumOperation(<>)
+    RegisterDeclaration,
+    GateDefinition,
+    Include,
+    Barrier => ast::Statement::Barrier(<>),
+    If,
+    QuantumOperation => ast::Statement::QuantumOperation(<>)
 };
 
 pub GateDefinition: ast::Statement = {
-  <GateDeclaration> "{" "}" => ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
-  <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
-    ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops),
-  "opaque" <GateDeclaration> ";" =>
-    ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2)
+    <GateDeclaration> "{" "}" =>
+        ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
+    <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
+        ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops),
+    "opaque" <GateDeclaration> ";" =>
+        ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2)
 };
 
 Include: ast::Statement = {
-  "include" <s:string> ";" => ast::Statement::Include(s)
+    "include" <s:string> ";" => ast::Statement::Include(s)
 }
 
 If: ast::Statement = {
-  "if" "(" <r:Id> "==" <t:Int> ")" <op:QuantumOperation> =>
-    ast::Statement::Conditional(ast::Argument::Id(r), t, op)
+    "if" "(" <r:Id> "==" <t:Int> ")" <op:QuantumOperation> =>
+        ast::Statement::Conditional(ast::Argument::Id(r), t, op)
 }
 
 GateDefinitionList: Vec<ast::Statement> = {
-  GateDefinition => vec![<>],
-  <definitions:GateDefinitionList> <d:GateDefinition> => {
-    let mut definitions = definitions;
-    definitions.push(d);
-    definitions
-  }
-};
+    GateDefinition => vec![<>],
+    <definitions:GateDefinitionList> <d:GateDefinition> => {
+        let mut definitions = definitions;
+        definitions.push(d);
+        definitions
+    }
+}
 
 RegisterDeclaration: ast::Statement = {
-  "qreg" <Id> "[" <Size> "]" ";" => ast::Statement::QRegDecl(<>),
-  "creg" <Id> "[" <Size> "]" ";" => ast::Statement::CRegDecl(<>)
-};
+    "qreg" <Id> "[" <Size> "]" ";" => ast::Statement::QRegDecl(<>),
+    "creg" <Id> "[" <Size> "]" ";" => ast::Statement::CRegDecl(<>)
+}
 
 QuantumOperation: ast::QuantumOperation = {
-  "measure" <Argument> "->" <Argument> ";" =>
-    ast::QuantumOperation::Measure(<>),
-  "reset" <Argument> ";" => ast::QuantumOperation::Reset(<>),
-  UnitaryOperation => ast::QuantumOperation::Unitary(<>)
-};
+    "measure" <Argument> "->" <Argument> ";" =>
+        ast::QuantumOperation::Measure(<>),
+    "reset" <Argument> ";" => ast::QuantumOperation::Reset(<>),
+        UnitaryOperation => ast::QuantumOperation::Unitary(<>)
+}
 
 GateDeclaration: (String, Vec<String>,  Vec<String>) = {
-  "gate" <id:Id> <args:IdList> => (id, vec![], args),
-  "gate" <id:Id> "(" ")" <args:IdList> => (id, vec![], args),
-  "gate" <Id> "(" <IdList> ")" <IdList> => (<>)
-};
+    "gate" <id:Id> <args:IdList> => (id, vec![], args),
+    "gate" <id:Id> "(" ")" <args:IdList> => (id, vec![], args),
+    "gate" <Id> "(" <IdList> ")" <IdList> => (<>)
+}
 
 GateOperationList: Vec<ast::GateOperation> = {
-  GateOperation => vec![<>],
-  <list:GateOperationList> <op:GateOperation> => {
-    let mut list = list; list.push(op); list }
-};
+    GateOperation => vec![<>],
+    <list:GateOperationList> <op:GateOperation> => {
+        let mut list = list; list.push(op); list
+    }
+}
 
 GateOperation: ast::GateOperation = {
-  Barrier => ast::GateOperation::Barrier(<>),
-  UnitaryOperation => ast::GateOperation::Unitary(<>)
-};
+    Barrier => ast::GateOperation::Barrier(<>),
+    UnitaryOperation => ast::GateOperation::Unitary(<>)
+}
 
 Barrier: ast::BarrierPragma = {
-  "barrier" <ArgumentList> ";" => ast::BarrierPragma(<>),
+    "barrier" <ArgumentList> ";" => ast::BarrierPragma(<>),
 }
 
 UnitaryOperation: ast::UnitaryOperation = {
-  "U" "(" <theta:Expr> "," <phi:Expr> "," <lambda:Expr> ")" <target:Argument> ";" =>
-    ast::UnitaryOperation("U".to_owned(), vec![theta, phi, lambda], vec![target]),
-  "CX" <Argument> "," <Argument> ";" =>
-    ast::UnitaryOperation("CX".to_owned(), vec![], vec![<>]),
-  GateExpansion => ast::UnitaryOperation(<>.0, <>.1, <>.2)
+    "U" "(" <theta:Expr> "," <phi:Expr> "," <lambda:Expr> ")" <target:Argument> ";" =>
+        ast::UnitaryOperation("U".to_owned(), vec![theta, phi, lambda], vec![target]),
+    "CX" <Argument> "," <Argument> ";" =>
+        ast::UnitaryOperation("CX".to_owned(), vec![], vec![<>]),
+    GateExpansion => ast::UnitaryOperation(<>.0, <>.1, <>.2)
 };
 
 GateExpansion: (String, Vec<ast::Expression>, Vec<ast::Argument>) = {
-  <id:Id> <args:ArgumentList> ";" => (id, vec![], args),
-  <id:Id> "(" ")" <args:ArgumentList> ";" => (id, vec![], args),
-  <Id> "(" <ExpressionList> ")" <ArgumentList> ";" => (<>)
+    <id:Id> <args:ArgumentList> ";" => (id, vec![], args),
+    <id:Id> "(" ")" <args:ArgumentList> ";" => (id, vec![], args),
+    <Id> "(" <ExpressionList> ")" <ArgumentList> ";" => (<>)
 };
 
 ExpressionList = List<Expr>;
 
 pub Expr: ast::Expression = {
-  <l:Expr> <op:ExprOp> <r:Factor> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
-  Factor
+    <l:Expr> <op:ExprOp> <r:Factor> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
+    Factor
 }
 
 ExprOp: ast::Opcode = {
-  "+" => ast::Opcode::Add,
-  "-" => ast::Opcode::Sub
+    "+" => ast::Opcode::Add,
+    "-" => ast::Opcode::Sub
 }
 
 Factor: ast::Expression = {
-  <l:Factor> <op:FactorOp> <r:Base> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
-  Base
+    <l:Factor> <op:FactorOp> <r:Base> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
+    Base
 }
 
 FactorOp: ast::Opcode = {
-  "*" => ast::Opcode::Mul,
-  "/" => ast::Opcode::Div
+    "*" => ast::Opcode::Mul,
+    "/" => ast::Opcode::Div
 }
 
 Base: ast::Expression = {
-  <l:Base> <op:BaseOp> <r:Term> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
-  Term
+    <l:Base> <op:BaseOp> <r:Term> => ast::Expression::Op(op, Box::new(l), Box::new(r)),
+    Term
 }
 
 BaseOp: ast::Opcode = {
-  "^" => ast::Opcode::Pow
+    "^" => ast::Opcode::Pow
 }
 
 Term: ast::Expression = {
-  "-" <Term> => ast::Expression::Minus(Box::new(<>)),
-  "pi" => ast::Expression::Pi,
-  <f:Func> "(" <e:Expr> ")" => ast::Expression::Function(f, Box::new(e)),
-  Id => ast::Expression::Id(<>),
-  Real => ast::Expression::Real(<>),
-  "(" <Expr> ")"
+    "-" <Term> => ast::Expression::Minus(Box::new(<>)),
+    "pi" => ast::Expression::Pi,
+    <f:Func> "(" <e:Expr> ")" => ast::Expression::Function(f, Box::new(e)),
+    Id => ast::Expression::Id(<>),
+    Real => ast::Expression::Real(<>),
+    "(" <Expr> ")"
 };
 
 Func: ast::Funccode = {
-  "sin" => ast::Funccode::Sin,
-  "cos" => ast::Funccode::Cos,
-  "tan" => ast::Funccode::Tan,
-  "exp" => ast::Funccode::Exp,
-  "ln" => ast::Funccode::Ln,
-  "sqrt" => ast::Funccode::Sqrt
+    "sin" => ast::Funccode::Sin,
+    "cos" => ast::Funccode::Cos,
+    "tan" => ast::Funccode::Tan,
+    "exp" => ast::Funccode::Exp,
+    "ln" => ast::Funccode::Ln,
+    "sqrt" => ast::Funccode::Sqrt
 }
 
 ArgumentList = List<Argument>;
 
 Argument: ast::Argument = {
-  Id => ast::Argument::Id(<>),
-  <Id> "[" <Size> "]" => ast::Argument::Item(<>)
+    Id => ast::Argument::Id(<>),
+    <Id> "[" <Size> "]" => ast::Argument::Item(<>)
 };
 
 IdList = List<Id>;
@@ -176,60 +178,60 @@ Size: usize = <v:int> => usize::from_str(&v).unwrap();
 Int: u64 = <v:int> => u64::from_str(&v).unwrap();
 
 Real: f64 = {
-  <v:real> => f64::from_str(&v).unwrap(),
-  <v:int> => f64::from_str(&v).unwrap()
+    <v:real> => f64::from_str(&v).unwrap(),
+    <v:int> => f64::from_str(&v).unwrap()
 }
 
 Version: String = <s:version> => s;
 
 List<T>: Vec<T> = {
-  T => vec![<>],
-  <list:List<T>> "," <item:T> => { let mut list = list; list.push(item); list }
+    T => vec![<>],
+    <list:List<T>> "," <item:T> => { let mut list = list; list.push(item); list }
 }
 
 extern {
-  type Location = Location;
-  type Error = LexicalError<Location>;
+    type Location = Location;
+    type Error = LexicalError<Location>;
 
-  enum Tok {
-    "+" => Tok::Add,
-    "-" => Tok::Minus,
-    "*" => Tok::Mult,
-    "/" => Tok::Div,
-    "^" => Tok::Pow,
-    "[" => Tok::LBracket,
-    "]" => Tok::RBracket,
-    "{" => Tok::LBrace,
-    "}" => Tok::RBrace,
-    "(" => Tok::LParent,
-    ")" => Tok::RParent,
-    ";" => Tok::Semi,
-    "," => Tok::Comma,
-    "->" => Tok::Arrow,
-    "==" => Tok::Equal,
-    "sin" => Tok::Sin,
-    "cos" => Tok::Cos,
-    "tan" => Tok::Tan,
-    "exp" => Tok::Exp,
-    "ln" => Tok::Ln,
-    "sqrt" => Tok::Sqrt,
-    "pi" => Tok::ConstPi,
-    "U" => Tok::U,
-    "CX" => Tok::CX,
-    "opaque" => Tok::Opaque,
-    "gate" => Tok::Gate,
-    "include" => Tok::Include,
-    "qreg" => Tok::QReg,
-    "creg" => Tok::CReg,
-    "measure" => Tok::Measure,
-    "reset" => Tok::Reset,
-    "barrier" => Tok::Barrier,
-    "if" => Tok::If,
-    "OPENQASM" => Tok::QASMHeader,
-    version => Tok::Version { repr: <String> },
-    id => Tok::Id { repr: <String> },
-    int => Tok::Int { repr: <String> },
-    real => Tok::Real { repr: <String> },
-    string => Tok::Str { repr: <String> }
-  }
+    enum Tok {
+        "+" => Tok::Add,
+        "-" => Tok::Minus,
+        "*" => Tok::Mult,
+        "/" => Tok::Div,
+        "^" => Tok::Pow,
+        "[" => Tok::LBracket,
+        "]" => Tok::RBracket,
+        "{" => Tok::LBrace,
+        "}" => Tok::RBrace,
+        "(" => Tok::LParent,
+        ")" => Tok::RParent,
+        ";" => Tok::Semi,
+        "," => Tok::Comma,
+        "->" => Tok::Arrow,
+        "==" => Tok::Equal,
+        "sin" => Tok::Sin,
+        "cos" => Tok::Cos,
+        "tan" => Tok::Tan,
+        "exp" => Tok::Exp,
+        "ln" => Tok::Ln,
+        "sqrt" => Tok::Sqrt,
+        "pi" => Tok::ConstPi,
+        "U" => Tok::U,
+        "CX" => Tok::CX,
+        "opaque" => Tok::Opaque,
+        "gate" => Tok::Gate,
+        "include" => Tok::Include,
+        "qreg" => Tok::QReg,
+        "creg" => Tok::CReg,
+        "measure" => Tok::Measure,
+        "reset" => Tok::Reset,
+        "barrier" => Tok::Barrier,
+        "if" => Tok::If,
+        "OPENQASM" => Tok::QASMHeader,
+        version => Tok::Version { repr: <String> },
+        id => Tok::Id { repr: <String> },
+        int => Tok::Int { repr: <String> },
+        real => Tok::Real { repr: <String> },
+        string => Tok::Str { repr: <String> }
+    }
 }

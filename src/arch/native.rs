@@ -6,6 +6,7 @@ use std::convert;
 use crate::{api, statevector::StateVector};
 
 use crate::interpreter::{Computation, Histogram};
+use crate::error::QasmSimError;
 
 pub use api::compile_with_linker;
 pub use api::default_linker;
@@ -88,6 +89,6 @@ pub fn run(input: &str, shots: Option<usize>) -> api::Result<'_, Run> {
             Some(shots) => execute_with_shots(&linked?, shots),
         }
     });
-    let out = out.map_err(|err| api::QasmSimError::from((input, err)));
+    let out = out.map_err(|err| QasmSimError::from((input, err)));
     Ok(Run::from((out?, parsing_time, simulation_time)))
 }

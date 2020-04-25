@@ -14,7 +14,7 @@ pub struct StateVector {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Measurement<'a> {
+struct Measurement<'a> {
     bases: &'a mut Vec<Complex>,
     chances: [f64; 2],
     target: usize,
@@ -142,34 +142,32 @@ fn check_bit(value: usize, index: usize) -> usize {
 }
 
 cached! {
-  FIND_EXCHANGEABLE_ROWS;
-  fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
-  -> Vec<(usize, usize)> = {
-    let context_range = exp2(bit_width - 2);
-    let mut out = Vec::with_capacity(context_range);
-    for n in 0..context_range {
-      let mut mask = 1;
-      let mut histogram_index_10 = 0;
-      let mut histogram_index_11 = 0;
-      for i in 0..bit_width {
-        if i == t {
-          histogram_index_11 += exp2(t);
+    FIND_EXCHANGEABLE_ROWS;
+    fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
+    -> Vec<(usize, usize)> = {
+        let context_range = exp2(bit_width - 2);
+        let mut out = Vec::with_capacity(context_range);
+        for n in 0..context_range {
+            let mut mask = 1;
+            let mut histogram_index_10 = 0;
+            let mut histogram_index_11 = 0;
+            for i in 0..bit_width {
+                if i == t {
+                    histogram_index_11 += exp2(t);
+                } else if i == c {
+                    histogram_index_10 += exp2(c);
+                    histogram_index_11 += exp2(c);
+                } else {
+                    let bit = ((n & mask) != 0) as usize;
+                    histogram_index_10 += bit * exp2(i);
+                    histogram_index_11 += bit * exp2(i);
+                    mask <<= 1;
+                }
+            }
+            out.push((histogram_index_10, histogram_index_11))
         }
-        else if i == c {
-          histogram_index_10 += exp2(c);
-          histogram_index_11 += exp2(c);
-        }
-        else {
-          let bit = ((n & mask) != 0) as usize;
-          histogram_index_10 += bit * exp2(i);
-          histogram_index_11 += bit * exp2(i);
-          mask <<= 1;
-        };
-      }
-      out.push((histogram_index_10, histogram_index_11))
+        out
     }
-    out
-  }
 }
 
 #[inline]
@@ -178,29 +176,28 @@ fn exp2(power: usize) -> usize {
 }
 
 cached! {
-  FIND_TARGET_ROWS;
-  fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> = {
-    let context_range = exp2(bit_width - 1);
-    let mut out = Vec::with_capacity(context_range);
-    for n in 0..context_range {
-      let mut mask = 1;
-      let mut histogram_index_0 = 0;
-      let mut histogram_index_1 = 0;
-      for i in 0..bit_width {
-        if i == t {
-          histogram_index_1 += exp2(t);
+    FIND_TARGET_ROWS;
+    fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> = {
+        let context_range = exp2(bit_width - 1);
+        let mut out = Vec::with_capacity(context_range);
+        for n in 0..context_range {
+            let mut mask = 1;
+            let mut histogram_index_0 = 0;
+            let mut histogram_index_1 = 0;
+            for i in 0..bit_width {
+                if i == t {
+                    histogram_index_1 += exp2(t);
+                } else {
+                    let bit = ((n & mask) != 0) as usize;
+                    histogram_index_0 += bit * exp2(i);
+                    histogram_index_1 += bit * exp2(i);
+                    mask <<= 1;
+                }
+            }
+            out.push((histogram_index_0, histogram_index_1))
         }
-        else {
-          let bit = ((n & mask) != 0) as usize;
-          histogram_index_0 += bit * exp2(i);
-          histogram_index_1 += bit * exp2(i);
-          mask <<= 1;
-        };
-      }
-      out.push((histogram_index_0, histogram_index_1))
+        out
     }
-    out
-  }
 }
 
 type DecodedFloat = (u64, i16, i8);
@@ -208,22 +205,20 @@ type BuildUKey = (DecodedFloat, DecodedFloat, DecodedFloat);
 type UMatrix = (Complex, Complex, Complex, Complex);
 
 cached_key! {
-  BUILD_U: SizedCache<BuildUKey, UMatrix> = SizedCache::with_size(20);
-  Key = {
-    (
-      Float::integer_decode(theta),
-      Float::integer_decode(phi),
-      Float::integer_decode(lambda)
-    )
-  };
-  fn build_u(theta: f64, phi: f64, lambda: f64) -> UMatrix = {
-    (
-      Complex::new((theta/2.0).cos(), 0.0),
-      -e_power_to(lambda) * (theta/2.0).sin(),
-      e_power_to(phi) * (theta/2.0).sin(),
-      e_power_to(phi+lambda) * (theta/2.0).cos()
-    )
-  }
+    BUILD_U: SizedCache<BuildUKey, UMatrix> = SizedCache::with_size(20);
+    Key = {(
+        Float::integer_decode(theta),
+        Float::integer_decode(phi),
+        Float::integer_decode(lambda)
+    )};
+    fn build_u(theta: f64, phi: f64, lambda: f64) -> UMatrix = {
+        (
+            Complex::new((theta/2.0).cos(), 0.0),
+            -e_power_to(lambda) * (theta/2.0).sin(),
+            e_power_to(phi) * (theta/2.0).sin(),
+            e_power_to(phi+lambda) * (theta/2.0).cos()
+        )
+    }
 }
 
 #[inline]
