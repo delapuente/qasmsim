@@ -78,13 +78,13 @@ impl From<QasmSimError<'_>> for JsValue {
                     set!(&obj, "token" => &format!("{}", token));
                 }
             }
-            QasmSimError::SemanticError {
+            QasmSimError::RedefinitionError {
                 symbol_name,
                 lineno,
                 ..
             } => {
                 set!(&obj,
-                  "type" => "SemanticError",
+                  "type" => "RedefinitionError",
                   "lineNumber" => lineno as f64,
                   "symbolName" => &symbol_name
                 );
