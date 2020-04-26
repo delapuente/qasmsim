@@ -4,7 +4,7 @@ extern crate indoc;
 extern crate qasmsim;
 
 use indoc::indoc;
-use qasmsim::grammar::Tok;
+use qasmsim::grammar::lexer::Tok;
 use qasmsim::QasmSimError;
 
 #[test]

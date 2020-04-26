@@ -5,7 +5,7 @@ use std::convert::From;
 use js_sys::{self, Object};
 use wasm_bindgen::prelude::JsValue;
 
-use crate::QasmSimError;
+use crate::error::QasmSimError;
 
 impl From<QasmSimError<'_>> for JsValue {
     fn from(value: QasmSimError) -> Self {

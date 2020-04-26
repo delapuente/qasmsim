@@ -5,7 +5,9 @@ use float_cmp::ApproxEq;
 use num::Float;
 use rand::random;
 
-use crate::complex::{self, Complex, ComplexMargin};
+use crate::complex;
+
+pub use crate::complex::{Complex, ComplexMargin};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct StateVector {

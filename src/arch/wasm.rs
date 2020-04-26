@@ -10,6 +10,7 @@ use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 use web_sys;
 
 use crate::api;
+use crate::error::QasmSimError;
 
 #[wasm_bindgen]
 pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
@@ -24,7 +25,7 @@ pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
     });
     let (out, serialization_time) = measure!("serialization", {
         computation
-            .map_err(|err| api::QasmSimError::from((input, err)))?
+            .map_err(|err| QasmSimError::from((input, err)))?
             .into()
     });
     let times = js_sys::Object::new();
