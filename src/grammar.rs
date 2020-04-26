@@ -1,3 +1,6 @@
+//! Contain language-related data structures and functionality for parsing
+//! OPENQASM 2.0 and building abstract syntax trees.
+
 use lalrpop_util::{self, lalrpop_mod};
 
 pub mod ast;

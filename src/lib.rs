@@ -1,3 +1,20 @@
+#![warn(missing_docs)]
+//! The `qasmsim` library includes a
+//! [OPENQASM 2.0](https://github.com/Qiskit/openqasm/blob/master/spec-human/)
+//! parser and interpreter, along with a statevector simulator. Compiled with
+//! default features, the library presents a `qasmsim` CLI for running programs
+//! like the following one:
+//!
+//! ```qasm
+//! OPENQASM 2.0;
+//! include "qelib1.inc";
+//! qdef q[2];
+//! cdef c[2];
+//! h q[0];
+//! cx q[0], q[1];
+//! measure q -> c;
+//! ```
+
 mod api;
 mod arch;
 mod error;
