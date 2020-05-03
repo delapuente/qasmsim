@@ -1,3 +1,5 @@
+//! Contain the API for splitting the source code into tokens.
+
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt;
@@ -6,12 +8,38 @@ use std::str::CharIndices;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+/// Represent a position inside the source code.
+///
+/// This position is a character index (0-based).
+///
+/// # Examples
+///
+/// In the following code:
+///
+/// ```qasm
+/// OPENQASM 2.0;
+/// qdef q[2];
+/// ```
+///
+/// The `q` register id starts in:
+///
+/// ```
+/// use qasmsim::grammar::lexer::Location;
+///
+/// Location::new_at(19);
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Location(pub usize);
 
 impl Location {
+    /// Creates a new location at char index 0.
     pub fn new() -> Self {
         Default::default()
+    }
+
+    /// Creates a new location at `position`.
+    pub fn new_at(position: usize) -> Self {
+        Location(position)
     }
 }
 
@@ -21,18 +49,36 @@ impl fmt::Display for Location {
     }
 }
 
+/// Represent a localized token in the source code, or an error.
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
+/// Represent an unrecognized sequence starting at a determined location.
+///
+/// # Examples
+///
+/// The following code:
+///
+/// ```qasm
+/// OPENQASM 2.0;
+/// zdef q[10];
+/// ```
+///
+/// Would produce an error like:
+///
+/// ```
+/// use qasmsim::grammar::lexer::LexicalError;
+///
+/// LexicalError::new_at(14);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LexicalError<Loc> {
+    /// Location at which the unknown sequence starts.
     pub location: Loc,
 }
 
-impl<Loc> LexicalError<Loc>
-where
-    Loc: Default,
-{
-    pub fn new(location: Loc) -> Self {
+impl<Loc> LexicalError<Loc> {
+    /// Create a new LexicalError at `location`.
+    pub fn new_at(location: Loc) -> Self {
         LexicalError { location }
     }
 }
@@ -46,47 +92,107 @@ where
     }
 }
 
+/// Represent an OPENQASM language token.
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Tok {
+    /// The addition operator `+`.
     Add,
+    /// The substraction operator `-`.
     Minus,
+    /// The multiplication operator `*`.
     Mult,
+    /// The division operator `/`.
     Div,
+    /// The power operator `^`.
     Pow,
+    /// The left square bracket `[`.
     LBracket,
+    /// The right square bracket `]`.
     RBracket,
+    /// The left curly bracket `{`.
     LBrace,
+    /// The right curly bracket `}`.
     RBrace,
+    /// The left parenthesis `(`.
     LParent,
+    /// The right parenthesis `)`.
     RParent,
+    /// A semicolon `;`.
     Semi,
+    /// A comma `,`.
     Comma,
+    /// The arrow symbol `->`.
     Arrow,
+    /// The equal symbol `=`.
     Equal,
+    /// The sinus function id `sin`.
     Sin,
+    /// The cosinus function id `cos`.
     Cos,
+    /// The tangent function id `tan`.
     Tan,
+    /// The exponential function id `exp`.
     Exp,
+    /// The natural logarithm id `ln`.
     Ln,
+    /// The square root function id `sqrt`.
     Sqrt,
+    /// The const `pi`.
     ConstPi,
+    /// The key-word `U`.
     U,
+    /// The key-word `CX`.
     CX,
+    /// The key-word `opaque`.
     Opaque,
+    /// The key-word `gate`.
     Gate,
+    /// The key-word `include`.
     Include,
+    /// The key-word `qreg`.
     QReg,
+    /// The key-word `creg`.
     CReg,
+    /// The key-word `measure`.
     Measure,
+    /// The key-word `reset`.
     Reset,
+    /// The key-word `barrier`.
     Barrier,
+    /// The key-word `if`.
     If,
+    /// The QASM header `OPENQASM`.
     QASMHeader,
-    Version { repr: String },
-    Id { repr: String },
-    Int { repr: String },
-    Real { repr: String },
-    Str { repr: String },
+    /// The version of OPENQASM as `X.Y`.
+    Version {
+        /// Version value.
+        repr: String
+    },
+    /// An identifier. Identifiers in OPENQASM must start with underscore or a
+    /// lower-case letter and may be followed by alphanumeric character, either
+    /// upper or lower case.
+    Id {
+        /// Identifier value.
+        repr: String
+    },
+    /// An integer number.
+    Int {
+        /// String representation of the interger as it appears in the
+        /// source code.
+        repr: String
+    },
+    /// A real number.
+    Real {
+        /// String representation of the real number as it appears in the
+        /// source code.
+        repr: String
+    },
+    /// A string of unicode characters.
+    Str {
+        /// The string as it appears in the source code.
+        repr: String
+    },
 }
 
 impl fmt::Display for Tok {
@@ -165,6 +271,47 @@ enum Mode {
     Str,
 }
 
+/// An iterator that generates OPENQASM tokens from source code.
+///
+/// Items are of type [`Spanned`] to be able of distinguishing between a
+/// token (`Ok(Some((Location, Tok, Location)))`), the EOF (`Ok(None)`) and
+/// some error (`Err(LexicalError)`).
+///
+/// # Examples
+///
+/// The following OPEANQASM code:
+///
+/// ```qasm
+/// OPENQASM 2.0;
+/// include "qelib1.inc";
+/// qdef q[2];
+/// cdef c[2];
+/// h q[0];
+/// cx q[0], q[1];
+/// measure q -> c;
+/// ```
+///
+/// Can be split into tokens with:
+///
+/// ```
+/// use qasmsim::grammar::lexer::Lexer;
+///
+/// let tokenizer = Lexer::new(r#"
+/// OPENQASM 2.0;
+/// include "qelib1.inc";
+/// qdef q[2];
+/// cdef c[2];
+/// h q[0];
+/// cx q[0], q[1];
+/// measure q -> c;
+/// "#);
+///
+/// for token in tokenizer {
+///     println!("{:?}", token);
+/// }
+/// ```
+///
+/// [`Spanned`]: ./type.Spanned.html
 #[derive(Debug, Clone)]
 pub struct Lexer<'input> {
     mode: VecDeque<Mode>,
@@ -178,6 +325,7 @@ pub struct Lexer<'input> {
 }
 
 impl<'input> Lexer<'input> {
+    /// Create a new iterator from the source code `input`.
     pub fn new(input: &'input str) -> Self {
         Lexer {
             mode: VecDeque::from(vec![Mode::Base]),
