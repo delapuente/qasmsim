@@ -1,3 +1,5 @@
+//! Contain utilities for combining AST spread into several locations.
+
 use std::collections::HashMap;
 
 use crate::grammar::ast;
@@ -74,6 +76,8 @@ pub enum LinkerError {
 /// qdef q[3];
 /// qhz q;
 /// ```
+///
+/// [`compile_with_linker`]: ../fn.compile_with_linker.html
 #[derive(Debug, Clone, Default)]
 pub struct Linker {
     embedded: HashMap<String, String>,
