@@ -1,17 +1,20 @@
+//! Contain utilities for representing the internal state of a quantum system.
 use std::f64;
 
-use cached::{cached, cached_key, SizedCache};
 use float_cmp::ApproxEq;
-use num::Float;
 use rand::random;
 
 use crate::complex;
-
+use self::cached_fns::{find_exchangeable_rows, find_target_rows, build_u};
 pub use crate::complex::{Complex, ComplexMargin};
 
+/// Represent the state vector of a quantum system simulation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StateVector {
+    /// Amplitudes corresponding to the bases of the system.
     pub bases: Vec<Complex>,
+    /// 2-base logarithm of the number of amplitudes representing the number
+    /// of qubits in the system.
     pub bit_width: usize,
 }
 
@@ -57,6 +60,8 @@ impl<'a> Measurement<'a> {
 }
 
 impl StateVector {
+    /// Create a new state-vector with of length 2 to the `bit_width` power
+    /// and all the amplitude concentrated in the all-zeroes outcome.
     pub fn new(bit_width: usize) -> Self {
         let bases = vec![Complex::new(0.0, 0.0); exp2(bit_width)];
         let mut statevector = StateVector { bases, bit_width };
@@ -64,28 +69,35 @@ impl StateVector {
         statevector
     }
 
+    /// Create a new state-vector from a vector of complex numbers representing
+    /// amplitudes. It does not check the length of the vector is a power of
+    /// two, not the norm of the vector is 1.
     pub fn from_bases(bases: Vec<Complex>) -> Self {
         let bit_width = (bases.len() as f64).log2() as usize;
         StateVector { bases, bit_width }
     }
 
+    /// Get the length of the state-vector.
     pub fn len(&self) -> usize {
         self.bases.len()
     }
 
+    /// Check if the length of statevector is zero.
     pub fn is_empty(&self) -> bool {
         self.bases.is_empty()
     }
 
-    /// Apply a controlled not
-    pub fn cnot(&mut self, c: usize, t: usize) {
-        let exchangable_rows = find_exchangeable_rows(self.bit_width, c, t);
+    /// Apply a controlled not operation on qubit `target`.
+    pub fn cnot(&mut self, control: usize, target: usize) {
+
+        let exchangable_rows = find_exchangeable_rows(self.bit_width, control, target);
         for (index_a, index_b) in exchangable_rows {
             self.bases.swap(index_a, index_b);
         }
     }
 
-    /// Apply a 3 degree rotation to the target bit.
+    /// Apply a general rotation on `target` qubit, specified as
+    /// RZ(`phi`)RY(`theta`)RZ(`lambda`).
     pub fn u(&mut self, theta: f64, phi: f64, lambda: f64, target: usize) {
         let target_rows = find_target_rows(self.bit_width, target);
         let u_matrix = build_u(theta, phi, lambda);
@@ -96,15 +108,19 @@ impl StateVector {
         }
     }
 
+    /// Perform a measurement on the Z-axis of the quantum state on `target` qubit.
     pub fn measure(&mut self, target: usize) -> bool {
         let mut measurement = Measurement::new(&mut self.bases, target);
         measurement.collapse(random::<f64>())
     }
 
+    /// Return the probabilities associated to the amplitudes in the
+    /// state-vector.
     pub fn probabilities(&self) -> Vec<f64> {
         self.bases.iter().map(|c| c.norm_sqr()).collect()
     }
 
+    /// Reset the state-vector to the state |0⟩.
     pub fn reset(&mut self) {
         for amplitude in self.bases.iter_mut() {
             amplitude.re = 0.0;
@@ -128,8 +144,10 @@ impl<'a> ApproxEq for &'a StateVector {
     }
 }
 
+/// Assert two state-vector are approximately equal by an error no higher than
+/// the f64 margin for each of the complex components.
 pub fn assert_approx_eq(v1: &StateVector, v2: &StateVector) {
-    if !v1.approx_eq(v2, (complex::EPSILON, 0)) {
+    if !v1.approx_eq(v2, complex::ComplexMargin::default()) {
         assert!(
             false,
             "assertion failed `(left ~= right)`\n  left: `{:?}`\n right: `{:?}`",
@@ -143,89 +161,97 @@ fn check_bit(value: usize, index: usize) -> usize {
     (value & (1 << index)) >> index
 }
 
-cached! {
-    FIND_EXCHANGEABLE_ROWS;
-    fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
-    -> Vec<(usize, usize)> = {
-        let context_range = exp2(bit_width - 2);
-        let mut out = Vec::with_capacity(context_range);
-        for n in 0..context_range {
-            let mut mask = 1;
-            let mut histogram_index_10 = 0;
-            let mut histogram_index_11 = 0;
-            for i in 0..bit_width {
-                if i == t {
-                    histogram_index_11 += exp2(t);
-                } else if i == c {
-                    histogram_index_10 += exp2(c);
-                    histogram_index_11 += exp2(c);
-                } else {
-                    let bit = ((n & mask) != 0) as usize;
-                    histogram_index_10 += bit * exp2(i);
-                    histogram_index_11 += bit * exp2(i);
-                    mask <<= 1;
-                }
-            }
-            out.push((histogram_index_10, histogram_index_11))
-        }
-        out
-    }
-}
-
 #[inline]
 fn exp2(power: usize) -> usize {
     1_usize << power
 }
 
-cached! {
-    FIND_TARGET_ROWS;
-    fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> = {
-        let context_range = exp2(bit_width - 1);
-        let mut out = Vec::with_capacity(context_range);
-        for n in 0..context_range {
-            let mut mask = 1;
-            let mut histogram_index_0 = 0;
-            let mut histogram_index_1 = 0;
-            for i in 0..bit_width {
-                if i == t {
-                    histogram_index_1 += exp2(t);
-                } else {
-                    let bit = ((n & mask) != 0) as usize;
-                    histogram_index_0 += bit * exp2(i);
-                    histogram_index_1 += bit * exp2(i);
-                    mask <<= 1;
-                }
-            }
-            out.push((histogram_index_0, histogram_index_1))
-        }
-        out
-    }
-}
-
-type DecodedFloat = (u64, i16, i8);
-type BuildUKey = (DecodedFloat, DecodedFloat, DecodedFloat);
-type UMatrix = (Complex, Complex, Complex, Complex);
-
-cached_key! {
-    BUILD_U: SizedCache<BuildUKey, UMatrix> = SizedCache::with_size(20);
-    Key = {(
-        Float::integer_decode(theta),
-        Float::integer_decode(phi),
-        Float::integer_decode(lambda)
-    )};
-    fn build_u(theta: f64, phi: f64, lambda: f64) -> UMatrix = {
-        (
-            Complex::new((theta/2.0).cos(), 0.0),
-            -e_power_to(lambda) * (theta/2.0).sin(),
-            e_power_to(phi) * (theta/2.0).sin(),
-            e_power_to(phi+lambda) * (theta/2.0).cos()
-        )
-    }
-}
-
 #[inline]
 fn e_power_to(x: f64) -> Complex {
     Complex::new(0.0, x).exp()
+}
+
+mod cached_fns {
+    #![allow(missing_docs)]
+
+    use num::Float;
+    use cached::{cached, cached_key, SizedCache};
+    use super::{Complex, exp2, e_power_to};
+
+    cached! {
+        FIND_EXCHANGEABLE_ROWS;
+        fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
+        -> Vec<(usize, usize)> = {
+            let context_range = exp2(bit_width - 2);
+            let mut out = Vec::with_capacity(context_range);
+            for n in 0..context_range {
+                let mut mask = 1;
+                let mut histogram_index_10 = 0;
+                let mut histogram_index_11 = 0;
+                for i in 0..bit_width {
+                    if i == t {
+                        histogram_index_11 += exp2(t);
+                    } else if i == c {
+                        histogram_index_10 += exp2(c);
+                        histogram_index_11 += exp2(c);
+                    } else {
+                        let bit = ((n & mask) != 0) as usize;
+                        histogram_index_10 += bit * exp2(i);
+                        histogram_index_11 += bit * exp2(i);
+                        mask <<= 1;
+                    }
+                }
+                out.push((histogram_index_10, histogram_index_11))
+            }
+            out
+        }
+    }
+
+    cached! {
+        FIND_TARGET_ROWS;
+        fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> = {
+            let context_range = exp2(bit_width - 1);
+            let mut out = Vec::with_capacity(context_range);
+            for n in 0..context_range {
+                let mut mask = 1;
+                let mut histogram_index_0 = 0;
+                let mut histogram_index_1 = 0;
+                for i in 0..bit_width {
+                    if i == t {
+                        histogram_index_1 += exp2(t);
+                    } else {
+                        let bit = ((n & mask) != 0) as usize;
+                        histogram_index_0 += bit * exp2(i);
+                        histogram_index_1 += bit * exp2(i);
+                        mask <<= 1;
+                    }
+                }
+                out.push((histogram_index_0, histogram_index_1))
+            }
+            out
+        }
+    }
+
+    type DecodedFloat = (u64, i16, i8);
+    type BuildUKey = (DecodedFloat, DecodedFloat, DecodedFloat);
+    type UMatrix = (Complex, Complex, Complex, Complex);
+
+    cached_key! {
+        BUILD_U: SizedCache<BuildUKey, UMatrix> = SizedCache::with_size(20);
+        Key = {(
+            Float::integer_decode(theta),
+            Float::integer_decode(phi),
+            Float::integer_decode(lambda)
+        )};
+        fn build_u(theta: f64, phi: f64, lambda: f64) -> UMatrix = {
+            (
+                Complex::new((theta/2.0).cos(), 0.0),
+                -e_power_to(lambda) * (theta/2.0).sin(),
+                e_power_to(phi) * (theta/2.0).sin(),
+                e_power_to(phi+lambda) * (theta/2.0).cos()
+            )
+        }
+    }
 }
 
 #[cfg(test)]

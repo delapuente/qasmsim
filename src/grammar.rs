@@ -5,7 +5,10 @@ use lalrpop_util::{self, lalrpop_mod};
 
 pub mod ast;
 pub mod lexer;
-lalrpop_mod!(#[allow(clippy::all)] pub open_qasm2, "/grammar/open_qasm2.rs");
+lalrpop_mod!(
+    #[allow(clippy::all)]
+    #[allow(missing_docs)]
+    pub open_qasm2, "/grammar/open_qasm2.rs");
 
 #[cfg(test)]
 mod tests {

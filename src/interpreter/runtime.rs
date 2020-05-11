@@ -147,10 +147,9 @@ impl<'src, 'program> Runtime<'program> {
 
         let expanded_arguments = self.expand_arguments(&actual_args).map_err(|sizes| {
             RuntimeError::RegisterSizeMismatch {
-                location: self
+                location: *self
                     .location
-                    .expect("after `apply_gates()`, the location of the statement")
-                    .clone(),
+                    .expect("after `apply_gates()`, the location of the statement"),
                 symbol_name: name.clone(),
                 sizes,
             }
@@ -179,10 +178,9 @@ impl<'src, 'program> Runtime<'program> {
                 .map(|argument| {
                     argument_solver.solve(argument).map_err(|symbol_name| {
                         RuntimeError::SymbolNotFound {
-                            location: self
+                            location: *self
                                 .location
-                                .expect("after `apply_gates()`, the location of the statement")
-                                .clone(),
+                                .expect("after `apply_gates()`, the location of the statement"),
                             symbol_name,
                             expected: QasmType::QuantumRegister,
                         }
@@ -208,10 +206,9 @@ impl<'src, 'program> Runtime<'program> {
             let value = expression_solver
                 .solve(&expression)
                 .map_err(|symbol_name| RuntimeError::SymbolNotFound {
-                    location: self
+                    location: *self
                         .location
-                        .expect("after `apply_gates()`, the location of the statement")
-                        .clone(),
+                        .expect("after `apply_gates()`, the location of the statement"),
                     symbol_name,
                     expected: QasmType::RealValue,
                 })?;
@@ -231,10 +228,9 @@ impl<'src, 'program> Runtime<'program> {
         let expanded_arguments =
             self.expand_arguments(&args)
                 .map_err(|sizes| RuntimeError::RegisterSizeMismatch {
-                    location: self
+                    location: *self
                         .location
-                        .expect("after `apply_gates()`, the location of the statement")
-                        .clone(),
+                        .expect("after `apply_gates()`, the location of the statement"),
                     symbol_name: "measure".into(),
                     sizes,
                 })?;
@@ -308,10 +304,9 @@ impl<'src, 'program> Runtime<'program> {
     fn assert_is_quantum_register(&self, name: &str) -> Result<()> {
         if !self.is_register_of_type(RegisterType::Q, name)? {
             Err(RuntimeError::TypeMismatch {
-                location: self
+                location: *self
                     .location
-                    .expect("after `apply_gates()`, the location of the statement")
-                    .clone(),
+                    .expect("after `apply_gates()`, the location of the statement"),
                 symbol_name: name.into(),
                 expected: QasmType::QuantumRegister,
             })
@@ -323,10 +318,9 @@ impl<'src, 'program> Runtime<'program> {
     fn assert_is_classical_register(&self, name: &str) -> Result<()> {
         if !self.is_register_of_type(RegisterType::C, name)? {
             Err(RuntimeError::TypeMismatch {
-                location: self
+                location: *self
                     .location
-                    .expect("after `apply_gates()`, the location of the statement")
-                    .clone(),
+                    .expect("after `apply_gates()`, the location of the statement"),
                 symbol_name: name.into(),
                 expected: QasmType::ClassicalRegister,
             })
@@ -339,10 +333,9 @@ impl<'src, 'program> Runtime<'program> {
         match self.semantics.register_table.get(name) {
             Some(entry) => Ok(entry.1 == rtype),
             None => Err(RuntimeError::SymbolNotFound {
-                location: self
+                location: *self
                     .location
-                    .expect("after `apply_gates()`, the location of the statement")
-                    .clone(),
+                    .expect("after `apply_gates()`, the location of the statement"),
                 symbol_name: name.into(),
                 expected: match rtype {
                     RegisterType::Q => QasmType::QuantumRegister,
@@ -373,10 +366,9 @@ impl<'src, 'program> Runtime<'program> {
         match argument {
             ast::Argument::Item(name, index) => match self.semantics.memory_map.get(name) {
                 None => Err(RuntimeError::SymbolNotFound {
-                    location: self
+                    location: *self
                         .location
-                        .expect("after `apply_gates()`, location of the statement")
-                        .clone(),
+                        .expect("after `apply_gates()`, location of the statement"),
                     symbol_name: name.into(),
                     expected: QasmType::Register,
                 }),
@@ -384,10 +376,9 @@ impl<'src, 'program> Runtime<'program> {
                     let size = mapping.2 - mapping.1 + 1;
                     if *index >= size {
                         return Err(RuntimeError::IndexOutOfBounds {
-                            location: self
+                            location: *self
                                 .location
-                                .expect("after `apply_gates()`, location of the statement")
-                                .clone(),
+                                .expect("after `apply_gates()`, location of the statement"),
                             symbol_name: name.into(),
                             index: *index,
                             size,
@@ -462,10 +453,9 @@ impl<'src, 'program> Runtime<'program> {
         let definition = match self.semantics.macro_definitions.get(&macro_name) {
             None => {
                 return Err(RuntimeError::UndefinedGate {
-                    location: self
+                    location: *self
                         .location
-                        .expect("after `apply_gates()`, the location of the statement")
-                        .clone(),
+                        .expect("after `apply_gates()`, the location of the statement"),
                     symbol_name: macro_name,
                 });
             }
@@ -475,10 +465,9 @@ impl<'src, 'program> Runtime<'program> {
         if real_args.len() != definition.1.len() {
             return Err(RuntimeError::WrongNumberOfParameters {
                 are_registers: false,
-                location: self
+                location: *self
                     .location
-                    .expect("after `apply_gates()`, the location of the statement")
-                    .clone(),
+                    .expect("after `apply_gates()`, the location of the statement"),
                 symbol_name: macro_name,
                 given: real_args.len(),
                 expected: definition.1.len(),
@@ -495,10 +484,9 @@ impl<'src, 'program> Runtime<'program> {
         if args.len() != definition.2.len() {
             return Err(RuntimeError::WrongNumberOfParameters {
                 are_registers: true,
-                location: self
+                location: *self
                     .location
-                    .expect("after `apply_gates()`, the location of the statement")
-                    .clone(),
+                    .expect("after `apply_gates()`, the location of the statement"),
                 symbol_name: macro_name,
                 given: args.len(),
                 expected: definition.2.len(),
@@ -525,6 +513,23 @@ impl<'src, 'program> Runtime<'program> {
     }
 }
 
+/// Perform a simulation of the parsed program `program`.
+///
+/// # Examples
+///
+/// ```
+/// use qasmsim::{compile_with_linker, default_linker, execute};
+///
+/// let program = compile_with_linker(r#"
+/// OPENQASM 2.0;
+/// include "qelib1.inc";
+/// qdef q[2];
+/// h q[0];
+/// cx q[0], q[1];
+/// "#, default_linker());
+///
+/// let computation = execute(&program)?
+/// ```
 pub fn execute(program: &ast::OpenQasmProgram) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);
@@ -532,6 +537,24 @@ pub fn execute(program: &ast::OpenQasmProgram) -> Result<Computation> {
     Ok(Computation::new(runtime.memory, runtime.statevector, None))
 }
 
+
+/// Perform `shots` number of simulations of the parsed proram `program`.
+///
+/// # Examples
+///
+/// ```
+/// use qasmsim::{compile_with_linker, default_linker, execute_with_shots};
+///
+/// let program = compile_with_linker(r#"
+/// OPENQASM 2.0;
+/// include "qelib1.inc";
+/// qdef q[2];
+/// h q[0];
+/// cx q[0], q[1];
+/// "#, default_linker());
+///
+/// let computation = execute_with_shots(&program, 1024)?
+/// ```
 pub fn execute_with_shots(program: &ast::OpenQasmProgram, shots: usize) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);

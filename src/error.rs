@@ -14,81 +14,146 @@ pub type ParseError = lalrpop_util::ParseError<Location, lexer::Tok, lexer::Lexi
 
 pub type SrcAndErr<'src, E> = (&'src str, E);
 
+/// Types of errors in QasmSim.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum QasmSimError<'src> {
+    /// A generic unknown error.
     UnknownError(String),
+    /// Found an invalid token at some position.
     InvalidToken {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Position inside the line (0-based) where the invalid token starts.
         startpos: usize,
+        /// Position inside the line (0-based) where the invalid token ends.
         endpos: Option<usize>,
+        /// Token found.
         token: Option<Tok>,
+        /// A list of expected tokens.
         expected: Vec<String>,
     },
+    /// Found an unexpected end of file.
     UnexpectedEOF {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Position inside the line (0-based) where the invalid token starts.
         startpos: usize,
+        /// Position inside the line (0-based) where the invalid token ends.
         endpos: Option<usize>,
+        /// Token found.
         token: Option<Tok>,
+        /// A list of expected tokens.
         expected: Vec<String>,
     },
+    /// Found an unexpected token.
     UnexpectedToken {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Position inside the line (0-based) where the invalid token starts.
         startpos: usize,
+        /// Position inside the line (0-based) where the invalid token ends.
         endpos: Option<usize>,
+        /// Token found.
         token: Option<Tok>,
+        /// A list of expected tokens.
         expected: Vec<String>,
     },
+    /// Found a redefinition of a register.
     RedefinitionError {
+        /// Line source.
         source: &'src str,
+        /// Name of the register declared for second time.
         symbol_name: String,
+        /// Line number.
         lineno: usize,
+        /// Line number where the register was originally declared.
         previous_lineno: usize,
     },
+    /// The unability of linking a library.
     LibraryNotFound {
+        /// Line source.
         source: &'src str,
+        /// Path to the library to be included.
         libpath: String,
+        /// Line number.
         lineno: usize,
     },
+    /// Use of register index that does not fit the register size.
     IndexOutOfBounds {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Name of the register being indexed.
         symbol_name: String,
+        /// Index tried to access.
         index: usize,
+        /// Size of the register.
         size: usize,
     },
+    /// Use of an unknown/undeclared symbol.
     SymbolNotFound {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Name of the unknown symbol.
         symbol_name: String,
+        /// The expected type.
         expected: QasmType,
     },
+    /// The attempt of applying an operation passing the wrong number of
+    /// parameters.
     WrongNumberOfParameters {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Name of the operation.
         symbol_name: String,
+        /// Indicate if the parameters are registers or real values.
         are_registers: bool,
+        /// The number of passed parameters.
         given: usize,
+        /// The number of expected parameters.
         expected: usize,
     },
+    /// Use of a gate not previously defined.
     UndefinedGate {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Name of the unknown gate.
         symbol_name: String,
     },
+    /// Found an unexpected type of value.
     TypeMismatch {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Name of the symbol with the incorrect type.
         symbol_name: String,
+        /// Expected type.
         expected: QasmType,
     },
+    /// Attempt of applying an operation to different sizes registers.
     RegisterSizeMismatch {
+        /// Line source.
         source: &'src str,
+        /// Line number.
         lineno: usize,
+        /// Name of the operation.
         symbol_name: String,
+        /// Sizes of the different registers involved.
         sizes: Vec<usize>,
     },
 }

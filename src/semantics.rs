@@ -4,11 +4,16 @@ use std::collections::HashMap;
 use crate::grammar::ast;
 use crate::grammar::lexer::Location;
 
+/// The different types for OPENQASM values.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum QasmType {
+    /// A generic register.
     Register,
+    /// A quantum register.
     QuantumRegister,
+    /// A classical register.
     ClassicalRegister,
+    /// A real value.
     RealValue,
 }
 
@@ -124,7 +129,7 @@ impl SemanticsBuilder {
             return Err(SemanticError::RedefinitionError {
                 symbol_name: name,
                 location,
-                previous_location: previous_location.clone(),
+                previous_location: *previous_location,
             });
         }
 
@@ -148,7 +153,7 @@ impl SemanticsBuilder {
             return Err(SemanticError::RedefinitionError {
                 symbol_name: name,
                 location,
-                previous_location: previous_location.clone(),
+                previous_location: *previous_location,
             });
         }
 
@@ -192,7 +197,7 @@ impl SemanticsBuilder {
 pub fn extract_semantics(tree: &ast::OpenQasmProgram) -> Result<Semantics> {
     let mut builder = SemanticsBuilder::new();
     for span in &tree.program {
-        let location = span.boundaries.0.clone();
+        let location = span.boundaries.0;
         match &*span.node {
             ast::Statement::QRegDecl(name, size) => {
                 builder.new_quantum_register(name.clone(), *size, location)?

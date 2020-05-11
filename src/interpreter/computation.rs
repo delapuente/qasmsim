@@ -2,17 +2,37 @@ use std::collections::HashMap;
 
 use crate::statevector::StateVector;
 
+/// Map classical registers with values and number of outcomes.
 pub type Histogram = HashMap<String, Vec<(u64, usize)>>;
 
+/// Represent the result of a simulation.
+///
+/// API functions such as [`execute`] or [`execute_with_shots`] return
+/// `Computation` instances.
+///
+/// # Examples:
+///
+/// See [`execute`] or [`execute_with_shots`] for an example of generating
+/// a `Computation` instance.
+///
+/// [`execute`]: ./fn.execute.html
+/// [`execute_with_shots`]: ./fn.execute_with_shots.html
 #[derive(Debug, Clone, PartialEq)]
 pub struct Computation {
+    /// The statevector of the quantum system.
     pub statevector: StateVector,
+    /// An associative map with classical names and the classical outcomes.
     pub memory: HashMap<String, u64>,
+    /// The probabilities associated with the state-vector.
     pub probabilities: Vec<f64>,
+    /// The histogram when simulating with several shots.
     pub histogram: Option<Histogram>,
 }
 
 impl Computation {
+    /// Create a new computation.
+    ///
+    /// Probabilities are computed from the state-vector.
     pub fn new(
         memory: HashMap<String, u64>,
         statevector: StateVector,
