@@ -64,8 +64,7 @@ See more options with:
 
 ```
 $ qasmsim --help
-qasmsim 0.1.0
-qasmsim 0.1.0
+qasmsim 1.0.0
 A QASM interpreter and quantum simulator in Rust.
 
 USAGE:
