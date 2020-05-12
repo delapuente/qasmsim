@@ -232,7 +232,7 @@ pub enum Statement {
     OpaqueGateDecl(String, Vec<String>, Vec<String>),
     /// A wrapper for a quantum operation.
     QuantumOperation(QuantumOperation),
-    /// A wrapper for making a quantum operation to execute just if certain
+    /// A wrapper for making a quantum operation to simulate just if certain
     /// equality condition holds. The wrapper takes the left-side of the
     /// comparison, the right side, and the operation to perform.
     Conditional(Argument, u64, QuantumOperation)
@@ -246,7 +246,7 @@ pub enum Statement {
 ///
 /// ```qasm
 /// OPENQASM 2.0;
-/// qdef q[10];
+/// qreg q[10];
 /// ```
 ///
 /// The span for the second line statement is as follows:

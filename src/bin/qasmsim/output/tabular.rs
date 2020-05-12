@@ -5,11 +5,11 @@ use std::iter::FromIterator;
 use prettytable::{cell, format, row, Table};
 
 use qasmsim::statevector::StateVector;
-use qasmsim::{Histogram, Run, RunTimes};
+use qasmsim::{Histogram, Execution, ExecutionTimes};
 
 use crate::options::Options;
 
-pub fn print<W>(buffer: &mut W, result: &Run, options: &Options)
+pub fn print<W>(buffer: &mut W, result: &Execution, options: &Options)
 where
     W: Write,
 {
@@ -174,7 +174,7 @@ where
     write!(buffer, "{}", table)
 }
 
-fn print_times<W>(buffer: &mut W, times: &RunTimes) -> io::Result<()>
+fn print_times<W>(buffer: &mut W, times: &ExecutionTimes) -> io::Result<()>
 where
     W: Write,
 {

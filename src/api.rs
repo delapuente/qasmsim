@@ -38,10 +38,12 @@ pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
 /// let ast = compile_with_linker(r#"
 ///     OPENQASM 2.0;
 ///     include "qelib1.inc";
-///     qdef q[2];
+///     qreg q[2];
 ///     h q[0];
 ///     cx q[0], q[1];
 /// "#, default_linker())?;
+/// # use qasmsim::QasmSimError;
+/// # Ok::<(), qasmsim::QasmSimError>(())
 /// ```
 pub fn compile_with_linker(input: &str, linker: Linker) -> Result<'_, ast::OpenQasmProgram> {
     let program = compile(&input)?;
@@ -50,6 +52,6 @@ pub fn compile_with_linker(input: &str, linker: Linker) -> Result<'_, ast::OpenQ
         .map_err(|err| QasmSimError::from((input, err)))
 }
 
-pub use interpreter::runtime::execute;
+pub use interpreter::runtime::simulate;
 
-pub use interpreter::runtime::execute_with_shots;
+pub use interpreter::runtime::simulate_with_shots;

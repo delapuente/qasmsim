@@ -38,11 +38,17 @@ pub enum RegisterType {
     C,
 }
 
+/// Represent the possible semantic errors.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum SemanticError {
+    /// Attempt to redefine an already defined register.
     RedefinitionError {
+        /// Name of the redefined register.
         symbol_name: String,
+        /// Location where the redefinition happens.
         location: Location,
+        /// Location of the original definition.
         previous_location: Location,
     },
 }

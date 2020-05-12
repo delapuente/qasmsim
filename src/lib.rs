@@ -8,8 +8,8 @@
 //! ```qasm
 //! OPENQASM 2.0;
 //! include "qelib1.inc";
-//! qdef q[2];
-//! cdef c[2];
+//! qreg q[2];
+//! creg c[2];
 //! h q[0];
 //! cx q[0], q[1];
 //! measure q -> c;
@@ -17,11 +17,13 @@
 
 mod api;
 mod arch;
-mod error;
 mod complex;
 mod interpreter;
 mod qe;
 mod semantics;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod error;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod grammar;
@@ -35,12 +37,12 @@ pub mod statevector;
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::{
     arch::native::{
-        Run,
-        RunTimes,
+        Execution,
+        ExecutionTimes,
         compile_with_linker,
         default_linker,
-        execute,
-        execute_with_shots,
+        simulate,
+        simulate_with_shots,
         run
     },
     error::QasmSimError,

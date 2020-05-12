@@ -10,40 +10,71 @@ use crate::statevector::StateVector;
 
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 
+/// Represent one of the possible errors that can happen during runtime.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum RuntimeError {
+    /// An unknown error.
     Other,
+    /// A semantic error.
     SemanticError(SemanticError),
+    /// Use of register index that does not fit the register size.
     IndexOutOfBounds {
+        /// Abstract location in the code.
         location: Location,
+        /// Name of the unknown gate.
         symbol_name: String,
+        /// Index tried to access.
         index: usize,
+        /// Size of the register.
         size: usize,
     },
+    /// Use of an unknown/undeclared symbol.
     SymbolNotFound {
+        /// Abstract location in the code.
         location: Location,
+        /// Name of the unknown gate.
         symbol_name: String,
+        /// The expected type.
         expected: QasmType,
     },
+    /// The attempt of applying an operation passing the wrong number of
+    /// parameters.
     WrongNumberOfParameters {
+        /// Indicate if the parameters are registers or real values.
         are_registers: bool,
+        /// Abstract location in the code.
         location: Location,
+        /// Name of the unknown gate.
         symbol_name: String,
+        /// The number of expected parameters.
         expected: usize,
+        /// The number of passed parameters.
         given: usize,
     },
+    /// Use of an unknown/undeclared symbol.
     UndefinedGate {
+        /// Abstract location in the code.
         location: Location,
+        /// Name of the unknown gate.
         symbol_name: String,
     },
+    /// Found an unexpected type of value.
     TypeMismatch {
+        /// Abstract location in the code.
         location: Location,
+        /// Name of the unknown gate.
         symbol_name: String,
+        /// Expected type.
         expected: QasmType,
     },
+    /// Use of an unknown/undeclared symbol.
     RegisterSizeMismatch {
+        /// Abstract location in the code.
         location: Location,
+        /// Name of the unknown gate.
         symbol_name: String,
+        /// Sizes of the different registers involved.
         sizes: Vec<usize>,
     },
 }
@@ -518,19 +549,21 @@ impl<'src, 'program> Runtime<'program> {
 /// # Examples
 ///
 /// ```
-/// use qasmsim::{compile_with_linker, default_linker, execute};
+/// use qasmsim::{compile_with_linker, default_linker, simulate};
 ///
-/// let program = compile_with_linker(r#"
+/// let source = r#"
 /// OPENQASM 2.0;
 /// include "qelib1.inc";
-/// qdef q[2];
+/// qreg q[2];
 /// h q[0];
 /// cx q[0], q[1];
-/// "#, default_linker());
-///
-/// let computation = execute(&program)?
+/// "#;
+/// let program = compile_with_linker(source, default_linker())?;
+/// let computation = simulate(&program).map_err(|err| (source, err))?;
+/// # use qasmsim::QasmSimError;
+/// # Ok::<(), QasmSimError>(())
 /// ```
-pub fn execute(program: &ast::OpenQasmProgram) -> Result<Computation> {
+pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);
     runtime.apply_gates(&program.program)?;
@@ -543,19 +576,21 @@ pub fn execute(program: &ast::OpenQasmProgram) -> Result<Computation> {
 /// # Examples
 ///
 /// ```
-/// use qasmsim::{compile_with_linker, default_linker, execute_with_shots};
+/// use qasmsim::{compile_with_linker, default_linker, simulate_with_shots};
 ///
-/// let program = compile_with_linker(r#"
+/// let source = r#"
 /// OPENQASM 2.0;
 /// include "qelib1.inc";
-/// qdef q[2];
+/// qreg q[2];
 /// h q[0];
 /// cx q[0], q[1];
-/// "#, default_linker());
-///
-/// let computation = execute_with_shots(&program, 1024)?
+/// "#;
+/// let program = compile_with_linker(source, default_linker())?;
+/// let computation = simulate_with_shots(&program, 1024).map_err(|err| (source, err))?;
+/// # use qasmsim::QasmSimError;
+/// # Ok::<(), QasmSimError>(())
 /// ```
-pub fn execute_with_shots(program: &ast::OpenQasmProgram, shots: usize) -> Result<Computation> {
+pub fn simulate_with_shots(program: &ast::OpenQasmProgram, shots: usize) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);
     let mut histogram_builder = HistogramBuilder::new();

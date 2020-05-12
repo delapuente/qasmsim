@@ -1,3 +1,5 @@
+//! Contain the error types ragarding the different tasks that QasmSim can
+//! perform.
 mod humanize;
 
 use std::convert;
@@ -5,16 +7,56 @@ use std::error;
 use std::fmt;
 
 use crate::grammar::lexer::{self, Location, Tok};
-use crate::interpreter::runtime::RuntimeError;
-use crate::linker::LinkerError;
-use crate::semantics::{QasmType, SemanticError};
+pub use crate::interpreter::runtime::RuntimeError;
+pub use crate::linker::LinkerError;
+use crate::semantics::QasmType;
+pub use crate::semantics::SemanticError;
 use self::humanize::humanize_error;
 
+/// Represent a parsing error.
 pub type ParseError = lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;
 
+/// An alias for a pair relating some source code with an error.
 pub type SrcAndErr<'src, E> = (&'src str, E);
 
-/// Types of errors in QasmSim.
+/// Types of errors in QasmSim. QasmSim errors contain information about
+/// the error and the location in the source code where the error happens.
+///
+/// Conversion between [`ParseError`], [`RuntimeError`] and [`LinkerError`] is
+/// possible thanks to the trait `From` is defined for the pair
+/// `(&'source str, T)` (see alias [`SrcAndErr`]) for all the errors listed
+/// above.
+///
+/// # Examples
+///
+/// The error type of [`simulate`] is [`RuntimeError`].
+/// `RuntimeError` is a _sourceless_ error in the sense it does not relate with
+/// the concrete source code beyond the location in the AST at which the error
+/// happens.
+///
+/// You can use [`map_err`] for for capturing the error and converting it
+/// into a `QasmSimError` from its pairing with the source.
+///
+/// ```
+/// use qasmsim::{QasmSimError, compile_with_linker, default_linker, simulate};
+///
+/// let source = r#"
+/// OPENQASM 2.0;
+/// qreg q[2];
+/// CX q[1], q[2]; // Notice we are indexing out of bounds here.
+/// "#;
+/// let program = compile_with_linker(source, default_linker())?;
+/// let runtime_error = simulate(&program).expect_err("Index out of bounds");
+/// let qasmsim_error = QasmSimError::from((source, runtime_error));
+/// # Ok::<(), QasmSimError>(())
+/// ```
+///
+/// [`ParseError`]: ./type.ParseError.html
+/// [`RuntimeError`]: ./enum.RuntimeError.html
+/// [`LinkerError`]: ../linker/enum.LinkerError.html
+/// [`SrcAndErr`]: ./type.SrcAndErr.html
+/// [`simulate]: ../fn.simulate.html
+/// [`map_err`]: ../../std/result/enum.Result.html#method.map_err
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum QasmSimError<'src> {

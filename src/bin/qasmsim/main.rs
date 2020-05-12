@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use qasmsim::Run;
+use qasmsim::Execution;
 
 fn main() -> io::Result<()> {
     let options = options::Options::from_args();
@@ -29,7 +29,7 @@ fn source(source: &Option<PathBuf>) -> io::Result<String> {
     }
 }
 
-fn print_result(result: &Run, options: &options::Options) -> io::Result<()> {
+fn print_result(result: &Execution, options: &options::Options) -> io::Result<()> {
     match &options.out {
         None => {
             let stdout = io::stdout();

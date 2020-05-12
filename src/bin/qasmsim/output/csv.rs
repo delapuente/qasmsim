@@ -6,11 +6,11 @@ use std::path::PathBuf;
 use csv;
 
 use qasmsim::statevector::StateVector;
-use qasmsim::{Histogram, Run, RunTimes};
+use qasmsim::{Histogram, Execution, ExecutionTimes};
 
 use crate::options::Options;
 
-pub fn print(path: &mut PathBuf, result: &Run, options: &Options) {
+pub fn print(path: &mut PathBuf, result: &Execution, options: &Options) {
     // TODO: Add error handling for path operations.
     let prefix = path
         .file_name()
@@ -172,7 +172,7 @@ where
     Ok(())
 }
 
-fn print_times<W>(writer: &mut csv::Writer<W>, times: &RunTimes) -> io::Result<()>
+fn print_times<W>(writer: &mut csv::Writer<W>, times: &ExecutionTimes) -> io::Result<()>
 where
     W: Write,
 {

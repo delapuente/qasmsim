@@ -10,8 +10,8 @@ use crate::error::QasmSimError;
 
 pub use api::compile_with_linker;
 pub use api::default_linker;
-pub use api::execute;
-pub use api::execute_with_shots;
+pub use api::simulate;
+pub use api::simulate_with_shots;
 
 macro_rules! measure {
     ($block:expr) => {{
@@ -25,17 +25,17 @@ macro_rules! measure {
 
 /// Register the milliseconds spent in parsing the program and simulating.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct RunTimes {
+pub struct ExecutionTimes {
     /// Time spent in parsing the program and converting it to an AST.
     pub parsing_time: u128,
     /// Time spent in simulating the program.
     pub simulation_time: u128,
 }
 
-impl RunTimes {
+impl ExecutionTimes {
     /// Create a new times statistics.
     pub fn new(parsing_time: u128, simulation_time: u128) -> Self {
-        RunTimes {
+        ExecutionTimes {
             parsing_time,
             simulation_time,
         }
@@ -53,9 +53,9 @@ impl RunTimes {
 ///
 /// [`run`]: ./fn.run.html
 /// [`Computation`]: ./struct.Computation.html
-/// [time statistics]: ./struct.RunTimes.html
+/// [time statistics]: ./struct.ExecutionTimes.html
 #[derive(Debug, Clone, PartialEq)]
-pub struct Run {
+pub struct Execution {
     /// The statevector of the quantum system.
     pub statevector: StateVector,
     /// The probabilities associated with the state-vector.
@@ -65,19 +65,19 @@ pub struct Run {
     /// The histogram when simulating with several shots.
     pub histogram: Option<Histogram>,
     /// Time spent in parsing and performing the simulation.
-    pub times: RunTimes,
+    pub times: ExecutionTimes,
 }
 
-impl Run {
-    /// Create a new `Run` instance.
+impl Execution {
+    /// Create a new `Execution` instance.
     pub fn new(
         statevector: StateVector,
         probabilities: Vec<f64>,
         memory: HashMap<String, u64>,
         histogram: Option<Histogram>,
-        times: RunTimes,
+        times: ExecutionTimes,
     ) -> Self {
-        Run {
+        Execution {
             statevector,
             probabilities,
             memory,
@@ -87,15 +87,15 @@ impl Run {
     }
 }
 
-impl convert::From<(Computation, u128, u128)> for Run {
+impl convert::From<(Computation, u128, u128)> for Execution {
     fn from(value: (Computation, u128, u128)) -> Self {
         let (computation, parsing_time, simulation_time) = value;
-        Run {
+        Execution {
             statevector: computation.statevector,
             probabilities: computation.probabilities,
             memory: computation.memory,
             histogram: computation.histogram,
-            times: RunTimes {
+            times: ExecutionTimes {
                 parsing_time,
                 simulation_time,
             },
@@ -110,22 +110,22 @@ impl convert::From<(Computation, u128, u128)> for Run {
 /// ```
 /// use qasmsim::run;
 ///
-/// let run_result = run(r#"
+/// let execution = run(r#"
 /// OPENQASM 2.0;
 /// include "qelib1.inc";
-/// qdef q[2];
-/// h q[0];
-/// cx q[0], q[1];
-/// "#);
+/// qreg q[2];
+/// "#, None)?;
+/// # use qasmsim::QasmSimError;
+/// # Ok::<(), QasmSimError>(())
 /// ```
-pub fn run(input: &str, shots: Option<usize>) -> api::Result<'_, Run> {
+pub fn run(input: &str, shots: Option<usize>) -> api::Result<'_, Execution> {
     let (linked, parsing_time) = measure!({ compile_with_linker(input, api::default_linker()) });
     let (out, simulation_time) = measure!({
         match shots {
-            None => execute(&linked?),
-            Some(shots) => execute_with_shots(&linked?, shots),
+            None => simulate(&linked?),
+            Some(shots) => simulate_with_shots(&linked?, shots),
         }
     });
     let out = out.map_err(|err| QasmSimError::from((input, err)));
-    Ok(Run::from((out?, parsing_time, simulation_time)))
+    Ok(Execution::from((out?, parsing_time, simulation_time)))
 }

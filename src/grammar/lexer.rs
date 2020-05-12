@@ -18,7 +18,7 @@ use regex::Regex;
 ///
 /// ```qasm
 /// OPENQASM 2.0;
-/// qdef q[2];
+/// qreg q[2];
 /// ```
 ///
 /// The `q` register id starts in:
@@ -284,8 +284,8 @@ enum Mode {
 /// ```qasm
 /// OPENQASM 2.0;
 /// include "qelib1.inc";
-/// qdef q[2];
-/// cdef c[2];
+/// qreg q[2];
+/// creg c[2];
 /// h q[0];
 /// cx q[0], q[1];
 /// measure q -> c;
@@ -299,8 +299,8 @@ enum Mode {
 /// let tokenizer = Lexer::new(r#"
 /// OPENQASM 2.0;
 /// include "qelib1.inc";
-/// qdef q[2];
-/// cdef c[2];
+/// qreg q[2];
+/// creg c[2];
 /// h q[0];
 /// cx q[0], q[1];
 /// measure q -> c;

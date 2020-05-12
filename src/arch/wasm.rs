@@ -12,6 +12,19 @@ use web_sys;
 use crate::api;
 use crate::error::QasmSimError;
 
+/// Parse and simulate the input OPENQASM program with optional shots.
+///
+/// # Example
+///
+/// ```js
+/// var result = qasmsim.run(`
+/// OPENQASM 2.0;
+/// include "qelib1.inc";
+/// qreg q[2];
+/// h q[0];
+/// cx q[0], q[1];
+/// `);
+/// ```
 #[wasm_bindgen]
 pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
     let (linked, parsing_time) = measure!("parsing", {
@@ -19,8 +32,8 @@ pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
     });
     let (computation, simulation_time) = measure!("simulation", {
         match shots {
-            None => api::execute(&linked?),
-            Some(shots) => api::execute_with_shots(&linked?, shots),
+            None => api::simulate(&linked?),
+            Some(shots) => api::simulate_with_shots(&linked?, shots),
         }
     });
     let (out, serialization_time) = measure!("serialization", {

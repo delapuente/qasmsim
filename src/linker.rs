@@ -73,7 +73,7 @@ pub enum LinkerError {
 /// ```qasm
 /// OPENQASM 2.0;
 /// include "ghz.inc";
-/// qdef q[3];
+/// qreg q[3];
 /// qhz q;
 /// ```
 ///

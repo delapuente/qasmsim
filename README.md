@@ -147,20 +147,20 @@ The module is exported by default as the `qasmsim` object in `window` and implme
 
 ```ts
 interface qasmsim {
-  run: (input: string, shots?: number) => Run
+  run: (input: string, shots?: number) => Execution
 }
 
-interface Run {
+interface Execution {
   histogram?: Histogram,
   probabilities: Float64Array,
   statevector: Float64Array,
   memory: Memory,
-  times: RunTimes
+  times: ExecutionTimes
 }
 
 type Memory = { [key: string]: Array[number] }
 type Histogram = { [key: string]: Array[[number, number]] }
-type RunTimes = {
+type ExecutionTimes = {
   parsing_time: number,
   simulation_time: number,
   serialization_time: number

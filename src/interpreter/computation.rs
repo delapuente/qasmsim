@@ -7,16 +7,16 @@ pub type Histogram = HashMap<String, Vec<(u64, usize)>>;
 
 /// Represent the result of a simulation.
 ///
-/// API functions such as [`execute`] or [`execute_with_shots`] return
+/// API functions such as [`simulate`] or [`simulate_with_shots`] return
 /// `Computation` instances.
 ///
 /// # Examples:
 ///
-/// See [`execute`] or [`execute_with_shots`] for an example of generating
+/// See [`simulate`] or [`simulate_with_shots`] for an example of generating
 /// a `Computation` instance.
 ///
-/// [`execute`]: ./fn.execute.html
-/// [`execute_with_shots`]: ./fn.execute_with_shots.html
+/// [`simulate`]: ./fn.simulate.html
+/// [`simulate_with_shots`]: ./fn.simulate_with_shots.html
 #[derive(Debug, Clone, PartialEq)]
 pub struct Computation {
     /// The statevector of the quantum system.
