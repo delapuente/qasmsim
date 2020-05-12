@@ -30,7 +30,16 @@ pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
 
 /// Return the AST of `input` and link external sources with `linker`.
 ///
+/// # Errors
+///
+/// The function can fail if failing to parse the source code. In that case
+/// it will return an `Err` variant with a value of [`QasmSimError`].
+///
+/// [`QasmSimError`]: ./error/enum.QasmSimError.html
+///
 /// # Examples
+///
+/// Basic usage:
 ///
 /// ```
 /// use qasmsim::{default_linker, compile_with_linker};

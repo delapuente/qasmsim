@@ -544,25 +544,47 @@ impl<'src, 'program> Runtime<'program> {
     }
 }
 
-/// Perform a simulation of the parsed program `program`.
+/// Perform a simulation of the parsed `program`.
+///
+/// # Errors
+///
+/// Simulate can fail during runtime returning an `Err` variant with a value
+/// of the [`RuntimeError`] type. `RuntimeError` is a sourceless error. It
+/// can be related to a source code and converted into a more useful
+/// [`QasmSimError`] value.
+///
+/// [`QasmSimError`]: ./error/enum.QasmSimError.html
+/// [`RuntimeError`]: ./error/enum.RuntimeError.html
 ///
 /// # Examples
 ///
-/// ```
-/// use qasmsim::{compile_with_linker, default_linker, simulate};
+/// Basic usage requires a valid AST as input. You can use
+/// [`compile_with_linker`].
 ///
-/// let source = r#"
-/// OPENQASM 2.0;
-/// include "qelib1.inc";
-/// qreg q[2];
-/// h q[0];
-/// cx q[0], q[1];
-/// "#;
-/// let program = compile_with_linker(source, default_linker())?;
-/// let computation = simulate(&program).map_err(|err| (source, err))?;
-/// # use qasmsim::QasmSimError;
-/// # Ok::<(), QasmSimError>(())
 /// ```
+/// # use qasmsim::QasmSimError;
+/// # use qasmsim::grammar::ast::OpenQasmProgram;
+/// # use qasmsim::{compile_with_linker, default_linker};
+/// use qasmsim::simulate;
+///
+/// # fn get_program_ast() -> OpenQasmProgram {
+/// #     let source = r#"
+/// #     OPENQASM 2.0;
+/// #     include "qelib1.inc";
+/// #     qreg q[2];
+/// #     h q[0];
+/// #     cx q[0], q[1];
+/// #     "#;
+/// #     compile_with_linker(source, default_linker()).unwrap()
+/// # }
+///
+/// let program = get_program_ast();
+/// let computation = simulate(&program)?;
+/// # use qasmsim::error::RuntimeError;
+/// # Ok::<(), RuntimeError>(())
+/// ```
+///
+/// [`compile_with_linker`]: ./fn.compile_with_linker.html
 pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);
@@ -573,23 +595,45 @@ pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
 
 /// Perform `shots` number of simulations of the parsed proram `program`.
 ///
+/// # Errors
+///
+/// Simulate can fail during runtime returning an `Err` variant with a value
+/// of the [`RuntimeError`] type. `RuntimeError` is a sourceless error. It
+/// can be related to a source code and converted into a more useful
+/// [`QasmSimError`] value.
+///
+/// [`QasmSimError`]: ./error/enum.QasmSimError.html
+/// [`RuntimeError`]: ./error/enum.RuntimeError.html
+///
 /// # Examples
 ///
-/// ```
-/// use qasmsim::{compile_with_linker, default_linker, simulate_with_shots};
+/// Basic usage requires a valid AST as input. You can use
+/// [`compile_with_linker`].
 ///
-/// let source = r#"
-/// OPENQASM 2.0;
-/// include "qelib1.inc";
-/// qreg q[2];
-/// h q[0];
-/// cx q[0], q[1];
-/// "#;
-/// let program = compile_with_linker(source, default_linker())?;
-/// let computation = simulate_with_shots(&program, 1024).map_err(|err| (source, err))?;
-/// # use qasmsim::QasmSimError;
-/// # Ok::<(), QasmSimError>(())
 /// ```
+/// # use qasmsim::QasmSimError;
+/// # use qasmsim::grammar::ast::OpenQasmProgram;
+/// # use qasmsim::{compile_with_linker, default_linker};
+/// use qasmsim::simulate_with_shots;
+///
+/// # fn get_program_ast() -> OpenQasmProgram {
+/// #     let source = r#"
+/// #     OPENQASM 2.0;
+/// #     include "qelib1.inc";
+/// #     qreg q[2];
+/// #     h q[0];
+/// #     cx q[0], q[1];
+/// #     "#;
+/// #     compile_with_linker(source, default_linker()).unwrap()
+/// # }
+///
+/// let program = get_program_ast();
+/// let computation = simulate_with_shots(&program, 1024)?;
+/// # use qasmsim::error::RuntimeError;
+/// # Ok::<(), RuntimeError>(())
+/// ```
+///
+/// [`compile_with_linker`]: ./fn.compile_with_linker.html
 pub fn simulate_with_shots(program: &ast::OpenQasmProgram, shots: usize) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);

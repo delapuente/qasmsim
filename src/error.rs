@@ -22,6 +22,9 @@ pub type SrcAndErr<'src, E> = (&'src str, E);
 /// Types of errors in QasmSim. QasmSim errors contain information about
 /// the error and the location in the source code where the error happens.
 ///
+/// `QasmSimError` instances can be printed. They refer to the source code and
+/// try to provide contextual information for fixing the problem.
+///
 /// Conversion between [`ParseError`], [`RuntimeError`] and [`LinkerError`] is
 /// possible thanks to the trait `From` is defined for the pair
 /// `(&'source str, T)` (see alias [`SrcAndErr`]) for all the errors listed

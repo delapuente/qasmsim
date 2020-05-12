@@ -105,7 +105,17 @@ impl convert::From<(Computation, u128, u128)> for Execution {
 
 /// Parse and simulate the `input` OPENQASM program with optional `shots`.
 ///
+/// # Errors
+///
+/// The function can fail if the source code presents an error or something
+/// unexpected happens during the simulation. In this case, an `Err` variant
+/// wrapping a value of [`QasmSimError`] is returned.
+///
+/// [`QasmSimError`]: ./error/enum.QasmSimError.html
+///
 /// # Examples
+///
+/// Basic usage:
 ///
 /// ```
 /// use qasmsim::run;
