@@ -74,7 +74,7 @@ pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 ///
 /// LexicalError::new_at(14);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LexicalError<Loc> {
     /// Location at which the unknown sequence starts.
     pub location: Loc,

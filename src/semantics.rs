@@ -44,8 +44,8 @@ pub enum RegisterType {
 }
 
 /// Represent the possible semantic errors.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SemanticError {
     /// Attempt to redefine an already defined register.
     RedefinitionError {

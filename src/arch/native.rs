@@ -27,7 +27,7 @@ macro_rules! measure {
 }
 
 /// Register the milliseconds spent in parsing the program and simulating.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ExecutionTimes {
     /// Time spent in parsing the program and converting it to an AST.
