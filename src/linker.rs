@@ -2,6 +2,9 @@
 
 use std::collections::HashMap;
 
+#[cfg(feature = "serde")]
+use serde::{Serialize, Deserialize};
+
 use crate::grammar::ast;
 use crate::grammar::open_qasm2;
 use crate::grammar::lexer::{Lexer, Location};
@@ -30,6 +33,7 @@ use crate::grammar::lexer::{Lexer, Location};
 /// ```
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum LinkerError {
     /// The `include` directive at `location` failed while importing `libpath`.
     LibraryNotFound {
