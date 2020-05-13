@@ -2,6 +2,9 @@
 use std::iter::FromIterator;
 use std::f64;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use float_cmp::ApproxEq;
 use rand::random;
 
@@ -11,6 +14,7 @@ pub use crate::complex::{Complex, ComplexMargin};
 
 /// Represent the state vector of a quantum system simulation.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct StateVector {
     /// Amplitudes corresponding to the bases of the system.
     pub bases: Vec<Complex>,
@@ -179,6 +183,7 @@ fn e_power_to(x: f64) -> Complex {
     Complex::new(0.0, x).exp()
 }
 
+// This module intentionally disable documentation of the cached functions.
 mod cached_fns {
     #![allow(missing_docs)]
 

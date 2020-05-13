@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::{Serialize, Deserialize};
+
 use crate::statevector::StateVector;
 
 /// Map classical registers with values and number of outcomes.
@@ -18,6 +20,7 @@ pub type Histogram = HashMap<String, Vec<(u64, usize)>>;
 /// [`simulate`]: ./fn.simulate.html
 /// [`simulate_with_shots`]: ./fn.simulate_with_shots.html
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Computation {
     /// The statevector of the quantum system.
     pub statevector: StateVector,

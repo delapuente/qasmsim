@@ -3,6 +3,9 @@
 use std::collections::HashMap;
 use std::convert;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{api, statevector::StateVector};
 
 use crate::interpreter::{Computation, Histogram};
@@ -25,6 +28,7 @@ macro_rules! measure {
 
 /// Register the milliseconds spent in parsing the program and simulating.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ExecutionTimes {
     /// Time spent in parsing the program and converting it to an AST.
     pub parsing_time: u128,
@@ -67,6 +71,7 @@ impl From<(u128, u128)> for ExecutionTimes {
 /// [`Computation`]: ./struct.Computation.html
 /// [time statistics]: ./struct.ExecutionTimes.html
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Execution {
     /// The statevector of the quantum system.
     pub statevector: StateVector,
