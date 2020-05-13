@@ -1,4 +1,5 @@
 //! Contain utilities for representing the internal state of a quantum system.
+use std::iter::FromIterator;
 use std::f64;
 
 use float_cmp::ApproxEq;
@@ -16,47 +17,6 @@ pub struct StateVector {
     /// 2-base logarithm of the number of amplitudes representing the number
     /// of qubits in the system.
     pub bit_width: usize,
-}
-
-#[derive(Debug, PartialEq)]
-struct Measurement<'a> {
-    bases: &'a mut Vec<Complex>,
-    chances: [f64; 2],
-    target: usize,
-}
-
-impl<'a> Measurement<'a> {
-    pub fn new(bases: &'a mut Vec<Complex>, target: usize) -> Self {
-        let mut chance_universe_0 = 0.0;
-        for (index, amplitude) in bases.iter().enumerate() {
-            if check_bit(index, target) == 0 {
-                chance_universe_0 += amplitude.norm_sqr();
-            }
-        }
-        let chances = [chance_universe_0, 1.0 - chance_universe_0];
-        Measurement {
-            bases,
-            chances,
-            target,
-        }
-    }
-
-    pub fn collapse(&mut self, fate: f64) -> bool {
-        assert!(
-            0.0 <= fate && fate < 1.0,
-            "Fate must be a f64 value in [0.0, 1.0)"
-        );
-        let value = (fate >= self.chances[0]) as usize;
-        let normalization_factor = self.chances[value].sqrt();
-        for index in 0..self.bases.len() {
-            if check_bit(index, self.target) == value {
-                self.bases[index] /= normalization_factor;
-            } else {
-                self.bases[index] = Complex::from(0.0);
-            }
-        }
-        value != 0
-    }
 }
 
 impl StateVector {
@@ -141,6 +101,54 @@ impl<'a> ApproxEq for &'a StateVector {
             }
         }
         true
+    }
+}
+
+impl FromIterator<Complex> for StateVector {
+    fn from_iter<I: IntoIterator<Item=Complex>>(iter: I) -> Self {
+        let bases: Vec<Complex> = iter.into_iter().collect();
+        StateVector::from_bases(bases)
+    }
+}
+
+#[derive(Debug, PartialEq)]
+struct Measurement<'a> {
+    bases: &'a mut Vec<Complex>,
+    chances: [f64; 2],
+    target: usize,
+}
+
+impl<'a> Measurement<'a> {
+    pub fn new(bases: &'a mut Vec<Complex>, target: usize) -> Self {
+        let mut chance_universe_0 = 0.0;
+        for (index, amplitude) in bases.iter().enumerate() {
+            if check_bit(index, target) == 0 {
+                chance_universe_0 += amplitude.norm_sqr();
+            }
+        }
+        let chances = [chance_universe_0, 1.0 - chance_universe_0];
+        Measurement {
+            bases,
+            chances,
+            target,
+        }
+    }
+
+    pub fn collapse(&mut self, fate: f64) -> bool {
+        assert!(
+            0.0 <= fate && fate < 1.0,
+            "Fate must be a f64 value in [0.0, 1.0)"
+        );
+        let value = (fate >= self.chances[0]) as usize;
+        let normalization_factor = self.chances[value].sqrt();
+        for index in 0..self.bases.len() {
+            if check_bit(index, self.target) == value {
+                self.bases[index] /= normalization_factor;
+            } else {
+                self.bases[index] = Complex::from(0.0);
+            }
+        }
+        value != 0
     }
 }
 

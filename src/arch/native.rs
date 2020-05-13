@@ -33,12 +33,24 @@ pub struct ExecutionTimes {
 }
 
 impl ExecutionTimes {
-    /// Create a new times statistics.
+    /// Create new times statistics. Parameters are expressed in milliseconds.
     pub fn new(parsing_time: u128, simulation_time: u128) -> Self {
         ExecutionTimes {
             parsing_time,
             simulation_time,
         }
+    }
+}
+
+impl From<&[u128; 2]> for ExecutionTimes {
+    fn from(pair: &[u128; 2]) -> Self {
+        ExecutionTimes::new(pair[0], pair[1])
+    }
+}
+
+impl From<(u128, u128)> for ExecutionTimes {
+    fn from(pair: (u128, u128)) -> Self {
+        ExecutionTimes::new(pair.0, pair.1)
     }
 }
 
