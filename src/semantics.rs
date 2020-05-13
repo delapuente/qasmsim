@@ -1,5 +1,5 @@
-use std::fmt;
 use std::collections::HashMap;
+use std::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -236,8 +236,8 @@ mod test {
     use super::*;
     use std::iter::FromIterator;
 
-    use crate::grammar::open_qasm2;
     use crate::grammar::lexer::Lexer;
+    use crate::grammar::open_qasm2;
 
     #[test]
     fn test_symbol_table_stores_register_info() {

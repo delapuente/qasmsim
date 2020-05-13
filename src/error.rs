@@ -7,14 +7,14 @@ use std::error;
 use std::fmt;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
+use self::humanize::humanize_error;
 use crate::grammar::lexer::{self, Location, Tok};
 pub use crate::interpreter::runtime::RuntimeError;
 pub use crate::linker::LinkerError;
 use crate::semantics::QasmType;
 pub use crate::semantics::SemanticError;
-use self::humanize::humanize_error;
 
 /// Represent a parsing error.
 pub type ParseError = lalrpop_util::ParseError<Location, lexer::Tok, lexer::LexicalError<Location>>;

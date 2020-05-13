@@ -3,11 +3,11 @@
 use std::collections::HashMap;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::grammar::ast;
-use crate::grammar::open_qasm2;
 use crate::grammar::lexer::{Lexer, Location};
+use crate::grammar::open_qasm2;
 
 /// Represent a filure during linkage.
 ///
@@ -40,10 +40,9 @@ pub enum LinkerError {
         /// Location of the `include` directive.
         location: Location,
         /// Library path passed to the `include` directive.
-        libpath: String
+        libpath: String,
     },
 }
-
 
 /// Allow for combining multiple AST, spread in several sources, into one.
 ///

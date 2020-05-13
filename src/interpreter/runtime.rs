@@ -592,7 +592,6 @@ pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
     Ok(Computation::new(runtime.memory, runtime.statevector, None))
 }
 
-
 /// Perform `shots` number of simulations of the parsed proram `program`.
 ///
 /// # Errors

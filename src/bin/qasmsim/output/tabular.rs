@@ -5,7 +5,7 @@ use std::iter::FromIterator;
 use prettytable::{cell, format, row, Table};
 
 use qasmsim::statevector::StateVector;
-use qasmsim::{Histogram, Execution, ExecutionTimes};
+use qasmsim::{Execution, ExecutionTimes, Histogram};
 
 use crate::options::Options;
 

@@ -172,31 +172,31 @@ pub enum Tok {
     /// The version of OPENQASM as `X.Y`.
     Version {
         /// Version value.
-        repr: String
+        repr: String,
     },
     /// An identifier. Identifiers in OPENQASM must start with underscore or a
     /// lower-case letter and may be followed by alphanumeric character, either
     /// upper or lower case.
     Id {
         /// Identifier value.
-        repr: String
+        repr: String,
     },
     /// An integer number.
     Int {
         /// String representation of the interger as it appears in the
         /// source code.
-        repr: String
+        repr: String,
     },
     /// A real number.
     Real {
         /// String representation of the real number as it appears in the
         /// source code.
-        repr: String
+        repr: String,
     },
     /// A string of unicode characters.
     Str {
         /// The string as it appears in the source code.
-        repr: String
+        repr: String,
     },
 }
 

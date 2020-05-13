@@ -4,7 +4,7 @@ extern crate qasmsim;
 
 use std::f64::consts::FRAC_1_SQRT_2;
 
-use qasmsim::statevector::{assert_approx_eq, StateVector, Complex};
+use qasmsim::statevector::{assert_approx_eq, Complex, StateVector};
 
 #[test]
 fn endianess() {

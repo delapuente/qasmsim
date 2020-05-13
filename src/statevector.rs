@@ -1,6 +1,6 @@
 //! Contain utilities for representing the internal state of a quantum system.
-use std::iter::FromIterator;
 use std::f64;
+use std::iter::FromIterator;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use float_cmp::ApproxEq;
 use rand::random;
 
+use self::cached_fns::{build_u, find_exchangeable_rows, find_target_rows};
 use crate::complex;
-use self::cached_fns::{find_exchangeable_rows, find_target_rows, build_u};
 pub use crate::complex::{Complex, ComplexMargin};
 
 /// Represent the state vector of a quantum system simulation.
@@ -53,7 +53,6 @@ impl StateVector {
 
     /// Apply a controlled not operation on qubit `target`.
     pub fn cnot(&mut self, control: usize, target: usize) {
-
         let exchangable_rows = find_exchangeable_rows(self.bit_width, control, target);
         for (index_a, index_b) in exchangable_rows {
             self.bases.swap(index_a, index_b);
@@ -109,7 +108,7 @@ impl<'a> ApproxEq for &'a StateVector {
 }
 
 impl FromIterator<Complex> for StateVector {
-    fn from_iter<I: IntoIterator<Item=Complex>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = Complex>>(iter: I) -> Self {
         let bases: Vec<Complex> = iter.into_iter().collect();
         StateVector::from_bases(bases)
     }
@@ -187,9 +186,9 @@ fn e_power_to(x: f64) -> Complex {
 mod cached_fns {
     #![allow(missing_docs)]
 
-    use num::Float;
+    use super::{e_power_to, exp2, Complex};
     use cached::{cached, cached_key, SizedCache};
-    use super::{Complex, exp2, e_power_to};
+    use num::Float;
 
     cached! {
         FIND_EXCHANGEABLE_ROWS;

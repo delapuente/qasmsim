@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use csv;
 
 use qasmsim::statevector::StateVector;
-use qasmsim::{Histogram, Execution, ExecutionTimes};
+use qasmsim::{Execution, ExecutionTimes, Histogram};
 
 use crate::options::Options;
 

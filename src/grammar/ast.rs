@@ -12,7 +12,7 @@
 //! code manipulations at the abstract level.
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::grammar::lexer::Location;
 
@@ -241,7 +241,7 @@ pub enum Statement {
     /// A wrapper for making a quantum operation to simulate just if certain
     /// equality condition holds. The wrapper takes the left-side of the
     /// comparison, the right side, and the operation to perform.
-    Conditional(Argument, u64, QuantumOperation)
+    Conditional(Argument, u64, QuantumOperation),
 }
 
 /// Relates a node with the fragment of source code where the node appears.

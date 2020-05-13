@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{api, statevector::StateVector};
 
-use crate::interpreter::{Computation, Histogram};
 use crate::error::QasmSimError;
+use crate::interpreter::{Computation, Histogram};
 
 pub use api::compile_with_linker;
 pub use api::default_linker;

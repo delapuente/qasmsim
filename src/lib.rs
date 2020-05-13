@@ -80,20 +80,12 @@ pub mod statevector;
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::{
     arch::native::{
-        Execution,
+        compile_with_linker, default_linker, run, simulate, simulate_with_shots, Execution,
         ExecutionTimes,
-        compile_with_linker,
-        default_linker,
-        simulate,
-        simulate_with_shots,
-        run
     },
     error::QasmSimError,
-    interpreter::{
-        Computation,
-        Histogram
-    },
-    semantics::QasmType
+    interpreter::{Computation, Histogram},
+    semantics::QasmType,
 };
 
 #[cfg(target_arch = "wasm32")]
