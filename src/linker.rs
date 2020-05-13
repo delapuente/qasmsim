@@ -70,7 +70,7 @@ pub enum LinkerError {
 /// ]));
 /// ```
 ///
-/// The linker can be passed to [`compile_with_linker`] to enable using the
+/// The linker can be passed to [`parse_and_link()`] to enable using the
 /// `ghz.inc` library in your programs like:
 ///
 /// ```qasm
@@ -80,7 +80,7 @@ pub enum LinkerError {
 /// qhz q;
 /// ```
 ///
-/// [`compile_with_linker`]: ../fn.compile_with_linker.html
+/// [`parse_and_link()`]: ../fn.parse_and_link.html
 #[derive(Debug, Clone, Default)]
 pub struct Linker {
     embedded: HashMap<String, String>,

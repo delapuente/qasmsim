@@ -11,8 +11,8 @@ use crate::{api, statevector::StateVector};
 use crate::error::QasmSimError;
 use crate::interpreter::{Computation, Histogram};
 
-pub use api::compile_with_linker;
 pub use api::default_linker;
+pub use api::parse_and_link;
 pub use api::simulate;
 pub use api::simulate_with_shots;
 
@@ -65,9 +65,9 @@ impl From<(u128, u128)> for ExecutionTimes {
 ///
 /// # Examples
 ///
-/// See the [`run`] function for a complete example.
+/// See the [`run()`] function for a complete example.
 ///
-/// [`run`]: ./fn.run.html
+/// [`run()`]: ./fn.run.html
 /// [`Computation`]: ./struct.Computation.html
 /// [time statistics]: ./struct.ExecutionTimes.html
 #[derive(Debug, Clone, PartialEq)]
@@ -146,7 +146,7 @@ impl convert::From<(Computation, u128, u128)> for Execution {
 /// # Ok::<(), QasmSimError>(())
 /// ```
 pub fn run(input: &str, shots: Option<usize>) -> api::Result<'_, Execution> {
-    let (linked, parsing_time) = measure!({ compile_with_linker(input, api::default_linker()) });
+    let (linked, parsing_time) = measure!({ parse_and_link(input, api::default_linker()) });
     let (out, simulation_time) = measure!({
         match shots {
             None => simulate(&linked?),

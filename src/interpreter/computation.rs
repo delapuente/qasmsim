@@ -10,16 +10,16 @@ pub type Histogram = HashMap<String, Vec<(u64, usize)>>;
 
 /// Represent the result of a simulation.
 ///
-/// API functions such as [`simulate`] or [`simulate_with_shots`] return
+/// API functions such as [`simulate()`] or [`simulate_with_shots()`] return
 /// `Computation` instances.
 ///
 /// # Examples:
 ///
-/// See [`simulate`] or [`simulate_with_shots`] for an example of generating
+/// See [`simulate()`] or [`simulate_with_shots()`] for an example of generating
 /// a `Computation` instance.
 ///
-/// [`simulate`]: ./fn.simulate.html
-/// [`simulate_with_shots`]: ./fn.simulate_with_shots.html
+/// [`simulate()`]: ./fn.simulate.html
+/// [`simulate_with_shots()`]: ./fn.simulate_with_shots.html
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Computation {

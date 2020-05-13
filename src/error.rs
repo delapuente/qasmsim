@@ -35,7 +35,7 @@ pub type SrcAndErr<'src, E> = (&'src str, E);
 ///
 /// # Examples
 ///
-/// The error type of [`simulate`] is [`RuntimeError`].
+/// The error type of [`simulate()`] is [`RuntimeError`].
 /// `RuntimeError` is a _sourceless_ error in the sense it does not relate with
 /// the concrete source code beyond the location in the AST at which the error
 /// happens.
@@ -44,14 +44,14 @@ pub type SrcAndErr<'src, E> = (&'src str, E);
 /// into a `QasmSimError` from its pairing with the source.
 ///
 /// ```
-/// use qasmsim::{QasmSimError, compile_with_linker, default_linker, simulate};
+/// use qasmsim::{QasmSimError, parse_and_link, default_linker, simulate};
 ///
 /// let source = r#"
 /// OPENQASM 2.0;
 /// qreg q[2];
 /// CX q[1], q[2]; // Notice we are indexing out of bounds here.
 /// "#;
-/// let program = compile_with_linker(source, default_linker())?;
+/// let program = parse_and_link(source, default_linker())?;
 /// let runtime_error = simulate(&program).expect_err("Index out of bounds");
 /// let qasmsim_error = QasmSimError::from((source, runtime_error));
 /// # Ok::<(), QasmSimError>(())

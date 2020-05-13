@@ -559,12 +559,12 @@ impl<'src, 'program> Runtime<'program> {
 /// # Examples
 ///
 /// Basic usage requires a valid AST as input. You can use
-/// [`compile_with_linker`].
+/// [`parse_and_link()`].
 ///
 /// ```
 /// # use qasmsim::QasmSimError;
 /// # use qasmsim::grammar::ast::OpenQasmProgram;
-/// # use qasmsim::{compile_with_linker, default_linker};
+/// # use qasmsim::{parse_and_link, default_linker};
 /// use qasmsim::simulate;
 ///
 /// # fn get_program_ast() -> OpenQasmProgram {
@@ -575,7 +575,7 @@ impl<'src, 'program> Runtime<'program> {
 /// #     h q[0];
 /// #     cx q[0], q[1];
 /// #     "#;
-/// #     compile_with_linker(source, default_linker()).unwrap()
+/// #     parse_and_link(source, default_linker()).unwrap()
 /// # }
 ///
 /// let program = get_program_ast();
@@ -584,7 +584,7 @@ impl<'src, 'program> Runtime<'program> {
 /// # Ok::<(), RuntimeError>(())
 /// ```
 ///
-/// [`compile_with_linker`]: ./fn.compile_with_linker.html
+/// [`parse_and_link()`]: ./fn.parse_and_link.html
 pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);
@@ -607,12 +607,12 @@ pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
 /// # Examples
 ///
 /// Basic usage requires a valid AST as input. You can use
-/// [`compile_with_linker`].
+/// [`parse_and_link()`].
 ///
 /// ```
 /// # use qasmsim::QasmSimError;
 /// # use qasmsim::grammar::ast::OpenQasmProgram;
-/// # use qasmsim::{compile_with_linker, default_linker};
+/// # use qasmsim::{parse_and_link, default_linker};
 /// use qasmsim::simulate_with_shots;
 ///
 /// # fn get_program_ast() -> OpenQasmProgram {
@@ -623,7 +623,7 @@ pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
 /// #     h q[0];
 /// #     cx q[0], q[1];
 /// #     "#;
-/// #     compile_with_linker(source, default_linker()).unwrap()
+/// #     parse_and_link(source, default_linker()).unwrap()
 /// # }
 ///
 /// let program = get_program_ast();
@@ -632,7 +632,7 @@ pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
 /// # Ok::<(), RuntimeError>(())
 /// ```
 ///
-/// [`compile_with_linker`]: ./fn.compile_with_linker.html
+/// [`parse_and_link()`]: ./fn.parse_and_link.html
 pub fn simulate_with_shots(program: &ast::OpenQasmProgram, shots: usize) -> Result<Computation> {
     let semantics = extract_semantics(program)?;
     let mut runtime = Runtime::new(semantics);

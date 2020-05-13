@@ -19,10 +19,6 @@ pub fn default_linker() -> Linker {
     )]))
 }
 
-pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
-    parse_program(input)
-}
-
 /// Return the AST of `input` and link external sources with `linker`.
 ///
 /// # Errors
@@ -37,9 +33,9 @@ pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
 /// Basic usage:
 ///
 /// ```
-/// use qasmsim::{default_linker, compile_with_linker};
+/// use qasmsim::{default_linker, parse_and_link};
 ///
-/// let ast = compile_with_linker(r#"
+/// let ast = parse_and_link(r#"
 ///     OPENQASM 2.0;
 ///     include "qelib1.inc";
 ///     qreg q[2];
@@ -49,8 +45,8 @@ pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
 /// # use qasmsim::QasmSimError;
 /// # Ok::<(), qasmsim::QasmSimError>(())
 /// ```
-pub fn compile_with_linker(input: &str, linker: Linker) -> Result<'_, ast::OpenQasmProgram> {
-    let program = compile(&input)?;
+pub fn parse_and_link(input: &str, linker: Linker) -> Result<'_, ast::OpenQasmProgram> {
+    let program = parse_program(&input)?;
     linker
         .link(program)
         .map_err(|err| QasmSimError::from((input, err)))

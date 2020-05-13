@@ -53,8 +53,129 @@ parse_functions! {
     /// [`Expression`]: ./ast/enum.Expression.html
     pub fn parse_expression(source) -> Expression => open_qasm2::ExprParser;
 
+    /// Parse `source` into a [`OpenQasmLib`] AST.
+    ///
+    /// The main difference between this method and [`parse_program()`] is that
+    /// a library can only contain gate definitions and other statements are
+    /// forbidden. Also, the list of statements in a program is colated to
+    /// the source code via [`Span`]. Definitions in a library are not.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use qasmsim::{QasmSimError, grammar::parse_library};
+    /// use qasmsim::grammar::lexer::Location;
+    /// use qasmsim::grammar::ast::{
+    ///     Argument,
+    ///     Expression,
+    ///     GateOperation,
+    ///     OpenQasmLibrary,
+    ///     Span,
+    ///     Statement,
+    ///     UnitaryOperation
+    /// };
+    ///
+    /// let library_ast = parse_library(r"
+    /// gate idle q {
+    ///   U(0, 0, 0) q;
+    /// }")?;
+    ///
+    /// assert_eq!(library_ast, OpenQasmLibrary{
+    ///     definitions: vec![
+    ///         Statement::GateDecl(
+    ///             "idle".to_string(),
+    ///             vec![],
+    ///             vec!["q".to_string()],
+    ///             vec![
+    ///                 GateOperation::Unitary(
+    ///                     UnitaryOperation(
+    ///                         "U".to_string(),
+    ///                         vec![
+    ///                             Expression::Real(0.0),
+    ///                             Expression::Real(0.0),
+    ///                             Expression::Real(0.0)
+    ///                         ],
+    ///                         vec![Argument::Id("q".to_string())]
+    ///                     )
+    ///                 )
+    ///             ]
+    ///         )
+    ///     ]
+    /// });
+    /// # Ok::<(), QasmSimError>(())
+    /// ```
+    ///
+    /// Compare this example with the result of [`parse_program()`],
+    /// [`parse_program_body()`] or [`parse_statement()`].
+    ///
+    /// [`Statement`]: ./ast/enum.Statement.html
+    /// [`Span`]: ./ast/struct.Span.html
+    /// [`parse_program()`]: ./fn.parse_program.html
+    /// [`parse_program_body()`]: ./fn.parse_program_body.html
+    /// [`parse_statement()`]: ./fn.parse_statement.html
     pub fn parse_library(source) -> OpenQasmLibrary => open_qasm2::OpenQasmLibraryParser;
 
+    /// Parse `source` into a [`OpenQasmProgram`] AST.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use qasmsim::{QasmSimError, grammar::parse_program};
+    /// use qasmsim::grammar::lexer::Location;
+    /// use qasmsim::grammar::ast::{
+    ///     Argument,
+    ///     Expression,
+    ///     GateOperation,
+    ///     OpenQasmProgram,
+    ///     Span,
+    ///     Statement,
+    ///     UnitaryOperation
+    /// };
+    ///
+    /// let program_ast = parse_program(r"
+    /// OPENQASM 2.0;
+    /// gate idle q {
+    ///   U(0, 0, 0) q;
+    /// }")?;
+    ///
+    /// assert_eq!(program_ast, OpenQasmProgram{
+    ///     version: "2.0".to_string(),
+    ///     program: vec![Span{
+    ///         boundaries: (Location(15), Location(46)),
+    ///         node: Box::new(Statement::GateDecl(
+    ///             "idle".to_string(),
+    ///             vec![],
+    ///             vec!["q".to_string()],
+    ///             vec![
+    ///                 GateOperation::Unitary(
+    ///                     UnitaryOperation(
+    ///                         "U".to_string(),
+    ///                         vec![
+    ///                             Expression::Real(0.0),
+    ///                             Expression::Real(0.0),
+    ///                             Expression::Real(0.0)
+    ///                         ],
+    ///                         vec![Argument::Id("q".to_string())]
+    ///                     )
+    ///                 )
+    ///             ]
+    ///         ))
+    ///     }]
+    /// });
+    /// # Ok::<(), QasmSimError>(())
+    /// ```
+    ///
+    /// Compare this example with the result of [`parse_library()`],
+    /// [`parse_program_body()`] or [`parse_statement()`].
+    ///
+    /// [`Statement`]: ./ast/enum.Statement.html
+    /// [`parse_library()`]: ./fn.parse_library.html
+    /// [`parse_program_body()`]: ./fn.parse_program_body.html
+    /// [`parse_statement()`]: ./fn.parse_statement.html
     pub fn parse_program(source) -> OpenQasmProgram => open_qasm2::OpenQasmProgramParser;
 
     /// Parse `source` into a list of [`Statement`]s.

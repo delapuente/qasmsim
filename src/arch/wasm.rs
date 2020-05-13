@@ -28,7 +28,7 @@ use crate::error::QasmSimError;
 #[wasm_bindgen]
 pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
     let (linked, parsing_time) = measure!("parsing", {
-        api::compile_with_linker(input, api::default_linker())
+        api::parse_and_link(input, api::default_linker())
     });
     let (computation, simulation_time) = measure!("simulation", {
         match shots {
