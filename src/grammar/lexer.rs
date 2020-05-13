@@ -5,6 +5,9 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::str::CharIndices;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -29,6 +32,7 @@ use regex::Regex;
 /// Location::new_at(19);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Location(pub usize);
 
 impl Location {

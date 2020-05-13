@@ -35,6 +35,12 @@ float-cmp = "0.6.0"
 lazy_static = "1.4.0"
 rand = "0.7.3"
 
+[dependencies.serde]
+optional = true
+version = "1.0"
+features = ['derive']
+default-features = false
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 structopt = { version = "0.3", default-features = false, optional = true }
 prettytable-rs = { version = "0.8.0", optional = true }
