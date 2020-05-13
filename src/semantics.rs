@@ -236,8 +236,7 @@ mod test {
     use super::*;
     use std::iter::FromIterator;
 
-    use crate::grammar::lexer::Lexer;
-    use crate::grammar::open_qasm2;
+    use crate::grammar::parse_program;
 
     #[test]
     fn test_symbol_table_stores_register_info() {
@@ -250,10 +249,7 @@ mod test {
     creg d[10];
     "
         );
-        let lexer = Lexer::new(source);
-        let tree = open_qasm2::OpenQasmProgramParser::new()
-            .parse(lexer)
-            .unwrap();
+        let tree = parse_program(source).unwrap();
         let semantics_result = extract_semantics(&tree);
         assert!(semantics_result.is_ok());
 
@@ -289,10 +285,7 @@ mod test {
     qreg r[10];
     creg d[10];
     ";
-        let lexer = Lexer::new(source);
-        let tree = open_qasm2::OpenQasmProgramParser::new()
-            .parse(lexer)
-            .unwrap();
+        let tree = parse_program(source).unwrap();
         let semantics_result = extract_semantics(&tree);
         assert!(semantics_result.is_ok());
         if let Ok(semantics) = semantics_result {
@@ -309,10 +302,7 @@ mod test {
     qreg r[10];
     creg d[10];
     ";
-        let lexer = Lexer::new(source);
-        let tree = open_qasm2::OpenQasmProgramParser::new()
-            .parse(lexer)
-            .unwrap();
+        let tree = parse_program(source).unwrap();
         let semantics_result = extract_semantics(&tree);
         assert!(semantics_result.is_ok());
         if let Ok(semantics) = semantics_result {
@@ -367,10 +357,7 @@ mod test {
             ),
         ];
         for (index, source) in sources.iter().enumerate() {
-            let lexer = Lexer::new(source);
-            let tree = open_qasm2::OpenQasmProgramParser::new()
-                .parse(lexer)
-                .expect("successful parsing");
+            let tree = parse_program(source).unwrap();
             let error = extract_semantics(&tree).expect_err("should be a redeclaration error");
             println!("Using source sample #{}", index);
             assert_eq!(
@@ -393,10 +380,7 @@ mod test {
     qreg r[10];
     creg d[10];
     ";
-        let lexer = Lexer::new(source);
-        let tree = open_qasm2::OpenQasmProgramParser::new()
-            .parse(lexer)
-            .unwrap();
+        let tree = parse_program(source).unwrap();
         let semantics_result = extract_semantics(&tree);
         assert!(semantics_result.is_ok());
         let expected_memory_map = HashMap::from_iter(vec![
@@ -425,10 +409,7 @@ mod test {
     }
     "
         );
-        let lexer = Lexer::new(source);
-        let tree = open_qasm2::OpenQasmProgramParser::new()
-            .parse(lexer)
-            .unwrap();
+        let tree = parse_program(source).unwrap();
         let semantics_result = extract_semantics(&tree);
         assert!(semantics_result.is_ok());
         let expected_definitions = HashMap::from_iter(vec![
@@ -456,7 +437,7 @@ mod test {
                         "U".to_owned(),
                         vec![
                             ast::Expression::Op(
-                                ast::Opcode::Div,
+                                ast::OpCode::Div,
                                 Box::new(ast::Expression::Id("a".to_owned())),
                                 Box::new(ast::Expression::Id("b".to_owned())),
                             ),

@@ -38,7 +38,7 @@ use crate::grammar::lexer::Location;
 ///     Statement,
 ///     QuantumOperation,
 ///     UnitaryOperation,
-///     Opcode,
+///     OpCode,
 ///     Expression,
 ///     Argument
 /// };
@@ -65,7 +65,7 @@ use crate::grammar::lexer::Location;
 ///                             "U".to_string(),
 ///                             vec![
 ///                                 Expression::Op(
-///                                     Opcode::Div,
+///                                     OpCode::Div,
 ///                                     Box::new(Expression::Pi),
 ///                                     Box::new(Expression::Int(2))
 ///                                 ),
@@ -114,7 +114,7 @@ pub struct OpenQasmProgram {
 ///     Statement,
 ///     GateOperation,
 ///     UnitaryOperation,
-///     Opcode,
+///     OpCode,
 ///     Expression,
 ///     Argument
 /// };
@@ -132,7 +132,7 @@ pub struct OpenQasmProgram {
 ///                        "U".to_string(),
 ///                         vec![
 ///                             Expression::Op(
-///                                 Opcode::Div,
+///                                 OpCode::Div,
 ///                                 Box::new(Expression::Pi),
 ///                                 Box::new(Expression::Int(2))
 ///                             ),
@@ -352,7 +352,7 @@ pub struct UnitaryOperation(pub String, pub Vec<Expression>, pub Vec<Argument>);
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Opcode {
+pub enum OpCode {
     /// Code for the addition operator `+`.
     Add,
     /// Code for the substraction operator `-`.
@@ -369,7 +369,7 @@ pub enum Opcode {
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Funccode {
+pub enum FuncCode {
     /// Function sinus `sin`.
     Sin,
     /// Function cosinus `cos`.
@@ -404,9 +404,9 @@ pub enum Expression {
     /// An integer number.
     Int(u64),
     /// A binary operation.
-    Op(Opcode, Box<Expression>, Box<Expression>),
+    Op(OpCode, Box<Expression>, Box<Expression>),
     /// A call to a function.
-    Function(Funccode, Box<Expression>),
+    Function(FuncCode, Box<Expression>),
     /// A negation of an expression.
     Minus(Box<Expression>),
 }

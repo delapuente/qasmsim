@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::grammar::ast;
-use crate::grammar::lexer::{Lexer, Location};
-use crate::grammar::open_qasm2;
+use crate::grammar::lexer::Location;
+use crate::grammar::parse_library;
 
 /// Represent a filure during linkage.
 ///
@@ -113,9 +113,7 @@ impl Linker {
                         location: span.boundaries.0,
                         libpath: libpath.into(),
                     })?;
-                let lexer = Lexer::new(&source);
-                let parser = open_qasm2::OpenQasmLibraryParser::new();
-                let library_tree = parser.parse(lexer).unwrap();
+                let library_tree = parse_library(&source).unwrap();
                 to_embed.push((index, span.boundaries, library_tree.definitions));
             }
         }
@@ -147,7 +145,7 @@ mod tests {
 
     use indoc::indoc;
 
-    use crate::grammar::ast::Span;
+    use crate::grammar::{ast::Span, parse_program};
     use crate::linker::Location;
 
     use super::*;
@@ -173,9 +171,7 @@ mod tests {
             "test.inc".to_owned(),
             "gate test () q {}".to_owned(),
         )]));
-        let lexer = Lexer::new(&source);
-        let parser = open_qasm2::OpenQasmProgramParser::new();
-        let tree = parser.parse(lexer).unwrap();
+        let tree = parse_program(&source).unwrap();
         let linked_tree = linker.link(tree).unwrap();
         assert_eq!(
             linked_tree,

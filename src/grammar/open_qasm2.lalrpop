@@ -38,7 +38,7 @@ pub Statement: ast::Statement = {
     QuantumOperation => ast::Statement::QuantumOperation(<>)
 };
 
-pub GateDefinition: ast::Statement = {
+GateDefinition: ast::Statement = {
     <GateDeclaration> "{" "}" =>
         ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
     <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
@@ -120,9 +120,9 @@ pub Expr: ast::Expression = {
     Factor
 }
 
-ExprOp: ast::Opcode = {
-    "+" => ast::Opcode::Add,
-    "-" => ast::Opcode::Sub
+ExprOp: ast::OpCode = {
+    "+" => ast::OpCode::Add,
+    "-" => ast::OpCode::Sub
 }
 
 Factor: ast::Expression = {
@@ -130,9 +130,9 @@ Factor: ast::Expression = {
     Base
 }
 
-FactorOp: ast::Opcode = {
-    "*" => ast::Opcode::Mul,
-    "/" => ast::Opcode::Div
+FactorOp: ast::OpCode = {
+    "*" => ast::OpCode::Mul,
+    "/" => ast::OpCode::Div
 }
 
 Base: ast::Expression = {
@@ -140,8 +140,8 @@ Base: ast::Expression = {
     Term
 }
 
-BaseOp: ast::Opcode = {
-    "^" => ast::Opcode::Pow
+BaseOp: ast::OpCode = {
+    "^" => ast::OpCode::Pow
 }
 
 Term: ast::Expression = {
@@ -153,13 +153,13 @@ Term: ast::Expression = {
     "(" <Expr> ")"
 };
 
-Func: ast::Funccode = {
-    "sin" => ast::Funccode::Sin,
-    "cos" => ast::Funccode::Cos,
-    "tan" => ast::Funccode::Tan,
-    "exp" => ast::Funccode::Exp,
-    "ln" => ast::Funccode::Ln,
-    "sqrt" => ast::Funccode::Sqrt
+Func: ast::FuncCode = {
+    "sin" => ast::FuncCode::Sin,
+    "cos" => ast::FuncCode::Cos,
+    "tan" => ast::FuncCode::Tan,
+    "exp" => ast::FuncCode::Exp,
+    "ln" => ast::FuncCode::Ln,
+    "sqrt" => ast::FuncCode::Sqrt
 }
 
 ArgumentList = List<Argument>;

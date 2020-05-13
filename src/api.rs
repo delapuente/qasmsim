@@ -2,8 +2,7 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 use crate::error::QasmSimError;
-use crate::grammar::open_qasm2;
-use crate::grammar::{ast, lexer::Lexer};
+use crate::grammar::{ast, parse_program};
 use crate::interpreter;
 use crate::linker::Linker;
 use crate::qe;
@@ -21,11 +20,7 @@ pub fn default_linker() -> Linker {
 }
 
 pub fn compile(input: &str) -> Result<ast::OpenQasmProgram> {
-    let lexer = Lexer::new(&input);
-    let parser = open_qasm2::OpenQasmProgramParser::new();
-    parser
-        .parse(lexer)
-        .map_err(|err| QasmSimError::from((input, err)))
+    parse_program(input)
 }
 
 /// Return the AST of `input` and link external sources with `linker`.

@@ -7,8 +7,157 @@ pub mod ast;
 pub mod lexer;
 lalrpop_mod!(
     #[allow(clippy::all)]
-    #[allow(missing_docs)]
-    pub open_qasm2, "/grammar/open_qasm2.rs");
+    open_qasm2,
+    "/grammar/open_qasm2.rs"
+);
+
+use self::ast::{Expression, OpenQasmLibrary, OpenQasmProgram, Span, Statement};
+use self::lexer::Lexer;
+use crate::error::QasmSimError;
+
+macro_rules! parse_functions {
+    ($($(#[$attr:meta])* $vis:vis fn $funcname:ident ($param:ident) -> $rettype:ty => $parser:ty);*) => {
+        $(
+            $(#[$attr])* $vis fn $funcname(
+                $param: &str
+            ) -> Result<$rettype, QasmSimError> {
+                let lexer = Lexer::new($param);
+                let parser = <$parser>::new();
+                parser.parse(lexer).map_err(|err| ($param, err).into())
+            }
+        )*
+    };
+}
+
+parse_functions! {
+    /// Parse `source` into a [`Expression`] AST.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use qasmsim::{QasmSimError, grammar::parse_expression};
+    /// use qasmsim::grammar::ast::{Expression, OpCode};
+    ///
+    /// let expr_ast = parse_expression("pi/2")?;
+    ///
+    /// assert_eq!(expr_ast, Expression::Op(
+    ///     OpCode::Div,
+    ///     Box::new(Expression::Pi),
+    ///     Box::new(Expression::Real(2.0))
+    /// ));
+    /// # Ok::<(), QasmSimError>(())
+    /// ```
+    ///
+    /// [`Expression`]: ./ast/enum.Expression.html
+    pub fn parse_expression(source) -> Expression => open_qasm2::ExprParser;
+
+    pub fn parse_library(source) -> OpenQasmLibrary => open_qasm2::OpenQasmLibraryParser;
+
+    pub fn parse_program(source) -> OpenQasmProgram => open_qasm2::OpenQasmProgramParser;
+
+    /// Parse `source` into a list of [`Statement`]s.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use qasmsim::{QasmSimError, grammar::parse_program_body};
+    /// use qasmsim::grammar::lexer::Location;
+    /// use qasmsim::grammar::ast::{
+    ///     Argument,
+    ///     Expression,
+    ///     GateOperation,
+    ///     Span,
+    ///     Statement,
+    ///     UnitaryOperation
+    /// };
+    ///
+    /// let statement_list = parse_program_body("gate idle q { U(0, 0, 0) q; }")?;
+    ///
+    /// assert_eq!(statement_list, vec![Span{
+    ///     boundaries: (Location(0), Location(29)),
+    ///     node: Box::new(Statement::GateDecl(
+    ///         "idle".to_string(),
+    ///         vec![],
+    ///         vec!["q".to_string()],
+    ///         vec![
+    ///             GateOperation::Unitary(
+    ///                 UnitaryOperation(
+    ///                     "U".to_string(),
+    ///                     vec![
+    ///                         Expression::Real(0.0),
+    ///                         Expression::Real(0.0),
+    ///                         Expression::Real(0.0)
+    ///                     ],
+    ///                     vec![Argument::Id("q".to_string())]
+    ///                 )
+    ///             )
+    ///         ]
+    ///     ))
+    /// }]);
+    /// # Ok::<(), QasmSimError>(())
+    /// ```
+    ///
+    /// Compare this example with the result of [`parse_library()`],
+    /// [`parse_program()`] or [`parse_statement()`].
+    ///
+    /// [`Statement`]: ./ast/enum.Statement.html
+    /// [`parse_library()`]: ./fn.parse_library.html
+    /// [`parse_program()`]: ./fn.parse_program.html
+    /// [`parse_statement()`]: ./fn.parse_statement.html
+    pub fn parse_program_body(source) -> Vec<Span<Statement>> => open_qasm2::ProgramBodyParser;
+
+    /// Parse `source` into a [`Statement`] AST.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use qasmsim::{QasmSimError, grammar::parse_statement};
+    /// use qasmsim::grammar::ast::{
+    ///     Argument,
+    ///     Expression,
+    ///     GateOperation,
+    ///     Statement,
+    ///     UnitaryOperation
+    /// };
+    ///
+    /// let statement_ast = parse_statement("gate idle q { U(0, 0, 0) q; }")?;
+    ///
+    /// assert_eq!(statement_ast, Statement::GateDecl(
+    ///     "idle".to_string(),
+    ///     vec![],
+    ///     vec!["q".to_string()],
+    ///     vec![
+    ///         GateOperation::Unitary(
+    ///             UnitaryOperation(
+    ///                 "U".to_string(),
+    ///                 vec![
+    ///                     Expression::Real(0.0),
+    ///                     Expression::Real(0.0),
+    ///                     Expression::Real(0.0)
+    ///                 ],
+    ///                 vec![Argument::Id("q".to_string())]
+    ///             )
+    ///         )
+    ///     ]
+    /// ));
+    /// # Ok::<(), QasmSimError>(())
+    /// ```
+    ///
+    /// Compare this example with the result of [`parse_library()`],
+    /// [`parse_program()`] or [`parse_program_body()`].
+    ///
+    /// [`Statement`]: ./ast/enum.Statement.html
+    /// [`parse_library()`]: ./fn.parse_library.html
+    /// [`parse_program()`]: ./fn.parse_program.html
+    /// [`parse_program_body()`]: ./fn.parse_program_body.html
+    pub fn parse_statement(source) -> Statement => open_qasm2::StatementParser
+}
 
 #[cfg(test)]
 mod tests {
@@ -172,7 +321,7 @@ mod tests {
                 "U".to_owned(),
                 vec![
                     Expression::Op(
-                        Opcode::Div,
+                        OpCode::Div,
                         Box::new(Expression::Pi),
                         Box::new(Expression::Real(2.0))
                     ),
@@ -195,14 +344,14 @@ mod tests {
         assert_eq!(
             tree,
             Expression::Op(
-                Opcode::Add,
+                OpCode::Add,
                 Box::new(Expression::Minus(Box::new(Expression::Pi))),
                 Box::new(Expression::Op(
-                    Opcode::Div,
+                    OpCode::Div,
                     Box::new(Expression::Op(
-                        Opcode::Mul,
+                        OpCode::Mul,
                         Box::new(Expression::Op(
-                            Opcode::Sub,
+                            OpCode::Sub,
                             Box::new(Expression::Real(1.0)),
                             Box::new(Expression::Real(2.0))
                         )),

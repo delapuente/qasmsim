@@ -16,20 +16,20 @@ impl<'bindings> ExpressionSolver<'bindings> {
             ast::Expression::Int(value) => *value as f64,
             ast::Expression::Real(value) => *value,
             ast::Expression::Minus(expr) => -self.solve(expr)?,
-            ast::Expression::Op(opcode, left, right) => match opcode {
-                ast::Opcode::Add => self.solve(left)? + self.solve(right)?,
-                ast::Opcode::Sub => self.solve(left)? - self.solve(right)?,
-                ast::Opcode::Mul => self.solve(left)? * self.solve(right)?,
-                ast::Opcode::Div => self.solve(left)? / self.solve(right)?,
-                ast::Opcode::Pow => self.solve(left)?.powf(self.solve(right)?),
+            ast::Expression::Op(op_code, left, right) => match op_code {
+                ast::OpCode::Add => self.solve(left)? + self.solve(right)?,
+                ast::OpCode::Sub => self.solve(left)? - self.solve(right)?,
+                ast::OpCode::Mul => self.solve(left)? * self.solve(right)?,
+                ast::OpCode::Div => self.solve(left)? / self.solve(right)?,
+                ast::OpCode::Pow => self.solve(left)?.powf(self.solve(right)?),
             },
-            ast::Expression::Function(funccode, expr) => match funccode {
-                ast::Funccode::Sin => self.solve(expr)?.sin(),
-                ast::Funccode::Cos => self.solve(expr)?.cos(),
-                ast::Funccode::Tan => self.solve(expr)?.tan(),
-                ast::Funccode::Exp => self.solve(expr)?.exp(),
-                ast::Funccode::Ln => self.solve(expr)?.ln(),
-                ast::Funccode::Sqrt => self.solve(expr)?.sqrt(),
+            ast::Expression::Function(func_code, expr) => match func_code {
+                ast::FuncCode::Sin => self.solve(expr)?.sin(),
+                ast::FuncCode::Cos => self.solve(expr)?.cos(),
+                ast::FuncCode::Tan => self.solve(expr)?.tan(),
+                ast::FuncCode::Exp => self.solve(expr)?.exp(),
+                ast::FuncCode::Ln => self.solve(expr)?.ln(),
+                ast::FuncCode::Sqrt => self.solve(expr)?.sqrt(),
             },
             ast::Expression::Id(name) => match self.0.get(name) {
                 None => return Err(name.into()),
@@ -51,17 +51,17 @@ mod test {
     #[allow(clippy::float_cmp)]
     fn test_expression_solver() {
         let expression = Expression::Op(
-            Opcode::Add,
+            OpCode::Add,
             Box::new(Expression::Minus(Box::new(Expression::Pi))),
             Box::new(Expression::Op(
-                Opcode::Div,
+                OpCode::Div,
                 Box::new(Expression::Op(
-                    Opcode::Mul,
+                    OpCode::Mul,
                     Box::new(Expression::Op(
-                        Opcode::Sub,
+                        OpCode::Sub,
                         Box::new(Expression::Real(1.0)),
                         Box::new(Expression::Op(
-                            Opcode::Pow,
+                            OpCode::Pow,
                             Box::new(Expression::Real(2.0)),
                             Box::new(Expression::Real(3.0)),
                         )),
@@ -81,17 +81,17 @@ mod test {
     #[allow(clippy::float_cmp)]
     fn test_expression_solver_with_functions() {
         let expression = Expression::Function(
-            Funccode::Sqrt,
+            FuncCode::Sqrt,
             Box::new(Expression::Function(
-                Funccode::Ln,
+                FuncCode::Ln,
                 Box::new(Expression::Function(
-                    Funccode::Exp,
+                    FuncCode::Exp,
                     Box::new(Expression::Function(
-                        Funccode::Tan,
+                        FuncCode::Tan,
                         Box::new(Expression::Function(
-                            Funccode::Cos,
+                            FuncCode::Cos,
                             Box::new(Expression::Function(
-                                Funccode::Sin,
+                                FuncCode::Sin,
                                 Box::new(Expression::Real(1.0)),
                             )),
                         )),
@@ -109,14 +109,14 @@ mod test {
     #[allow(clippy::float_cmp)]
     fn test_expression_solver_with_symbol_substitution() {
         let expression = Expression::Op(
-            Opcode::Add,
+            OpCode::Add,
             Box::new(Expression::Id("some_name".into())),
             Box::new(Expression::Op(
-                Opcode::Div,
+                OpCode::Div,
                 Box::new(Expression::Op(
-                    Opcode::Mul,
+                    OpCode::Mul,
                     Box::new(Expression::Op(
-                        Opcode::Sub,
+                        OpCode::Sub,
                         Box::new(Expression::Real(1.0)),
                         Box::new(Expression::Real(2.0)),
                     )),
@@ -134,7 +134,7 @@ mod test {
     #[test]
     fn test_expression_solver_fails_at_symbol_substitution() {
         let expression = Expression::Op(
-            Opcode::Add,
+            OpCode::Add,
             Box::new(Expression::Id("some_name".into())),
             Box::new(Expression::Real(1.0)),
         );
