@@ -9,46 +9,68 @@ use qasmsim::{Execution, ExecutionTimes, Histogram};
 
 use crate::options::Options;
 
+/// Writes the `msg` in the `buffer` if `options.verbose` is greater than 0.
+macro_rules! vvprint {
+    ($options:expr, $buffer:expr, $msg:expr) => {{
+        if $options.verbose > 0 {
+            write!($buffer, $msg)
+        } else {
+            Ok(())
+        }
+    }};
+}
+
+/// Writes the `msg` in the `buffer` if `options.verbose` is greater than 0 and
+/// ends it with a newline.
+macro_rules! vvprintln {
+    ($options:expr, $buffer:expr, $msg:literal) => {{
+        vvprint!($options, $buffer, concat!($msg, "\n"))
+    }};
+    ($options:expr, $buffer:expr) => {{
+        vvprintln!($options, $buffer, "")
+    }};
+}
+
 pub fn print<W>(buffer: &mut W, result: &Execution, options: &Options)
+where
+W: Write,
+{
+    do_print(buffer, result, options).expect("writes in stdout");
+}
+
+fn do_print<W>(buffer: &mut W, result: &Execution, options: &Options)
+-> io::Result<()>
 where
     W: Write,
 {
-    writeln!(buffer).expect("writes");
     if options.shots.is_some() {
-        if options.verbose > 0 {
-            writeln!(buffer, "Memory histogram:").expect("writes");
-        }
         let histogram = result.histogram.as_ref().expect("there is some histogram");
-        print_histogram(buffer, histogram, options).expect("writes");
-    } else {
-        if options.verbose > 0 {
-            writeln!(buffer, "Memory:").expect("writes");
+        if !histogram.is_empty() {
+            vvprintln!(options, buffer, "Memory histogram:")?;
+            print_histogram(buffer, histogram, options)?;
+            vvprintln!(options, buffer)?;
         }
-        print_memory(buffer, &result.memory, options).expect("writes");
-    }
-    if options.verbose > 0 {
-        writeln!(buffer).expect("writes");
+    } else {
+        let memory = &result.memory;
+        if !memory.is_empty() {
+            vvprintln!(options, buffer, "Memory:")?;
+            print_memory(buffer, &result.memory, options)?;
+            vvprintln!(options, buffer)?;
+        }
     }
 
     if (options.statevector || options.probabilities) && options.shots.is_none() {
-        if options.verbose > 0 {
-            writeln!(buffer, "Simulation state:").expect("writes");
-        }
-        print_state(buffer, &result.statevector, &result.probabilities, options).expect("writes");
-    }
-    if options.verbose > 0 {
-        writeln!(buffer).expect("writes");
+        vvprintln!(options, buffer, "Simulation state:")?;
+        print_state(buffer, &result.statevector, &result.probabilities, options)?;
+        vvprintln!(options, buffer)?;
     }
 
     if options.times {
-        if options.verbose > 0 {
-            writeln!(buffer, "Times:").expect("writes");
-        }
-        print_times(buffer, &result.times).expect("writes");
+        vvprintln!(options, buffer, "Times:")?;
+        print_times(buffer, &result.times)?;
+        vvprintln!(options, buffer)?;
     }
-    if options.verbose > 0 {
-        writeln!(buffer).expect("writes");
-    }
+    Ok(())
 }
 
 fn print_memory<W>(
