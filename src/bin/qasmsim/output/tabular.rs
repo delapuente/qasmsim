@@ -44,30 +44,30 @@ where
     W: Write,
 {
     if options.shots.is_some() {
-        let histogram = result.histogram.as_ref().expect("there is some histogram");
+        let histogram = result.histogram().as_ref().expect("there is some histogram");
         if !histogram.is_empty() {
             vvprintln!(options, buffer, "Memory histogram:")?;
             print_histogram(buffer, histogram, options)?;
             vvprintln!(options, buffer)?;
         }
     } else {
-        let memory = &result.memory;
+        let memory = result.memory();
         if !memory.is_empty() {
             vvprintln!(options, buffer, "Memory:")?;
-            print_memory(buffer, &result.memory, options)?;
+            print_memory(buffer, memory, options)?;
             vvprintln!(options, buffer)?;
         }
     }
 
     if (options.statevector || options.probabilities) && options.shots.is_none() {
         vvprintln!(options, buffer, "Simulation state:")?;
-        print_state(buffer, &result.statevector, &result.probabilities, options)?;
+        print_state(buffer, result.statevector(), result.probabilities(), options)?;
         vvprintln!(options, buffer)?;
     }
 
     if options.times {
         vvprintln!(options, buffer, "Times:")?;
-        print_times(buffer, &result.times)?;
+        print_times(buffer, result.times())?;
         vvprintln!(options, buffer)?;
     }
     Ok(())

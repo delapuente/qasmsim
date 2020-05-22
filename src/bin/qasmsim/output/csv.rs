@@ -24,10 +24,10 @@ pub fn print(path: &mut PathBuf, result: &Execution, options: &Options) {
     let writer_ref = &mut writer;
 
     if options.shots.is_some() {
-        let histogram = result.histogram.as_ref().expect("there is some histogram");
+        let histogram = result.histogram().as_ref().expect("there is some histogram");
         print_histogram(writer_ref, histogram, options).expect("writes");
     } else {
-        print_memory(writer_ref, &result.memory, options).expect("writes");
+        print_memory(writer_ref, result.memory(), options).expect("writes");
     }
 
     if (options.statevector || options.probabilities) && options.shots.is_none() {
@@ -36,8 +36,8 @@ pub fn print(path: &mut PathBuf, result: &Execution, options: &Options) {
         let writer_ref = &mut writer;
         print_state(
             writer_ref,
-            &result.statevector,
-            &result.probabilities,
+            result.statevector(),
+            result.probabilities(),
             &options,
         )
         .expect("writes");
@@ -47,7 +47,7 @@ pub fn print(path: &mut PathBuf, result: &Execution, options: &Options) {
         path.set_file_name(format!("{}.times.csv", &prefix));
         let mut writer = csv::Writer::from_path(path).expect("can open the file");
         let writer_ref = &mut writer;
-        print_times(writer_ref, &result.times).expect("writes");
+        print_times(writer_ref, result.times()).expect("writes");
     }
 }
 

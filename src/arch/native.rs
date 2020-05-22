@@ -72,16 +72,11 @@ impl From<(u128, u128)> for ExecutionTimes {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Execution {
-    /// The statevector of the quantum system.
-    pub statevector: StateVector,
-    /// The probabilities associated with the state-vector.
-    pub probabilities: Vec<f64>,
-    /// An associative map with classical names and the classical outcomes.
-    pub memory: HashMap<String, u64>,
-    /// The histogram when simulating with several shots.
-    pub histogram: Option<Histogram>,
-    /// Time spent in parsing and performing the simulation.
-    pub times: ExecutionTimes,
+    statevector: StateVector,
+    probabilities: Vec<f64>,
+    memory: HashMap<String, u64>,
+    histogram: Option<Histogram>,
+    times: ExecutionTimes,
 }
 
 impl Execution {
@@ -100,6 +95,31 @@ impl Execution {
             histogram,
             times,
         }
+    }
+
+    /// Return the statevector of the quantum system.
+    pub fn statevector(&self) -> &StateVector {
+        &self.statevector
+    }
+
+    /// Return the probabilities associated with the state-vector.
+    pub fn probabilities(&self) -> &Vec<f64> {
+        &self.probabilities
+    }
+
+    /// Return an associative map with classical names and the classical outcomes.
+    pub fn memory(&self) -> &HashMap<String, u64> {
+        &self.memory
+    }
+
+    /// Return the histogram when simulating with several shots.
+    pub fn histogram(&self) -> &Option<Histogram> {
+        &self.histogram
+    }
+
+    /// Return the time spent in parsing and performing the simulation.
+    pub fn times(&self) -> &ExecutionTimes {
+        &self.times
     }
 }
 
