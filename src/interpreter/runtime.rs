@@ -564,7 +564,7 @@ impl<'src, 'program> Runtime<'program> {
 /// ```
 /// # use qasmsim::QasmSimError;
 /// # use qasmsim::grammar::ast::OpenQasmProgram;
-/// # use qasmsim::{parse_and_link, default_linker};
+/// # use qasmsim::parse_and_link;
 /// use qasmsim::simulate;
 ///
 /// # fn get_program_ast() -> OpenQasmProgram {
@@ -575,7 +575,7 @@ impl<'src, 'program> Runtime<'program> {
 /// #     h q[0];
 /// #     cx q[0], q[1];
 /// #     "#;
-/// #     parse_and_link(source, default_linker()).unwrap()
+/// #     parse_and_link(source).unwrap()
 /// # }
 ///
 /// let program = get_program_ast();
@@ -612,7 +612,7 @@ pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
 /// ```
 /// # use qasmsim::QasmSimError;
 /// # use qasmsim::grammar::ast::OpenQasmProgram;
-/// # use qasmsim::{parse_and_link, default_linker};
+/// # use qasmsim::parse_and_link;
 /// use qasmsim::simulate_with_shots;
 ///
 /// # fn get_program_ast() -> OpenQasmProgram {
@@ -623,7 +623,7 @@ pub fn simulate(program: &ast::OpenQasmProgram) -> Result<Computation> {
 /// #     h q[0];
 /// #     cx q[0], q[1];
 /// #     "#;
-/// #     parse_and_link(source, default_linker()).unwrap()
+/// #     parse_and_link(source).unwrap()
 /// # }
 ///
 /// let program = get_program_ast();

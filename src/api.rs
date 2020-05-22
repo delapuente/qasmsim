@@ -12,7 +12,7 @@ pub type Result<'src, T> = std::result::Result<T, QasmSimError<'src>>;
 /// Return the default linker which includes the [`qelib1.inc`] library.
 ///
 /// [`qelib1.inc`]: https://github.com/Qiskit/openqasm/blob/master/examples/generic/qelib1.inc
-pub fn default_linker() -> Linker {
+fn default_linker() -> Linker {
     Linker::with_embedded(HashMap::from_iter(vec![(
         "qelib1.inc".to_owned(),
         qe::QELIB1.to_owned(),
@@ -33,7 +33,7 @@ pub fn default_linker() -> Linker {
 /// Basic usage:
 ///
 /// ```
-/// use qasmsim::{default_linker, parse_and_link};
+/// use qasmsim::parse_and_link;
 ///
 /// let ast = parse_and_link(r#"
 ///     OPENQASM 2.0;
@@ -41,11 +41,12 @@ pub fn default_linker() -> Linker {
 ///     qreg q[2];
 ///     h q[0];
 ///     cx q[0], q[1];
-/// "#, default_linker())?;
+/// "#)?;
 /// # use qasmsim::QasmSimError;
 /// # Ok::<(), qasmsim::QasmSimError>(())
 /// ```
-pub fn parse_and_link(input: &str, linker: Linker) -> Result<'_, ast::OpenQasmProgram> {
+pub fn parse_and_link(input: &str) -> Result<'_, ast::OpenQasmProgram> {
+    let linker = default_linker();
     let program = parse_program(&input)?;
     linker
         .link(program)

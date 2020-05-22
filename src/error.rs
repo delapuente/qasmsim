@@ -44,14 +44,14 @@ pub type SrcAndErr<'src, E> = (&'src str, E);
 /// into a `QasmSimError` from its pairing with the source.
 ///
 /// ```
-/// use qasmsim::{QasmSimError, parse_and_link, default_linker, simulate};
+/// use qasmsim::{QasmSimError, parse_and_link, simulate};
 ///
 /// let source = r#"
 /// OPENQASM 2.0;
 /// qreg q[2];
 /// CX q[1], q[2]; // Notice we are indexing out of bounds here.
 /// "#;
-/// let program = parse_and_link(source, default_linker())?;
+/// let program = parse_and_link(source)?;
 /// let runtime_error = simulate(&program).expect_err("Index out of bounds");
 /// let qasmsim_error = QasmSimError::from((source, runtime_error));
 /// # Ok::<(), QasmSimError>(())

@@ -44,43 +44,6 @@ pub enum LinkerError {
     },
 }
 
-/// Allow for combining multiple AST, spread in several sources, into one.
-///
-/// Current implementation is incomplete as it only allows for using embedded
-/// resources without looking for sources in the file system.
-///
-/// # Examples
-///
-/// You can provide a custom embedded library `ghz.inc` with:
-///
-/// ```
-/// use std::collections::HashMap;
-/// use std::iter::FromIterator;
-/// use qasmsim::linker::Linker;
-///
-/// let linker = Linker::with_embedded(HashMap::from_iter(vec![
-///     (
-///         "ghz.inc".to_string(),
-///         r#"gate ghz q {
-///             U(pi/2, 0, pi) q[0];
-///             CX(q[0], q[1]);
-///             CX(q[0], q[2]);
-///         }"#.to_string()
-///     )
-/// ]));
-/// ```
-///
-/// The linker can be passed to [`parse_and_link()`] to enable using the
-/// `ghz.inc` library in your programs like:
-///
-/// ```qasm
-/// OPENQASM 2.0;
-/// include "ghz.inc";
-/// qreg q[3];
-/// qhz q;
-/// ```
-///
-/// [`parse_and_link()`]: ../fn.parse_and_link.html
 #[derive(Debug, Clone, Default)]
 pub struct Linker {
     embedded: HashMap<String, String>,
@@ -89,13 +52,6 @@ pub struct Linker {
 type Result<T> = std::result::Result<T, LinkerError>;
 
 impl Linker {
-    /// Create a new linker with no embedded sources.
-    pub fn new() -> Self {
-        Linker {
-            embedded: Default::default(),
-        }
-    }
-
     /// Create a new linker with a hashmap relating paths with embedded sources.
     pub fn with_embedded(embedded: HashMap<String, String>) -> Self {
         Linker { embedded }

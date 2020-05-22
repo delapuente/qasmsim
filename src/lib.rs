@@ -72,17 +72,14 @@ pub mod error;
 pub mod grammar;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub mod linker;
+mod linker;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod statevector;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::{
-    arch::native::{
-        default_linker, parse_and_link, run, simulate, simulate_with_shots, Execution,
-        ExecutionTimes,
-    },
+    arch::native::{parse_and_link, run, simulate, simulate_with_shots, Execution, ExecutionTimes},
     error::QasmSimError,
     interpreter::{Computation, Histogram},
     semantics::QasmType,
