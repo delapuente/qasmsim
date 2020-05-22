@@ -23,14 +23,10 @@ pub type Histogram = HashMap<String, Vec<(u64, usize)>>;
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Computation {
-    /// The statevector of the quantum system.
-    pub statevector: StateVector,
-    /// An associative map with classical names and the classical outcomes.
-    pub memory: HashMap<String, u64>,
-    /// The probabilities associated with the state-vector.
-    pub probabilities: Vec<f64>,
-    /// The histogram when simulating with several shots.
-    pub histogram: Option<Histogram>,
+    statevector: StateVector,
+    memory: HashMap<String, u64>,
+    probabilities: Vec<f64>,
+    histogram: Option<Histogram>,
 }
 
 impl Computation {
@@ -48,6 +44,26 @@ impl Computation {
             memory,
             histogram,
         }
+    }
+
+    /// Return the statevector of the quantum system.
+    pub fn statevector(&self) -> &StateVector {
+        &self.statevector
+    }
+
+    /// Return an associative map with classical names and the classical outcomes.
+    pub fn memory(&self) -> &HashMap<String, u64> {
+        &self.memory
+    }
+
+    /// Return the probabilities associated with the state-vector.
+    pub fn probabilities(&self) -> &[f64] {
+        &self.probabilities
+    }
+
+    /// Return the histogram when simulating with several shots.
+    pub fn histogram(&self) -> &Option<Histogram> {
+        &self.histogram
     }
 }
 

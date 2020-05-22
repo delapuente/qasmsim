@@ -107,10 +107,10 @@ impl convert::From<(Computation, u128, u128)> for Execution {
     fn from(value: (Computation, u128, u128)) -> Self {
         let (computation, parsing_time, simulation_time) = value;
         Execution {
-            statevector: computation.statevector,
-            probabilities: computation.probabilities,
-            memory: computation.memory,
-            histogram: computation.histogram,
+            statevector: computation.statevector().clone(),
+            probabilities: computation.probabilities().to_vec(),
+            memory: computation.memory().clone(),
+            histogram: computation.histogram().clone(),
             times: ExecutionTimes {
                 parsing_time,
                 simulation_time,
