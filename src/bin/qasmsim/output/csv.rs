@@ -177,7 +177,7 @@ where
     W: Write,
 {
     writer.write_record(&["Name", "Duration (ms)"])?;
-    writer.serialize(("parsing", times.parsing_time))?;
-    writer.serialize(("simulation", times.parsing_time))?;
+    writer.serialize(("parsing", times.parsing_time()))?;
+    writer.serialize(("simulation", times.parsing_time()))?;
     Ok(())
 }

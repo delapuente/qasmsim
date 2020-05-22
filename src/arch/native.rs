@@ -29,10 +29,8 @@ macro_rules! measure {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ExecutionTimes {
-    /// Time spent in parsing the program and converting it to an AST.
-    pub parsing_time: u128,
-    /// Time spent in simulating the program.
-    pub simulation_time: u128,
+    parsing_time: u128,
+    simulation_time: u128,
 }
 
 impl ExecutionTimes {
@@ -42,6 +40,16 @@ impl ExecutionTimes {
             parsing_time,
             simulation_time,
         }
+    }
+
+    /// Return the time spent in parsing the program and converting it to an AST.
+    pub fn simulation_time(&self) -> u128 {
+        self.simulation_time
+    }
+
+    /// Return the time spent in simulating the program.
+    pub fn parsing_time(&self) -> u128 {
+        self.parsing_time
     }
 }
 

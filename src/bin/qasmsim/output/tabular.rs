@@ -204,8 +204,8 @@ where
     table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
 
     table.set_titles(row!["Name", "Duration (ms)"]);
-    table.add_row(row!["parsing", times.parsing_time]);
-    table.add_row(row!["simulation", times.simulation_time]);
+    table.add_row(row!["parsing", times.parsing_time()]);
+    table.add_row(row!["simulation", times.simulation_time()]);
 
     write!(buffer, "{}", table)
 }
