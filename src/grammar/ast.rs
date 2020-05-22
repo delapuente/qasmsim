@@ -7,9 +7,6 @@
 //! errors would require an extensive use of the `Span` structure beyond
 //! statements, and adding new features to the language would require the
 //! modification os certain layouts.
-//!
-//! The module would remain in the public API for enabling the users to perform
-//! code manipulations at the abstract level.
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

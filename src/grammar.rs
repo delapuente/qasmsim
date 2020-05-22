@@ -1,5 +1,13 @@
-//! Contain language-related data structures and functionality for parsing
-//! OPENQASM 2.0 and building abstract syntax trees.
+//! Contain the machinery for parsing and processing OPENQASM programs. This
+//! module is **unstable**.
+//!
+//! # Notes
+//!
+//! Be warned: the API of this module can change from release to release
+//! independently of the semantic versioning of the rest of the library.
+//!
+//! The module would remain in the public API for enabling the users to perform
+//! code manipulations at the abstract level.
 
 use lalrpop_util::{self, lalrpop_mod};
 

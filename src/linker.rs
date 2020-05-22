@@ -1,4 +1,5 @@
-//! Contain utilities for combining AST spread into several locations.
+//! Contain utilities for combining multiple AST spread into several locations.
+//! The module is **unstable**.
 
 use std::collections::HashMap;
 
