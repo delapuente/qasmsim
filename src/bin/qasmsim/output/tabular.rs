@@ -33,18 +33,20 @@ macro_rules! vvprintln {
 
 pub fn print<W>(buffer: &mut W, result: &Execution, options: &Options)
 where
-W: Write,
+    W: Write,
 {
     do_print(buffer, result, options).expect("writes in stdout");
 }
 
-fn do_print<W>(buffer: &mut W, result: &Execution, options: &Options)
--> io::Result<()>
+fn do_print<W>(buffer: &mut W, result: &Execution, options: &Options) -> io::Result<()>
 where
     W: Write,
 {
     if options.shots.is_some() {
-        let histogram = result.histogram().as_ref().expect("there is some histogram");
+        let histogram = result
+            .histogram()
+            .as_ref()
+            .expect("there is some histogram");
         if !histogram.is_empty() {
             vvprintln!(options, buffer, "Memory histogram:")?;
             print_histogram(buffer, histogram, options)?;
@@ -61,7 +63,12 @@ where
 
     if (options.statevector || options.probabilities) && options.shots.is_none() {
         vvprintln!(options, buffer, "Simulation state:")?;
-        print_state(buffer, result.statevector(), result.probabilities(), options)?;
+        print_state(
+            buffer,
+            result.statevector(),
+            result.probabilities(),
+            options,
+        )?;
         vvprintln!(options, buffer)?;
     }
 
@@ -180,7 +187,11 @@ where
     }
     table.set_titles(titles);
 
-    let amplitudes_and_probabilities = statevector.as_complex_bases().iter().zip(probabilities).enumerate();
+    let amplitudes_and_probabilities = statevector
+        .as_complex_bases()
+        .iter()
+        .zip(probabilities)
+        .enumerate();
     for (idx, (amplitude, probability)) in amplitudes_and_probabilities {
         let mut row = row![idx];
         if options.statevector {

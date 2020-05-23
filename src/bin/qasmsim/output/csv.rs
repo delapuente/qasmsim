@@ -24,7 +24,10 @@ pub fn print(path: &mut PathBuf, result: &Execution, options: &Options) {
     let writer_ref = &mut writer;
 
     if options.shots.is_some() {
-        let histogram = result.histogram().as_ref().expect("there is some histogram");
+        let histogram = result
+            .histogram()
+            .as_ref()
+            .expect("there is some histogram");
         print_histogram(writer_ref, histogram, options).expect("writes");
     } else {
         print_memory(writer_ref, result.memory(), options).expect("writes");
@@ -156,7 +159,11 @@ where
     }
     writer.write_record(&titles)?;
 
-    let amplitudes_and_probabilities = statevector.as_complex_bases().iter().zip(probabilities).enumerate();
+    let amplitudes_and_probabilities = statevector
+        .as_complex_bases()
+        .iter()
+        .zip(probabilities)
+        .enumerate();
     for (idx, (amplitude, probability)) in amplitudes_and_probabilities {
         let mut record = vec![format!("{}", idx)];
         if options.statevector {

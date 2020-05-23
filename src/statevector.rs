@@ -308,7 +308,10 @@ mod tests {
         let b = Complex::new(0.0, 1.0);
         let mut v = StateVector::from_complex_bases(vec![p, p, p, p, a, b, a, b]);
         v.cnot(2, 0);
-        assert_eq!(v, StateVector::from_complex_bases(vec!(p, p, p, p, b, a, b, a)));
+        assert_eq!(
+            v,
+            StateVector::from_complex_bases(vec!(p, p, p, p, b, a, b, a))
+        );
     }
 
     #[test]
@@ -318,7 +321,10 @@ mod tests {
         let b = Complex::new(0.0, 1.0);
         let mut v = StateVector::from_complex_bases(vec![p, a, p, a, p, b, p, b]);
         v.cnot(0, 2);
-        assert_eq!(v, StateVector::from_complex_bases(vec!(p, b, p, b, p, a, p, a)));
+        assert_eq!(
+            v,
+            StateVector::from_complex_bases(vec!(p, b, p, b, p, a, p, a))
+        );
     }
 
     #[test]
