@@ -180,7 +180,7 @@ where
     }
     table.set_titles(titles);
 
-    let amplitudes_and_probabilities = statevector.bases.iter().zip(probabilities).enumerate();
+    let amplitudes_and_probabilities = statevector.as_complex().iter().zip(probabilities).enumerate();
     for (idx, (amplitude, probability)) in amplitudes_and_probabilities {
         let mut row = row![idx];
         if options.statevector {

@@ -16,29 +16,37 @@ pub use crate::complex::{Complex, ComplexMargin};
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct StateVector {
-    /// Amplitudes corresponding to the bases of the system.
-    pub bases: Vec<Complex>,
-    /// 2-base logarithm of the number of amplitudes representing the number
-    /// of qubits in the system.
-    pub bit_width: usize,
+    bases: Vec<Complex>,
+    qubit_width: usize,
 }
 
 impl StateVector {
-    /// Create a new state-vector with of length 2 to the `bit_width` power
+    /// Create a new state-vector with of length 2 to the `qubit_width` power
     /// and all the amplitude concentrated in the all-zeroes outcome.
-    pub fn new(bit_width: usize) -> Self {
-        let bases = vec![Complex::new(0.0, 0.0); exp2(bit_width)];
-        let mut statevector = StateVector { bases, bit_width };
+    pub fn new(qubit_width: usize) -> Self {
+        let bases = vec![Complex::new(0.0, 0.0); exp2(qubit_width)];
+        let mut statevector = StateVector { bases, qubit_width };
         statevector.reset();
         statevector
+    }
+
+    /// Return the amplitudes corresponding to the bases of the system.
+    pub fn as_complex(&self) -> &[Complex] {
+        &self.bases
+    }
+
+    /// Return the 2-base logarithm of the number of amplitudes representing the
+    /// number of qubits in the system.
+    pub fn qubit_width(&self) -> usize {
+        self.qubit_width
     }
 
     /// Create a new state-vector from a vector of complex numbers representing
     /// amplitudes. It does not check the length of the vector is a power of
     /// two, not the norm of the vector is 1.
-    pub fn from_bases(bases: Vec<Complex>) -> Self {
-        let bit_width = (bases.len() as f64).log2() as usize;
-        StateVector { bases, bit_width }
+    pub fn from_complex_bases(bases: Vec<Complex>) -> Self {
+        let qubit_width = (bases.len() as f64).log2() as usize;
+        StateVector { bases, qubit_width }
     }
 
     /// Get the length of the state-vector.
@@ -53,7 +61,7 @@ impl StateVector {
 
     /// Apply a controlled not operation on qubit `target`.
     pub fn cnot(&mut self, control: usize, target: usize) {
-        let exchangable_rows = find_exchangeable_rows(self.bit_width, control, target);
+        let exchangable_rows = find_exchangeable_rows(self.qubit_width, control, target);
         for (index_a, index_b) in exchangable_rows {
             self.bases.swap(index_a, index_b);
         }
@@ -62,7 +70,7 @@ impl StateVector {
     /// Apply a general rotation on `target` qubit, specified as
     /// RZ(`phi`)RY(`theta`)RZ(`lambda`).
     pub fn u(&mut self, theta: f64, phi: f64, lambda: f64, target: usize) {
-        let target_rows = find_target_rows(self.bit_width, target);
+        let target_rows = find_target_rows(self.qubit_width, target);
         let u_matrix = build_u(theta, phi, lambda);
         for (index_0, index_1) in target_rows {
             let selected = (self.bases[index_0], self.bases[index_1]);
@@ -110,7 +118,7 @@ impl<'a> ApproxEq for &'a StateVector {
 impl FromIterator<Complex> for StateVector {
     fn from_iter<I: IntoIterator<Item = Complex>>(iter: I) -> Self {
         let bases: Vec<Complex> = iter.into_iter().collect();
-        StateVector::from_bases(bases)
+        StateVector::from_complex_bases(bases)
     }
 }
 
@@ -192,15 +200,15 @@ mod cached_fns {
 
     cached! {
         FIND_EXCHANGEABLE_ROWS;
-        fn find_exchangeable_rows(bit_width: usize, c: usize, t: usize)
+        fn find_exchangeable_rows(qubit_width: usize, c: usize, t: usize)
         -> Vec<(usize, usize)> = {
-            let context_range = exp2(bit_width - 2);
+            let context_range = exp2(qubit_width - 2);
             let mut out = Vec::with_capacity(context_range);
             for n in 0..context_range {
                 let mut mask = 1;
                 let mut histogram_index_10 = 0;
                 let mut histogram_index_11 = 0;
-                for i in 0..bit_width {
+                for i in 0..qubit_width {
                     if i == t {
                         histogram_index_11 += exp2(t);
                     } else if i == c {
@@ -221,14 +229,14 @@ mod cached_fns {
 
     cached! {
         FIND_TARGET_ROWS;
-        fn find_target_rows(bit_width: usize, t: usize) -> Vec<(usize, usize)> = {
-            let context_range = exp2(bit_width - 1);
+        fn find_target_rows(qubit_width: usize, t: usize) -> Vec<(usize, usize)> = {
+            let context_range = exp2(qubit_width - 1);
             let mut out = Vec::with_capacity(context_range);
             for n in 0..context_range {
                 let mut mask = 1;
                 let mut histogram_index_0 = 0;
                 let mut histogram_index_1 = 0;
-                for i in 0..bit_width {
+                for i in 0..qubit_width {
                     if i == t {
                         histogram_index_1 += exp2(t);
                     } else {
@@ -278,9 +286,9 @@ mod tests {
         let p = Default::default();
         let a = Complex::new(1.0, 0.0);
         let b = Complex::new(0.0, 1.0);
-        let mut v = StateVector::from_bases(vec![p, a, p, b]);
+        let mut v = StateVector::from_complex_bases(vec![p, a, p, b]);
         v.cnot(0, 1);
-        assert_eq!(v, StateVector::from_bases(vec!(p, b, p, a)));
+        assert_eq!(v, StateVector::from_complex_bases(vec!(p, b, p, a)));
     }
 
     #[test]
@@ -288,9 +296,9 @@ mod tests {
         let p = Default::default();
         let a = Complex::new(1.0, 0.0);
         let b = Complex::new(0.0, 1.0);
-        let mut v = StateVector::from_bases(vec![p, p, a, b]);
+        let mut v = StateVector::from_complex_bases(vec![p, p, a, b]);
         v.cnot(1, 0);
-        assert_eq!(v, StateVector::from_bases(vec!(p, p, b, a)));
+        assert_eq!(v, StateVector::from_complex_bases(vec!(p, p, b, a)));
     }
 
     #[test]
@@ -298,9 +306,9 @@ mod tests {
         let p = Default::default();
         let a = Complex::new(1.0, 0.0);
         let b = Complex::new(0.0, 1.0);
-        let mut v = StateVector::from_bases(vec![p, p, p, p, a, b, a, b]);
+        let mut v = StateVector::from_complex_bases(vec![p, p, p, p, a, b, a, b]);
         v.cnot(2, 0);
-        assert_eq!(v, StateVector::from_bases(vec!(p, p, p, p, b, a, b, a)));
+        assert_eq!(v, StateVector::from_complex_bases(vec!(p, p, p, p, b, a, b, a)));
     }
 
     #[test]
@@ -308,9 +316,9 @@ mod tests {
         let p = Default::default();
         let a = Complex::new(1.0, 0.0);
         let b = Complex::new(0.0, 1.0);
-        let mut v = StateVector::from_bases(vec![p, a, p, a, p, b, p, b]);
+        let mut v = StateVector::from_complex_bases(vec![p, a, p, a, p, b, p, b]);
         v.cnot(0, 2);
-        assert_eq!(v, StateVector::from_bases(vec!(p, b, p, b, p, a, p, a)));
+        assert_eq!(v, StateVector::from_complex_bases(vec!(p, b, p, b, p, a, p, a)));
     }
 
     #[test]
@@ -318,10 +326,10 @@ mod tests {
         let p = Default::default();
         let a = Complex::new(1.0, 0.0);
         let b = Complex::new(0.0, 1.0);
-        let mut v = StateVector::from_bases(vec![p, a, p, b]);
+        let mut v = StateVector::from_complex_bases(vec![p, a, p, b]);
         v.cnot(0, 1);
         v.cnot(0, 1);
-        assert_eq!(v, StateVector::from_bases(vec!(p, a, p, b)));
+        assert_eq!(v, StateVector::from_complex_bases(vec!(p, a, p, b)));
     }
 
     #[test]
@@ -329,7 +337,7 @@ mod tests {
         let size = 1000;
         let mut accum = 0;
         for _ in 0..size {
-            let mut v = StateVector::from_bases(vec![
+            let mut v = StateVector::from_complex_bases(vec![
                 Complex::from(FRAC_1_SQRT_2),
                 Complex::from(FRAC_1_SQRT_2),
             ]);
@@ -346,7 +354,7 @@ mod tests {
 
     #[test]
     fn test_state_vector_measurement_superposition() {
-        let mut v = StateVector::from_bases(vec![
+        let mut v = StateVector::from_complex_bases(vec![
             Complex::from(FRAC_1_SQRT_2),
             Complex::from(FRAC_1_SQRT_2),
         ]);
@@ -355,37 +363,37 @@ mod tests {
         measurement.collapse(faked_random_value);
         assert_approx_eq(
             &v,
-            &StateVector::from_bases(vec![Complex::from(1.0), Complex::from(0.0)]),
+            &StateVector::from_complex_bases(vec![Complex::from(1.0), Complex::from(0.0)]),
         );
     }
 
     #[test]
     fn test_state_vector_measurement_0() {
-        let mut v = StateVector::from_bases(vec![Complex::from(1.0), Complex::from(0.0)]);
+        let mut v = StateVector::from_complex_bases(vec![Complex::from(1.0), Complex::from(0.0)]);
         let mut measurement = Measurement::new(&mut v.bases, 0);
         let faked_random_value = 0.0;
         measurement.collapse(faked_random_value);
         assert_approx_eq(
             &v,
-            &StateVector::from_bases(vec![Complex::from(1.0), Complex::from(0.0)]),
+            &StateVector::from_complex_bases(vec![Complex::from(1.0), Complex::from(0.0)]),
         );
     }
 
     #[test]
     fn test_state_vector_measurement_1() {
-        let mut v = StateVector::from_bases(vec![Complex::from(0.0), Complex::from(1.0)]);
+        let mut v = StateVector::from_complex_bases(vec![Complex::from(0.0), Complex::from(1.0)]);
         let mut measurement = Measurement::new(&mut v.bases, 0);
         let faked_random_value = 0.0;
         measurement.collapse(faked_random_value);
         assert_approx_eq(
             &v,
-            &StateVector::from_bases(vec![Complex::from(0.0), Complex::from(1.0)]),
+            &StateVector::from_complex_bases(vec![Complex::from(0.0), Complex::from(1.0)]),
         );
     }
 
     #[test]
     fn test_state_vector_measurement_2_qubit_superposition() {
-        let mut v = StateVector::from_bases(vec![
+        let mut v = StateVector::from_complex_bases(vec![
             Complex::from(0.5),
             Complex::from(0.5),
             Complex::from(0.5),
@@ -396,7 +404,7 @@ mod tests {
         measurement.collapse(faked_random_value);
         assert_approx_eq(
             &v,
-            &StateVector::from_bases(vec![
+            &StateVector::from_complex_bases(vec![
                 Complex::from(FRAC_1_SQRT_2),
                 Complex::from(0.0),
                 Complex::from(FRAC_1_SQRT_2),

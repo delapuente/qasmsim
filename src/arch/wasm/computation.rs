@@ -64,7 +64,7 @@ impl From<StateVector> for JsValue {
         let out = Object::new();
         set!(&out,
           "bases" => as_typed_array(flatten_amplitudes),
-          "bitWidth" => statevector.bit_width as f64
+          "bitWidth" => statevector.qubit_width as f64
         );
         out.into()
     }
