@@ -4,10 +4,11 @@
 //! # Notes
 //!
 //! Be warned: the API of this module can change from release to release
-//! independently of the semantic versioning of the rest of the library.
-//!
-//! The module would remain in the public API for enabling the users to perform
-//! code manipulations at the abstract level.
+//! and break backwards compatibility regardless of the semantic versioning of
+//! the rest of the library. Ideally, this module will become a different crate.
+//! At the moment, the module and most of its functionallity will remain public
+//! for enabling the users to experiment with performing code manipulations at
+//! the abstract level.
 
 use lalrpop_util::{self, lalrpop_mod};
 

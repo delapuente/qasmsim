@@ -31,7 +31,7 @@ impl StateVector {
     }
 
     /// Return the amplitudes corresponding to the bases of the system.
-    pub fn as_complex(&self) -> &[Complex] {
+    pub fn as_complex_bases(&self) -> &[Complex] {
         &self.bases
     }
 
