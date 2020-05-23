@@ -212,7 +212,7 @@ pub struct BarrierPragma(pub Vec<Argument>);
 /// Enclose a statement inside a [span] and aggregate them in a list to form
 /// a valid [`OpenQasmProgram`].
 ///
-/// [span]: ./enum.Span.html
+/// [span]: ./struct.Span.html
 /// [`OpenQasmProgram`]: ./struct.OpenQasmProgram.html
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]

@@ -31,7 +31,7 @@ use regex::Regex;
 ///
 /// Location::new_at(19);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Location(pub usize);
 
@@ -276,49 +276,8 @@ enum Mode {
     Str,
 }
 
-/// An iterator that generates OPENQASM tokens from source code.
-///
-/// Items are of type [`Spanned`] to be able of distinguishing between a
-/// token (`Ok(Some((Location, Tok, Location)))`), the EOF (`Ok(None)`) and
-/// some error (`Err(LexicalError)`).
-///
-/// # Examples
-///
-/// The following OPEANQASM code:
-///
-/// ```qasm
-/// OPENQASM 2.0;
-/// include "qelib1.inc";
-/// qreg q[2];
-/// creg c[2];
-/// h q[0];
-/// cx q[0], q[1];
-/// measure q -> c;
-/// ```
-///
-/// Can be split into tokens with:
-///
-/// ```
-/// use qasmsim::grammar::lexer::Lexer;
-///
-/// let tokenizer = Lexer::new(r#"
-/// OPENQASM 2.0;
-/// include "qelib1.inc";
-/// qreg q[2];
-/// creg c[2];
-/// h q[0];
-/// cx q[0], q[1];
-/// measure q -> c;
-/// "#);
-///
-/// for token in tokenizer {
-///     println!("{:?}", token);
-/// }
-/// ```
-///
-/// [`Spanned`]: ./type.Spanned.html
 #[derive(Debug, Clone)]
-pub struct Lexer<'input> {
+pub(crate) struct Lexer<'input> {
     mode: VecDeque<Mode>,
     lineno: usize,
     lineoffset: usize,
@@ -330,7 +289,6 @@ pub struct Lexer<'input> {
 }
 
 impl<'input> Lexer<'input> {
-    /// Create a new iterator from the source code `input`.
     pub fn new(input: &'input str) -> Self {
         Lexer {
             mode: VecDeque::from(vec![Mode::Base]),
@@ -371,7 +329,7 @@ impl<'input> Lexer<'input> {
 impl<'input> Iterator for Lexer<'input> {
     type Item = Spanned<Tok, Location, LexicalError<Location>>;
 
-    // ! The function is not split since I'm trying to distinguish a pattern
+    // XXX: The function is not split since I'm trying to distinguish a pattern
     // for creating a macro to autogenerate a stack-based lexer with matching
     // rules specific per mode.
     //

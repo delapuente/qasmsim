@@ -123,6 +123,7 @@ parse_functions! {
     /// [`parse_program()`]: ./fn.parse_program.html
     /// [`parse_program_body()`]: ./fn.parse_program_body.html
     /// [`parse_statement()`]: ./fn.parse_statement.html
+    /// [`OpenQasmLib`]: ./ast/struct.OpenQasmLibrary.html
     pub fn parse_library(source) -> OpenQasmLibrary => open_qasm2::OpenQasmLibraryParser;
 
     /// Parse `source` into a [`OpenQasmProgram`] AST.
@@ -184,6 +185,7 @@ parse_functions! {
     /// [`parse_library()`]: ./fn.parse_library.html
     /// [`parse_program_body()`]: ./fn.parse_program_body.html
     /// [`parse_statement()`]: ./fn.parse_statement.html
+    /// [`OpenQasmProgram`]: ./ast/struct.OpenQasmProgram.html
     pub fn parse_program(source) -> OpenQasmProgram => open_qasm2::OpenQasmProgramParser;
 
     /// Parse `source` into a list of [`Statement`]s.
