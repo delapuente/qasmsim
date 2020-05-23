@@ -10,6 +10,7 @@ homepage = "https://github.com/delapuente/qasmsim/"
 keywords = ["quantum", "qasm", "computing"]
 categories = ["simulation", "science", "command-line-utilities"]
 readme = "README.md"
+exclude = ["samples/*", "tests/*", "www/*"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
