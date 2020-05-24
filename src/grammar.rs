@@ -25,7 +25,7 @@ use self::lexer::Lexer;
 use crate::error::QasmSimError;
 
 macro_rules! parse_functions {
-    ($($(#[$attr:meta])* $vis:vis fn $funcname:ident ($param:ident) -> $rettype:ty => $parser:ty);*) => {
+    ($($(#[$attr:meta])* $vis:vis fn $funcname:ident ($param:ident) -> $rettype:ty => $parser:ty;)*) => {
         $(
             $(#[$attr])* $vis fn $funcname(
                 $param: &str
@@ -288,7 +288,7 @@ parse_functions! {
     /// [`parse_library()`]: ./fn.parse_library.html
     /// [`parse_program()`]: ./fn.parse_program.html
     /// [`parse_program_body()`]: ./fn.parse_program_body.html
-    pub fn parse_statement(source) -> Statement => open_qasm2::StatementParser
+    pub fn parse_statement(source) -> Statement => open_qasm2::StatementParser;
 }
 
 #[cfg(test)]

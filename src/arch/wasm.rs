@@ -16,7 +16,7 @@ use crate::error::QasmSimError;
 use crate::grammar;
 
 macro_rules! adapt_parse_functions {
-    ($($(#[$attr:meta])* $vis:vis fn $funcname:ident ($param:ident) => $parsefunc:path);*) => {
+    ($($(#[$attr:meta])* $vis:vis fn $funcname:ident ($param:ident) => $parsefunc:path;)*) => {
         $(
             #[wasm_bindgen]
             #[allow(non_snake_case)]
@@ -60,7 +60,7 @@ adapt_parse_functions! {
     pub fn parseLibrary(source) => grammar::parse_library;
     pub fn parseExpression(source) => grammar::parse_expression;
     pub fn parseProgramBody(source) => grammar::parse_program_body;
-    pub fn parseStatement(source) => grammar::parse_statement
+    pub fn parseStatement(source) => grammar::parse_statement;
 }
 
 #[wasm_bindgen(start)]
