@@ -3,36 +3,24 @@
 
 ## Prerequisites
 
-Make sure you have installed [`cargo`](https://doc.rust-lang.org/cargo/getting-started/installation.html).
+Make sure you have [`cargo`](https://doc.rust-lang.org/cargo/getting-started/installation.html) installed.
 For compiling the WASM version, make sure you have [`wasm-pack`](https://rustwasm.github.io/wasm-pack/installer/)
 also installed.
 
 ## What is missing?
 
-The interpreter [golden path](https://en.wikipedia.org/wiki/Happy_path) is almost complete, although the following is still lacking before version `1.0.0`:
+Very few is missing, but the most important things are allowing the inclusion
+of external libraries throught the `include` directive, and improve the
+reporting of errors. Nevertheless,
+[including `qelib1.inc`](https://github.com/Qiskit/openqasm/blob/master/examples/generic/qelib1.inc) is possible since it comes with the interpreter.
 
- - [X] Add trigonometric and exponential functions in real expressions.
- - [X] Create CLI interface.
-   - [X] Better formatting of results.
-   - [X] Add --shots option + histogram output.
- - [X] Handle error paths.
-   - [X] Improve error hierarchy.
-   - [X] Add source references to errors.
-
-And planned for `1.1.0` is:
+Planned for future versions is:
 
  - [ ] Allow including external source.
    - [ ] In the native lib.
    - [ ] In the WASM version.
  - [ ] Add a semantic checker for checking the correctness of the program before runtime.
  - [ ] Semantic comments for documenting the gates.
-
-Although there is still no support for including external gate definitions,
-[including `qelib1.inc`](https://github.com/Qiskit/openqasm/blob/master/examples/generic/qelib1.inc) via the `include` instruction will work, for the `qelib1.inc` lib is embedded in the simulator:
-
-```
-include "qelib1.inc";
-```
 
 A sample QASM program can be found here:
 
@@ -115,7 +103,7 @@ $ cargo test
 `qasmsim` can be used in the web if you compile it for Web Assembly. Doing it is easy, simply download the sources, ensure you have `wasm-pack` installed and run:
 
 ```sh
-$ wasm-pack build
+$ wasm-pack build -- --features="serde"
 ```
 
 It will compile your project and pack it inside the `pkg` folder. Now enter the `www` directory, install the dependencies with (you only need run this once):
@@ -146,13 +134,18 @@ The module is exported by default as the `qasmsim` object in `window` and implme
 
 ```ts
 interface qasmsim {
-  run: (input: string, shots?: number) => Execution
+  run: (input: string, shots?: number) => Execution,
+  parseProgram: (source: string) => OpenQasmProgram,
+  parseLibrary: (source: string) => OpenQasmLibrary,
+  parseExpression: (source: string) => Expression,
+  parseProgramBody: (source: string) => Statement[],
+  parseStatement: (source: string) => Statement
 }
 
 interface Execution {
   histogram?: Histogram,
   probabilities: Float64Array,
-  statevector: Float64Array,
+  statevector: { bases: Float64Array, qubitWidth: number },
   memory: Memory,
   times: ExecutionTimes
 }
@@ -160,8 +153,8 @@ interface Execution {
 type Memory = { [key: string]: Array[number] }
 type Histogram = { [key: string]: Array[[number, number]] }
 type ExecutionTimes = {
-  parsing_time: number,
-  simulation_time: number,
-  serialization_time: number
+  parsing: number,
+  simulation: number,
+  serialization: number
 }
 ```

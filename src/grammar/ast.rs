@@ -146,6 +146,7 @@ pub struct OpenQasmProgram {
 ///     ]
 /// };
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OpenQasmLibrary {
     /// List of gate declarations. Although the type allows for the contruction
     /// of a library with arbitrary statements, this would not constitute a

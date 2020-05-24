@@ -1,6 +1,9 @@
 use std::collections::{HashMap, VecDeque};
 use std::iter::FromIterator;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::grammar::{ast, lexer::Location};
 use crate::interpreter::argument_solver::ArgumentSolver;
 use crate::interpreter::computation::{Computation, HistogramBuilder};
@@ -12,6 +15,7 @@ type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 
 /// Represent one of the possible errors that can happen during runtime.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[non_exhaustive]
 pub enum RuntimeError {
     /// An unknown error.

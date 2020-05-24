@@ -13,8 +13,8 @@ impl From<QasmSimError<'_>> for JsValue {
         let obj = Object::new();
 
         set!(&obj,
-          "message" => &message,
-          "toString" => js_sys::Function::new_no_args("return this.message")
+            "message" => &message,
+            "toString" => js_sys::Function::new_no_args("return this.message")
         );
 
         match value {
@@ -29,9 +29,9 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "InvalidToken",
-                  "lineNumber" => lineno as f64,
-                  "startPosition" => startpos as f64
+                    "type" => "InvalidToken",
+                    "lineNumber" => lineno as f64,
+                    "startPosition" => startpos as f64
                 );
                 if let Some(endpos) = endpos {
                     set!(&obj, "endPosition" => endpos as f64);
@@ -48,9 +48,9 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "UnexpectedEOF",
-                  "lineNumber" => lineno as f64,
-                  "startPosition" => startpos as f64
+                    "type" => "UnexpectedEOF",
+                    "lineNumber" => lineno as f64,
+                    "startPosition" => startpos as f64
                 );
                 if let Some(endpos) = endpos {
                     set!(&obj, "endPosition" => endpos as f64);
@@ -67,9 +67,9 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "UnexpectedToken",
-                  "lineNumber" => lineno as f64,
-                  "startPosition" => startpos as f64
+                    "type" => "UnexpectedToken",
+                    "lineNumber" => lineno as f64,
+                    "startPosition" => startpos as f64
                 );
                 if let Some(endpos) = endpos {
                     set!(&obj, "endPosition" => endpos as f64);
@@ -84,18 +84,18 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "RedefinitionError",
-                  "lineNumber" => lineno as f64,
-                  "symbolName" => &symbol_name
+                    "type" => "RedefinitionError",
+                    "lineNumber" => lineno as f64,
+                    "symbolName" => &symbol_name
                 );
             }
             QasmSimError::LibraryNotFound {
                 libpath, lineno, ..
             } => {
                 set!(&obj,
-                  "type" => "LibraryNotFound",
-                  "lineNumber" => lineno as f64,
-                  "libPath" => &libpath
+                    "type" => "LibraryNotFound",
+                    "lineNumber" => lineno as f64,
+                    "libPath" => &libpath
                 );
             }
             QasmSimError::IndexOutOfBounds {
@@ -106,11 +106,11 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "IndexOutOfBounds",
-                  "lineNumber" => lineno as f64,
-                  "symbolName" => &symbol_name,
-                  "index" => index as f64,
-                  "size" => size as f64
+                    "type" => "IndexOutOfBounds",
+                    "lineNumber" => lineno as f64,
+                    "symbolName" => &symbol_name,
+                    "index" => index as f64,
+                    "size" => size as f64
                 );
             }
             QasmSimError::SymbolNotFound {
@@ -120,10 +120,10 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "SymbolNotFound",
-                  "lineNumber" => lineno as f64,
-                  "symbolName" => &symbol_name,
-                  "expected" => &format!("{}", expected)
+                    "type" => "SymbolNotFound",
+                    "lineNumber" => lineno as f64,
+                    "symbolName" => &symbol_name,
+                    "expected" => &format!("{}", expected)
                 );
             }
             QasmSimError::WrongNumberOfParameters {
@@ -135,12 +135,12 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "WrongNumberOfParameters",
-                  "lineNumber" => lineno as f64,
-                  "symbolName" => &symbol_name,
-                  "kind" => if are_registers { "register" } else { "real" },
-                  "given" => given as f64,
-                  "expected" => expected as f64
+                    "type" => "WrongNumberOfParameters",
+                    "lineNumber" => lineno as f64,
+                    "symbolName" => &symbol_name,
+                    "kind" => if are_registers { "register" } else { "real" },
+                    "given" => given as f64,
+                    "expected" => expected as f64
                 );
             }
             QasmSimError::UndefinedGate {
@@ -149,9 +149,9 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "UndefinedGate",
-                  "lineNumber" => lineno as f64,
-                  "symbolName" => &symbol_name
+                    "type" => "UndefinedGate",
+                    "lineNumber" => lineno as f64,
+                    "symbolName" => &symbol_name
                 );
             }
             QasmSimError::TypeMismatch {
@@ -161,10 +161,10 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "TypeMismatch",
-                  "lineNumber" => lineno as f64,
-                  "symbolName" => &symbol_name,
-                  "expected" => &format!("{}", expected)
+                    "type" => "TypeMismatch",
+                    "lineNumber" => lineno as f64,
+                    "symbolName" => &symbol_name,
+                    "expected" => &format!("{}", expected)
                 );
             }
             QasmSimError::RegisterSizeMismatch {
@@ -173,9 +173,9 @@ impl From<QasmSimError<'_>> for JsValue {
                 ..
             } => {
                 set!(&obj,
-                  "type" => "RegisterSizeMismatch",
-                  "lineNumber" => lineno as f64,
-                  "symbolName" => &symbol_name
+                    "type" => "RegisterSizeMismatch",
+                    "lineNumber" => lineno as f64,
+                    "symbolName" => &symbol_name
                 );
             }
         };
