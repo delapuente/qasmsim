@@ -1,4 +1,5 @@
 #![cfg(target_arch = "wasm32")]
+#![allow(missing_docs)]
 
 #[macro_use]
 mod macros;
@@ -18,6 +19,7 @@ macro_rules! adapt_parse_functions {
     ($($(#[$attr:meta])* $vis:vis fn $funcname:ident ($param:ident) => $parsefunc:path);*) => {
         $(
             #[wasm_bindgen]
+            #[allow(non_snake_case)]
             $(#[$attr])* $vis fn $funcname(
                 $param: &str
             ) -> Result<JsValue, JsValue> {
@@ -54,15 +56,10 @@ pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
 }
 
 adapt_parse_functions! {
-    #[warn(non_snake_case)]
     pub fn parseProgram(source) => grammar::parse_program;
-    #[warn(non_snake_case)]
     pub fn parseLibrary(source) => grammar::parse_library;
-    #[warn(non_snake_case)]
     pub fn parseExpression(source) => grammar::parse_expression;
-    #[warn(non_snake_case)]
     pub fn parseProgramBody(source) => grammar::parse_program_body;
-    #[warn(non_snake_case)]
     pub fn parseStatement(source) => grammar::parse_statement
 }
 
