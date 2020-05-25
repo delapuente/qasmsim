@@ -9,6 +9,8 @@ also installed.
 
 ## What is missing?
 
+Looking for what's new? See [RELEASE_NOTES](RELEASE_NOTES.md).
+
 Very few is missing, but the most important things are allowing the inclusion
 of external libraries throught the `include` directive, and improve the
 reporting of errors. Nevertheless,
@@ -130,7 +132,7 @@ cx q[0], q[1];
 `);
 ```
 
-The module is exported by default as the `qasmsim` object in `window` and implments the following interface:
+The module is exported by default as the `qasmsim` object in `window` and implements the following interface:
 
 ```ts
 interface qasmsim {
@@ -163,3 +165,23 @@ type ExecutionTimes = {
   serialization: number
 }
 ```
+
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0
+   ([LICENSE-APACHE] or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license
+   ([LICENSE-MIT] or http://opensource.org/licenses/MIT)
+
+at your option.
+
+[LICENSE-APACHE]: LICENSE-APACHE.txt
+[LICENSE-MIT]: LICENSE-MIT.txt
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
