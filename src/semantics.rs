@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::error;
 use std::fmt;
 
 #[cfg(feature = "serde")]
@@ -59,6 +60,23 @@ pub enum SemanticError {
         previous_location: Location,
     },
 }
+
+impl fmt::Display for SemanticError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            _ => match lazy_humanize!{
+                self,
+                SemanticError::RedefinitionError
+            } {
+                Some(message) => message,
+                None => unreachable!()
+            }
+        };
+        write!(f, "{}", message)
+    }
+}
+
+impl error::Error for SemanticError {}
 
 type Result<T> = std::result::Result<T, SemanticError>;
 

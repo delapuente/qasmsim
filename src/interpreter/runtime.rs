@@ -1,5 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::iter::FromIterator;
+use std::error;
+use std::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -14,9 +16,9 @@ use crate::statevector::StateVector;
 type BindingMappings = (HashMap<String, f64>, HashMap<String, ast::Argument>);
 
 /// Represent one of the possible errors that can happen during runtime.
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[non_exhaustive]
 pub enum RuntimeError {
     /// An unknown error.
     Other,
@@ -82,6 +84,30 @@ pub enum RuntimeError {
         sizes: Vec<usize>,
     },
 }
+
+impl fmt::Display for RuntimeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            RuntimeError::Other => "unknown error".to_string(),
+            RuntimeError::SemanticError(semantic_error) => format!("{}", semantic_error),
+            _ => match lazy_humanize!{
+                self,
+                RuntimeError::IndexOutOfBounds,
+                RuntimeError::RegisterSizeMismatch,
+                RuntimeError::SymbolNotFound,
+                RuntimeError::TypeMismatch,
+                RuntimeError::UndefinedGate,
+                RuntimeError::WrongNumberOfParameters
+            } {
+                Some(message) => message,
+                None => unreachable!()
+            }
+        };
+        write!(f, "{}", message)
+    }
+}
+
+impl error::Error for RuntimeError {}
 
 type Result<T> = std::result::Result<T, RuntimeError>;
 

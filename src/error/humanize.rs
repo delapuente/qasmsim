@@ -2,6 +2,23 @@ use std::fmt::{self, Write};
 
 use crate::error::QasmSimError;
 
+macro_rules! lazy_humanize {
+    ($err:expr, $($variant:path),*) => {{
+        match $err {
+            $(
+                $variant {
+                    location,
+                    ..
+                } => {
+                    Some(format!("{} at character {}", stringify!($variant), location.0))
+                }
+            )*
+            #[allow(unreachable_patterns)]
+            _ => None
+        }
+    }};
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HumanDescription {
     msg: String,

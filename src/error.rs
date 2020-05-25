@@ -1,6 +1,8 @@
 //! Contain the error types ragarding the different tasks that QasmSim can
 //! perform.
-mod humanize;
+
+#[macro_use]
+pub(crate) mod humanize;
 
 use std::convert;
 use std::error;

@@ -58,14 +58,8 @@
 //!     <source>    QASM program file, read from stdin if not present
 //! ```
 
-mod api;
-mod arch;
-mod complex;
-mod interpreter;
-mod qe;
-mod semantics;
-
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg_attr(not(target_arch = "wasm32"), macro_use)]
 pub mod error;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -86,6 +80,7 @@ pub use crate::{
 };
 
 #[cfg(target_arch = "wasm32")]
+#[cfg_attr(target_arch = "wasm32", macro_use)]
 mod error;
 
 #[cfg(target_arch = "wasm32")]
@@ -99,3 +94,10 @@ mod statevector;
 
 #[cfg(target_arch = "wasm32")]
 pub use crate::arch::wasm::run;
+
+mod api;
+mod arch;
+mod complex;
+mod interpreter;
+mod qe;
+mod semantics;
