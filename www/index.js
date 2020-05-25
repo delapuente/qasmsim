@@ -1,3 +1,3 @@
-import * as qasmsim from "qasmsim";
+import * as qasmsim from "qasmsim"
 
-window.qasmsim = qasmsim;
+window.qasmsim = qasmsim

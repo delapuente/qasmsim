@@ -2,10 +2,207 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Hello wasm-pack!</title>
+    <title>The OpenQasm playground!</title>
+    <link rel="stylesheet" href="./vendor/mathbox-0.0.5/mathbox.css">
   </head>
   <body>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
     <script src="./bootstrap.js"></script>
+    <script src="./vendor/mathbox-0.0.5/mathbox-bundle.js"></script>
+    <h1>The OpenQasm playground</h1>
+    <section class="qasm-playground">
+      <div class="qasm-playground__source-area">
+        <ul class="qasm-playground__control-panel program-control">
+          <li class="program-control__button">
+            <button class="program-control__button-run">Run</button>
+          </li>
+        </ul>
+        <textarea class="qasm-playground__source-editor" cols="80" rows="20">
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+h q[0];
+cx q[0], q[1];</textarea>
+        <textarea disabled class="qasm-playground__log" cols="80" rows="10"></textarea>
+      </div>
+      <div class="qasm-playground__results-area">
+      </div>
+    </section>
+    <script>
+      (async function () {
+        await window._loadDependencies
+
+        const $ = document.querySelector.bind(document)
+        const mathbox = mathBox({
+          plugins: ['core', 'controls', 'cursor', 'mathbox'],
+          controls: {
+            klass: THREE.TrackballControls
+          },
+          element: $('.qasm-playground__results-area')
+        })
+        mathbox.three.renderer.setClearColor(new THREE.Color(0xFFFFFF), 1.0);
+        const camera = mathbox.camera({
+          proxy: true,
+          position: [0, 0, 3],
+        })
+        const view = mathbox
+          .cartesian({
+            range: [[-2, 2], [-1, 1], [-1, 1]],
+            scale: [2, 1, 1],
+          })
+          .axis({
+            axis: 1,
+          })
+          .axis({
+            axis: 2,
+          })
+          .grid({
+            width: 2,
+            divideX: 20,
+            divideY: 10,
+          })
+        const data = view.interval({
+          expr: function (emit, x, i, t) {
+            emit(x, Math.sin(x + t), Math.sin(x + t));
+          },
+          width: 32,
+          channels: 2,
+        })
+        const curve = view.line({
+          width: 5,
+          color: '#3090FF',
+        })
+        const points = view.point({
+          size: 8,
+          color: '#3090FF',
+        })
+        const vector = view.interval({
+          expr: function (emit, x, i, t) {
+            emit(x, 0);
+            emit(x, -Math.sin(x + t));
+          },
+          width: 64,
+          channels: 2,
+          items: 2,
+        })
+          .vector({
+            end: true,
+            width: 5,
+            color: '#50A000',
+          })
+        const scale = view.scale({
+          divide: 10,
+        })
+        const ticks = view.ticks({
+          width: 5,
+          size: 15,
+          color: 'black',
+        })
+        const format = view.format({
+          digits: 2,
+          weight: 'bold',
+        })
+        const labels = view.label({
+          color: 'red',
+          zIndex: 1,
+        })
+        const play = mathbox.play({
+          target: 'cartesian',
+          pace: 5,
+          to: 2,
+          loop: true,
+          script: [
+            {props: {range: [[-2, 2], [-1, 1]]}},
+            {props: {range: [[-4, 4], [-2, 2]]}},
+            {props: {range: [[-2, 2], [-1, 1]]}},
+          ]
+        })
+
+        $('.program-control__button-run').addEventListener('click', () => {
+          logCommand('run')
+          try {
+            const code = $('.qasm-playground__source-editor').value;
+            const execution = qasmsim.run(code)
+            logTimes(execution.times)
+          } catch (err) {
+            logOutput(err.message)
+          }
+        })
+
+        $('.qasm-playground__source-editor').addEventListener('keypress', (evt) => {
+          if (evt.ctrlKey && evt.key === 'Enter') {
+            $('.program-control__button-run').click()
+          }
+        })
+
+        function logTimes(times) {
+          console.log(times)
+          const values = [
+            `parsing: ${times.parsing.duration}ms`,
+            `simulation: ${times.simulation.duration}ms`,
+            `serialization: ${times.serialization.duration}ms`
+          ]
+          logOutput(values.join('\n'))
+        }
+
+        function logCommand(command) {
+          logOutput(`> ${command}`)
+        }
+
+        function logOutput(message) {
+          const textarea = $('.qasm-playground__log')
+          textarea.innerHTML += `${message}\n`
+          textarea.scrollTop = textarea.scrollHeight
+        }
+      }())
+    </script>
+    <style>
+      .qasm-playground {
+        display: flex;
+        width: 100%;
+      }
+
+      .qasm-playground__source-area {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      .qasm-playground__results-area {
+        margin-top: 2rem;
+        margin-left: 0.5rem;
+        flex: 1;
+      }
+
+      .qasm-playground__control-panel {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .qasm-playground__source-editor {
+        resize: none;
+        width: 100%;
+        overflow: scroll;
+        box-sizing: border-box;
+      }
+
+      .qasm-playground__log {
+        color: black;
+        resize: none;
+        width: 100%;
+        overflow: scroll;
+        box-sizing: border-box;
+      }
+
+      .program-control {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .program-control__button-run {
+        height: 2rem;
+      }
+    </style>
   </body>
 </html>
