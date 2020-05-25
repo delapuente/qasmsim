@@ -13,7 +13,10 @@ use web_sys;
 
 use crate::api;
 use crate::error::QasmSimError;
-use crate::grammar;
+use crate::grammar::{
+    self,
+    ast
+};
 
 macro_rules! adapt_parse_functions {
     ($($(#[$attr:meta])* $vis:vis fn $funcname:ident ($param:ident) => $parsefunc:path;)*) => {
@@ -55,7 +58,20 @@ pub fn run(input: &str, shots: Option<usize>) -> Result<JsValue, JsValue> {
     Ok(out)
 }
 
+#[wasm_bindgen]
+pub fn simulate(program: JsValue, shots: Option<usize>) -> Result<JsValue, JsValue> {
+    let openqasm_program: ast::OpenQasmProgram = serde_wasm_bindgen::from_value(program)?;
+    let computation = match shots {
+        None => api::simulate(&openqasm_program),
+        Some(shots) => api::simulate_with_shots(&openqasm_program, shots)
+    };
+    computation
+        .map(|v| v.into())
+        .map_err(|err| err.into())
+}
+
 adapt_parse_functions! {
+    pub fn parseAndLink(source) => api::parse_and_link;
     pub fn parseProgram(source) => grammar::parse_program;
     pub fn parseLibrary(source) => grammar::parse_library;
     pub fn parseExpression(source) => grammar::parse_expression;

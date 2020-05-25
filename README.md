@@ -135,6 +135,8 @@ The module is exported by default as the `qasmsim` object in `window` and implme
 ```ts
 interface qasmsim {
   run: (input: string, shots?: number) => Execution,
+  simulate: (program: OpenQasmProgram, shots?: number) => Computation,
+  parseAndLink: (source: string) => OpenQasmProgram,
   parseProgram: (source: string) => OpenQasmProgram,
   parseLibrary: (source: string) => OpenQasmLibrary,
   parseExpression: (source: string) => Expression,
@@ -142,11 +144,14 @@ interface qasmsim {
   parseStatement: (source: string) => Statement
 }
 
-interface Execution {
+interface Computation {
   histogram?: Histogram,
   probabilities: Float64Array,
   statevector: { bases: Float64Array, qubitWidth: number },
-  memory: Memory,
+  memory: Memory
+}
+
+interface Execution extends Computation {
   times: ExecutionTimes
 }
 
