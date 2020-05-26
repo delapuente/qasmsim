@@ -58,11 +58,30 @@ cx q[0], q[1];</textarea>
 
         const svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
 
+        let start = null
+        let endll = null
+        let duration = 1
+        let oldData = null
+        let newData = null
+
+        function toPolar(complexArr) {
+          const len = complexArr.length / 2
+          for (let i = 0; i < len; i++) {
+            const re = complexArr[2*i]
+            const im = complexArr[2*i+1]
+            const modu = Math.sqrt(re*re + im*im)
+            const angl = modu === 0 ? 0 : Math.atan(im/re)
+            complexArr[2*i] = modu
+            complexArr[2*i+1] = angl
+          }
+          return complexArr
+        }
+
         function initStateVectorVisualization(el) {
           const root = mathBox({
             element: $(el),
             classes: ['sv-visualization'],
-            plugins: ['core', 'controls', 'cursor', 'mathbox'],
+            plugins: ['core', 'controls', 'cursor'],
             controls: {
               klass: THREE.TrackballControls
             }
@@ -74,7 +93,7 @@ cx q[0], q[1];</textarea>
           })
           const view = root.cartesian({
             classes: ['view'],
-            range: [[0, 31], [-1, 1], [-1, 1]],
+            range: [[0, 3], [-1, 1], [-1, 1]],
             scale: [2, 1, 1],
           })
           view
@@ -93,10 +112,23 @@ cx q[0], q[1];</textarea>
           view
             .interval({
               classes: ['bases'],
-              width: 32,
+              width: 4,
+              expr: (emit, x, i, t) => {
+                if (!newData) { return }
+                start = start || t
+                end = end || (start + duration)
+                const startModu = !oldData ? 0 : Math.hypot(oldData[2*i], oldData[2*i+1])
+                const startAngl = !oldData ? 0 : Math.atan2(oldData[2*i], oldData[2*i+1])
+                const endModu = Math.hypot(newData[2*i], newData[2*i+1])
+                const endAngl = Math.atan2(newData[2*i], newData[2*i+1])
+                const progress = Math.min(1.0, (t - start) / (end - start))
+                const nextAmpl = progress * (endModu - startModu) + startModu
+                const nextAngl = progress * (endAngl - startAngl) + startAngl
+                emit(i, 0, 0)
+                emit(i, nextAmpl * Math.sin(nextAngl), nextAmpl * Math.cos(nextAngl))
+              },
               channels: 3,
-              items: 2,
-              live: false
+              items: 2
             })
             .vector({
               end: true,
@@ -107,34 +139,28 @@ cx q[0], q[1];</textarea>
         }
 
         function updateResults(statevector, visRoot) {
-          const bases = statevector.bases
-          const qubitWidth = statevector.qubitWidth
-          console.log(bases)
-          const len = bases.length / 2
-          visRoot.select('.scale')
-            .set({
-              divide: len
-            })
-          visRoot.select('.labels')
-            .set({
-              expr: function (x) {
-                return x.toString(2).padStart(qubitWidth, '0')
-              }
-            })
-          visRoot.select('.view')
-            .set({
-              range: [[0, len - 1], [-1, 1], [-1, 1]],
-            })
-          visRoot.select('.bases')
-            .set({
-              expr: function (emit, x, i, t) {
-                const [reIdx, imIdx] = [2 * i, 2 * i + 1]
-                emit(i, 0, 0)
-                emit(i, bases[reIdx], bases[imIdx])
-              },
-              width: len,
-              live: false
-            })
+          oldData = newData
+          newData = statevector.bases
+          const len = newData.length / 2
+          const isDifferent = !oldData || oldData.length !== newData.length
+
+          if (isDifferent) {
+            oldData = null
+            visRoot.select('.scale')
+              .set({
+                divide: len
+              })
+            visRoot.select('.view')
+              .set({
+                range: [[0, len - 1], [-1, 1], [-1, 1]],
+              })
+          }
+
+          start = null
+          end = null
+
+          console.log('Old bases:', oldData)
+          console.log('New bases:', newData)
         }
 
         function logTimes(times) {
