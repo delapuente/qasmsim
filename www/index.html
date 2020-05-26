@@ -26,9 +26,11 @@ include "qelib1.inc";
 qreg q[2];
 h q[0];
 cx q[0], q[1];</textarea>
-        <textarea disabled class="qasm-playground__log" cols="80" rows="10"></textarea>
+      <textarea class="qasm-playground__result-queries" cols="80" rows="10"></textarea>
       </div>
       <div class="qasm-playground__results-area">
+        <div class="qasm-playground__sv-vis"></div>
+        <textarea disabled class="qasm-playground__log" cols="80" rows="10"></textarea>
       </div>
     </section>
     <script>
@@ -42,7 +44,7 @@ cx q[0], q[1];</textarea>
         var oldBases = null
         var newBases = null
 
-        var svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
+        var svVis = window.svVis = initStateVectorVisualization('.qasm-playground__sv-vis')
 
         $('.program-control__button-reset').addEventListener('click', () => {
           resetCamera(svVis)
@@ -229,8 +231,10 @@ cx q[0], q[1];</textarea>
       .qasm-playground__results-area {
         max-width: 50%;
         margin-top: 2rem;
-        margin-left: 0.5rem;
+        margin-left: 0.1rem;
         flex: 1 0 0;
+        display: flex;
+        flex-direction: column;
       }
 
       .qasm-playground__control-panel {
@@ -243,6 +247,16 @@ cx q[0], q[1];</textarea>
         width: 100%;
         overflow: scroll;
         box-sizing: border-box;
+        flex: 1 0 0;
+      }
+
+      .qasm-playground__result-queries {
+        resize: none;
+        overflow: scroll;
+        box-sizing: border-box;
+      }
+
+      .qasm-playground__sv-vis {
         flex: 1 0 0;
       }
 
