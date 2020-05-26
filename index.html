@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>The OpenQasm playground!</title>
+    <link rel="stylesheet" href="./vendor/mathbox-0.0.5/mathbox.css">
+  </head>
+  <body class="qasm-playground">
+    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <script src="./bootstrap.js"></script>
+    <script src="./vendor/mathbox-0.0.5/mathbox-bundle.js"></script>
+    <h1 class="qasm-playground__header">The OpenQasm playground</h1>
+    <section class="qasm-playground__container">
+      <div class="qasm-playground__source-area">
+        <ul class="qasm-playground__control-panel program-control">
+          <li>
+            <button class="program-control__button program-control__button-run">Run</button>
+          </li>
+          <li>
+            <button class="program-control__button program-control__button-reset">Reset</button>
+          </li>
+        </ul>
+        <textarea class="qasm-playground__source-editor" cols="80">
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+h q[0];
+cx q[0], q[1];</textarea>
+        <textarea disabled class="qasm-playground__log" cols="80" rows="10"></textarea>
+      </div>
+      <div class="qasm-playground__results-area">
+      </div>
+    </section>
+    <script>
+      (async function () {
+        await window._loadDependencies
+        const $ = document.querySelector.bind(document)
+
+        var start = null
+        var end = null
+        var duration = 1
+        var oldBases = null
+        var newBases = null
+
+        var svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
+
+        $('.program-control__button-reset').addEventListener('click', () => {
+          resetCamera(svVis)
+        })
+
+        $('html').addEventListener('keyup', (evt) => {
+          if (evt.ctrlKey && evt.key === 'r') {
+            $('.program-control__button-reset').click()
+          }
+        })
+
+        $('.program-control__button-run').addEventListener('click', () => {
+          logCommand('run')
+
+          let execution;
+          try {
+            const code = $('.qasm-playground__source-editor').value;
+            execution = qasmsim.run(code)
+          } catch (err) {
+            logOutput(err.message)
+            return
+          }
+
+          logTimes(execution.times)
+          updateResults(execution.statevector, svVis)
+        })
+
+        $('.qasm-playground__source-editor').addEventListener('keypress', (evt) => {
+          if (evt.ctrlKey && evt.key === 'Enter') {
+            $('.program-control__button-run').click()
+          }
+        })
+
+        function initStateVectorVisualization(el) {
+          const root = mathBox({
+            element: $(el),
+            classes: ['sv-visualization'],
+            plugins: ['core', 'controls', 'cursor'],
+            controls: {
+              klass: THREE.OrbitControls,
+              parameters: {
+                keys: {}
+              }
+            },
+          })
+          root.three.renderer.setClearColor(new THREE.Color(0xFFFFFF), 1.0);
+          resetCamera(root)
+          const view = root.cartesian({
+            classes: ['view'],
+            range: [[0, 3], [-1, 1], [-1, 1]],
+            scale: [1.5, 1, 1],
+          })
+          view
+            .axis({
+              classes: ['axis-bases'],
+              axis: 1,
+            })
+            .axis({
+              classes: ['axis-re'],
+              axis: 2,
+            })
+            .axis({
+              classes: ['axis-im'],
+              axis: 3,
+            })
+          view
+            .interval({
+              classes: ['bases'],
+              expr: (emit, x, i, t) => {
+                if (!newBases) { return }
+                start = start || t
+                end = end || (start + duration)
+                const startModu = !oldBases ? 0 : Math.hypot(oldBases[2*i], oldBases[2*i+1])
+                let startAngl = !oldBases ? 0 : Math.atan2(oldBases[2*i], oldBases[2*i+1])
+                const endModu = Math.hypot(newBases[2*i], newBases[2*i+1])
+                let endAngl = Math.atan2(newBases[2*i], newBases[2*i+1])
+                if (startModu === 0) { startAngl = endAngl }
+                if (endModu === 0) { endAngl = startAngl }
+                const progress = Math.min(1.0, (t - start) / (end - start))
+                const nextAmpl = progress * (endModu - startModu) + startModu
+                const nextAngl = progress * (endAngl - startAngl) + startAngl
+                emit(i, 0, 0)
+                emit(i, nextAmpl * Math.sin(nextAngl), nextAmpl * Math.cos(nextAngl))
+              },
+              channels: 3,
+              items: 2
+            })
+            .vector({
+              end: true,
+              width: 5,
+              color: '#50A000',
+            })
+          view
+            .scale({
+              classes: ['scale']
+            })
+            .ticks({
+              classes: ['ticks'],
+              size: 15,
+              color: 'black'
+            })
+          return root
+        }
+
+        function resetCamera(root) {
+          root.select('camera').remove()
+          root.camera({
+            proxy: true,
+            position: [1, 1, 2]
+          })
+        }
+
+        function updateResults(statevector, visRoot) {
+          oldBases = newBases
+          newBases = statevector.bases
+          const len = newBases.length / 2
+          const isDifferent = !oldBases || oldBases.length !== newBases.length
+
+          if (isDifferent) {
+            oldBases = null
+            visRoot.select('.bases')
+              .set({
+                width: len
+              })
+            visRoot.select('.scale')
+              .set({
+                divide: len / 2 // why to divide between 2?
+              })
+            visRoot.select('.view')
+              .set({
+                range: [[0, len - 1], [-1, 1], [-1, 1]],
+              })
+          }
+
+          start = null
+          end = null
+
+          console.log('Old bases:', oldBases)
+          console.log('New bases:', newBases)
+        }
+
+        function logTimes(times) {
+          const values = [
+            `parsing: ${times.parsing.duration}ms`,
+            `simulation: ${times.simulation.duration}ms`,
+            `serialization: ${times.serialization.duration}ms`
+          ]
+          logOutput(values.join('\n'))
+        }
+
+        function logCommand(command) {
+          logOutput(`> ${command}`)
+        }
+
+        function logOutput(message) {
+          const textarea = $('.qasm-playground__log')
+          textarea.innerHTML += `${message}\n`
+          textarea.scrollTop = textarea.scrollHeight
+        }
+      }())
+    </script>
+    <style>
+      .qasm-playground {
+        font-family: Arial, Helvetica, sans-serif;
+        display: flex;
+        flex-direction: column;
+        margin: 0 0.5rem;
+        min-height: 100vh;
+      }
+
+      .qasm-playground__container {
+        display: flex;
+        width: 100%;
+        flex: 1 0 0;
+      }
+
+      .qasm-playground__source-area {
+        display: flex;
+        max-width: 50%;
+        flex-direction: column;
+        flex: 1 0 0;
+      }
+
+      .qasm-playground__results-area {
+        max-width: 50%;
+        margin-top: 2rem;
+        margin-left: 0.5rem;
+        flex: 1 0 0;
+      }
+
+      .qasm-playground__control-panel {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .qasm-playground__source-editor {
+        resize: none;
+        width: 100%;
+        overflow: scroll;
+        box-sizing: border-box;
+        flex: 1 0 0;
+      }
+
+      .qasm-playground__log {
+        color: black;
+        resize: none;
+        width: 100%;
+        overflow: scroll;
+        box-sizing: border-box;
+      }
+
+      .program-control {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .program-control__button {
+        height: 2rem;
+      }
+    </style>
+  </body>
+</html>
