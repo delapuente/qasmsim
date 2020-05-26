@@ -33,100 +33,21 @@ cx q[0], q[1];</textarea>
         await window._loadDependencies
 
         const $ = document.querySelector.bind(document)
-        const mathbox = mathBox({
-          plugins: ['core', 'controls', 'cursor', 'mathbox'],
-          controls: {
-            klass: THREE.TrackballControls
-          },
-          element: $('.qasm-playground__results-area')
-        })
-        mathbox.three.renderer.setClearColor(new THREE.Color(0xFFFFFF), 1.0);
-        const camera = mathbox.camera({
-          proxy: true,
-          position: [0, 0, 3],
-        })
-        const view = mathbox
-          .cartesian({
-            range: [[-2, 2], [-1, 1], [-1, 1]],
-            scale: [2, 1, 1],
-          })
-          .axis({
-            axis: 1,
-          })
-          .axis({
-            axis: 2,
-          })
-          .grid({
-            width: 2,
-            divideX: 20,
-            divideY: 10,
-          })
-        const data = view.interval({
-          expr: function (emit, x, i, t) {
-            emit(x, Math.sin(x + t), Math.sin(x + t));
-          },
-          width: 32,
-          channels: 2,
-        })
-        const curve = view.line({
-          width: 5,
-          color: '#3090FF',
-        })
-        const points = view.point({
-          size: 8,
-          color: '#3090FF',
-        })
-        const vector = view.interval({
-          expr: function (emit, x, i, t) {
-            emit(x, 0);
-            emit(x, -Math.sin(x + t));
-          },
-          width: 64,
-          channels: 2,
-          items: 2,
-        })
-          .vector({
-            end: true,
-            width: 5,
-            color: '#50A000',
-          })
-        const scale = view.scale({
-          divide: 10,
-        })
-        const ticks = view.ticks({
-          width: 5,
-          size: 15,
-          color: 'black',
-        })
-        const format = view.format({
-          digits: 2,
-          weight: 'bold',
-        })
-        const labels = view.label({
-          color: 'red',
-          zIndex: 1,
-        })
-        const play = mathbox.play({
-          target: 'cartesian',
-          pace: 5,
-          to: 2,
-          loop: true,
-          script: [
-            {props: {range: [[-2, 2], [-1, 1]]}},
-            {props: {range: [[-4, 4], [-2, 2]]}},
-            {props: {range: [[-2, 2], [-1, 1]]}},
-          ]
-        })
 
         $('.program-control__button-run').addEventListener('click', () => {
           logCommand('run')
+
+          let execution;
           try {
             const code = $('.qasm-playground__source-editor').value;
-            const execution = qasmsim.run(code)
-            logTimes(execution.times)
+            execution = qasmsim.run(code)
           } catch (err) {
             logOutput(err.message)
+            return
           }
+
+          logTimes(execution.times)
+          updateResults(execution.statevector, svVis)
         })
 
         $('.qasm-playground__source-editor').addEventListener('keypress', (evt) => {
@@ -135,8 +56,88 @@ cx q[0], q[1];</textarea>
           }
         })
 
+        const svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
+
+        function initStateVectorVisualization(el) {
+          const root = mathBox({
+            element: $(el),
+            classes: ['sv-visualization'],
+            plugins: ['core', 'controls', 'cursor', 'mathbox'],
+            controls: {
+              klass: THREE.TrackballControls
+            }
+          })
+          root.three.renderer.setClearColor(new THREE.Color(0xFFFFFF), 1.0);
+          root.camera({
+            proxy: true,
+            position: [0, 0, 3]
+          })
+          const view = root.cartesian({
+            classes: ['view'],
+            range: [[0, 31], [-1, 1], [-1, 1]],
+            scale: [2, 1, 1],
+          })
+          view
+            .axis({
+              classes: ['axis-bases'],
+              axis: 1,
+            })
+            .axis({
+              classes: ['axis-re'],
+              axis: 2,
+            })
+            .axis({
+              classes: ['axis-im'],
+              axis: 3,
+            })
+          view
+            .interval({
+              classes: ['bases'],
+              width: 32,
+              channels: 3,
+              items: 2,
+              live: false
+            })
+            .vector({
+              end: true,
+              width: 5,
+              color: '#50A000',
+            })
+          return root
+        }
+
+        function updateResults(statevector, visRoot) {
+          const bases = statevector.bases
+          const qubitWidth = statevector.qubitWidth
+          console.log(bases)
+          const len = bases.length / 2
+          visRoot.select('.scale')
+            .set({
+              divide: len
+            })
+          visRoot.select('.labels')
+            .set({
+              expr: function (x) {
+                return x.toString(2).padStart(qubitWidth, '0')
+              }
+            })
+          visRoot.select('.view')
+            .set({
+              range: [[0, len - 1], [-1, 1], [-1, 1]],
+            })
+          visRoot.select('.bases')
+            .set({
+              expr: function (emit, x, i, t) {
+                const [reIdx, imIdx] = [2 * i, 2 * i + 1]
+                emit(i, 0, 0)
+                emit(i, bases[reIdx], bases[imIdx])
+              },
+              width: len,
+              live: false
+            })
+        }
+
         function logTimes(times) {
-          console.log(times)
           const values = [
             `parsing: ${times.parsing.duration}ms`,
             `simulation: ${times.simulation.duration}ms`,
