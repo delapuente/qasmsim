@@ -5,12 +5,12 @@
     <title>The OpenQasm playground!</title>
     <link rel="stylesheet" href="./vendor/mathbox-0.0.5/mathbox.css">
   </head>
-  <body>
+  <body class="qasm-playground">
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
     <script src="./bootstrap.js"></script>
     <script src="./vendor/mathbox-0.0.5/mathbox-bundle.js"></script>
-    <h1>The OpenQasm playground</h1>
-    <section class="qasm-playground">
+    <h1 class="qasm-playground__header">The OpenQasm playground</h1>
+    <section class="qasm-playground__container">
       <div class="qasm-playground__source-area">
         <ul class="qasm-playground__control-panel program-control">
           <li>
@@ -20,7 +20,7 @@
             <button class="program-control__button program-control__button-reset">Reset</button>
           </li>
         </ul>
-        <textarea class="qasm-playground__source-editor" cols="80" rows="20">
+        <textarea class="qasm-playground__source-editor" cols="80">
 OPENQASM 2.0;
 include "qelib1.inc";
 qreg q[2];
@@ -206,20 +206,31 @@ cx q[0], q[1];</textarea>
     </script>
     <style>
       .qasm-playground {
+        font-family: Arial, Helvetica, sans-serif;
+        display: flex;
+        flex-direction: column;
+        margin: 0 0.5rem;
+        min-height: 100vh;
+      }
+
+      .qasm-playground__container {
         display: flex;
         width: 100%;
+        flex: 1 0 0;
       }
 
       .qasm-playground__source-area {
         display: flex;
+        max-width: 50%;
         flex-direction: column;
-        flex: 1;
+        flex: 1 0 0;
       }
 
       .qasm-playground__results-area {
+        max-width: 50%;
         margin-top: 2rem;
         margin-left: 0.5rem;
-        flex: 1;
+        flex: 1 0 0;
       }
 
       .qasm-playground__control-panel {
@@ -232,6 +243,7 @@ cx q[0], q[1];</textarea>
         width: 100%;
         overflow: scroll;
         box-sizing: border-box;
+        flex: 1 0 0;
       }
 
       .qasm-playground__log {
