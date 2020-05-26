@@ -13,8 +13,11 @@
     <section class="qasm-playground">
       <div class="qasm-playground__source-area">
         <ul class="qasm-playground__control-panel program-control">
-          <li class="program-control__button">
-            <button class="program-control__button-run">Run</button>
+          <li>
+            <button class="program-control__button program-control__button-run">Run</button>
+          </li>
+          <li>
+            <button class="program-control__button program-control__button-reset">Reset</button>
           </li>
         </ul>
         <textarea class="qasm-playground__source-editor" cols="80" rows="20">
@@ -31,8 +34,25 @@ cx q[0], q[1];</textarea>
     <script>
       (async function () {
         await window._loadDependencies
-
         const $ = document.querySelector.bind(document)
+
+        var start = null
+        var end = null
+        var duration = 1
+        var oldBases = null
+        var newBases = null
+
+        var svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
+
+        $('.program-control__button-reset').addEventListener('click', () => {
+          resetCamera(svVis)
+        })
+
+        $('html').addEventListener('keyup', (evt) => {
+          if (evt.ctrlKey && evt.key === 'r') {
+            $('.program-control__button-reset').click()
+          }
+        })
 
         $('.program-control__button-run').addEventListener('click', () => {
           logCommand('run')
@@ -56,28 +76,20 @@ cx q[0], q[1];</textarea>
           }
         })
 
-        var start = null
-        var end = null
-        var duration = 1
-        var oldBases = null
-        var newBases = null
-
-        var svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
-
         function initStateVectorVisualization(el) {
           const root = mathBox({
             element: $(el),
             classes: ['sv-visualization'],
             plugins: ['core', 'controls', 'cursor'],
             controls: {
-              klass: THREE.TrackballControls
-            }
+              klass: THREE.OrbitControls,
+              parameters: {
+                keys: {}
+              }
+            },
           })
           root.three.renderer.setClearColor(new THREE.Color(0xFFFFFF), 1.0);
-          root.camera({
-            proxy: true,
-            position: [0, 0, 3]
-          })
+          resetCamera(root)
           const view = root.cartesian({
             classes: ['view'],
             range: [[0, 3], [-1, 1], [-1, 1]],
@@ -133,6 +145,14 @@ cx q[0], q[1];</textarea>
               color: 'black'
             })
           return root
+        }
+
+        function resetCamera(root) {
+          root.select('camera').remove()
+          root.camera({
+            proxy: true,
+            position: [1, 1, 2]
+          })
         }
 
         function updateResults(statevector, visRoot) {
@@ -223,12 +243,13 @@ cx q[0], q[1];</textarea>
       }
 
       .program-control {
+        display: flex;
         list-style: none;
         margin: 0;
         padding: 0;
       }
 
-      .program-control__button-run {
+      .program-control__button {
         height: 2rem;
       }
     </style>
