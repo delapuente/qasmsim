@@ -56,26 +56,13 @@ cx q[0], q[1];</textarea>
           }
         })
 
-        const svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
+        var start = null
+        var end = null
+        var duration = 1
+        var oldBases = null
+        var newBases = null
 
-        let start = null
-        let end = null
-        let duration = 1
-        let oldBases = null
-        let newBases = null
-
-        function toPolar(complexArr) {
-          const len = complexArr.length / 2
-          for (let i = 0; i < len; i++) {
-            const re = complexArr[2*i]
-            const im = complexArr[2*i+1]
-            const modu = Math.sqrt(re*re + im*im)
-            const angl = modu === 0 ? 0 : Math.atan(im/re)
-            complexArr[2*i] = modu
-            complexArr[2*i+1] = angl
-          }
-          return complexArr
-        }
+        var svVis = window.svVis = initStateVectorVisualization('.qasm-playground__results-area')
 
         function initStateVectorVisualization(el) {
           const root = mathBox({
@@ -94,7 +81,7 @@ cx q[0], q[1];</textarea>
           const view = root.cartesian({
             classes: ['view'],
             range: [[0, 3], [-1, 1], [-1, 1]],
-            scale: [2, 1, 1],
+            scale: [1.5, 1, 1],
           })
           view
             .axis({
@@ -112,7 +99,6 @@ cx q[0], q[1];</textarea>
           view
             .interval({
               classes: ['bases'],
-              width: 4,
               expr: (emit, x, i, t) => {
                 if (!newBases) { return }
                 start = start || t
@@ -137,6 +123,15 @@ cx q[0], q[1];</textarea>
               width: 5,
               color: '#50A000',
             })
+          view
+            .scale({
+              classes: ['scale']
+            })
+            .ticks({
+              classes: ['ticks'],
+              size: 15,
+              color: 'black'
+            })
           return root
         }
 
@@ -148,9 +143,13 @@ cx q[0], q[1];</textarea>
 
           if (isDifferent) {
             oldBases = null
+            visRoot.select('.bases')
+              .set({
+                width: len
+              })
             visRoot.select('.scale')
               .set({
-                divide: len
+                divide: len / 2 // why to divide between 2?
               })
             visRoot.select('.view')
               .set({
