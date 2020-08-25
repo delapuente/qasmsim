@@ -65,6 +65,7 @@ cx q[0], q[1];</textarea>
             execution = qasmsim.run(code)
           } catch (err) {
             logOutput(err.message)
+            console.error(err)
             return
           }
 
