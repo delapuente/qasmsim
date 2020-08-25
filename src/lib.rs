@@ -100,4 +100,5 @@ mod arch;
 mod complex;
 mod interpreter;
 mod qe;
+mod random;
 mod semantics;

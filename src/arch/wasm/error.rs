@@ -6,8 +6,8 @@ use js_sys::{self, Object};
 use wasm_bindgen::prelude::JsValue;
 
 use crate::error::QasmSimError;
-use crate::semantics::SemanticError;
 use crate::interpreter::runtime::RuntimeError;
+use crate::semantics::SemanticError;
 
 impl From<QasmSimError<'_>> for JsValue {
     fn from(value: QasmSimError) -> Self {

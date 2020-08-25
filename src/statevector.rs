@@ -6,14 +6,11 @@ use std::iter::FromIterator;
 use serde::{Deserialize, Serialize};
 
 use float_cmp::ApproxEq;
-#[cfg(not(target_arch = "wasm32"))]
-use rand;
-#[cfg(target_arch = "wasm32")]
-use js_sys::Math;
 
 use self::cached_fns::{build_u, find_exchangeable_rows, find_target_rows};
 use crate::complex;
 pub use crate::complex::{Complex, ComplexMargin};
+use crate::random;
 
 /// Represent the state vector of a quantum system simulation.
 #[derive(Debug, Clone, PartialEq)]
@@ -21,16 +18,6 @@ pub use crate::complex::{Complex, ComplexMargin};
 pub struct StateVector {
     bases: Vec<Complex>,
     qubit_width: usize,
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn random() -> f64 {
-    rand::random()
-}
-
-#[cfg(target_arch = "wasm32")]
-fn random() -> f64 {
-    Math::random()
 }
 
 impl StateVector {
@@ -95,7 +82,7 @@ impl StateVector {
     /// Perform a measurement on the Z-axis of the quantum state on `target` qubit.
     pub fn measure(&mut self, target: usize) -> bool {
         let mut measurement = Measurement::new(&mut self.bases, target);
-        measurement.collapse(random())
+        measurement.collapse(random::random())
     }
 
     /// Return the probabilities associated to the amplitudes in the

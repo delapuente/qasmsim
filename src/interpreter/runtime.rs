@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
-use std::iter::FromIterator;
 use std::error;
 use std::fmt;
+use std::iter::FromIterator;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -90,7 +90,7 @@ impl fmt::Display for RuntimeError {
         let message = match self {
             RuntimeError::Other => "unknown error".to_string(),
             RuntimeError::SemanticError(semantic_error) => format!("{}", semantic_error),
-            _ => match lazy_humanize!{
+            _ => match lazy_humanize! {
                 self,
                 RuntimeError::IndexOutOfBounds,
                 RuntimeError::RegisterSizeMismatch,
@@ -100,8 +100,8 @@ impl fmt::Display for RuntimeError {
                 RuntimeError::WrongNumberOfParameters
             } {
                 Some(message) => message,
-                None => unreachable!()
-            }
+                None => unreachable!(),
+            },
         };
         write!(f, "{}", message)
     }

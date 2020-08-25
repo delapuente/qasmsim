@@ -3,8 +3,6 @@ use std::io::{self, Write};
 use std::iter::FromIterator;
 use std::path::PathBuf;
 
-use csv;
-
 use qasmsim::statevector::StateVector;
 use qasmsim::{Execution, ExecutionTimes, Histogram};
 

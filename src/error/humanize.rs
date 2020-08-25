@@ -254,44 +254,42 @@ pub fn humanize_error<W: Write>(buffer: &mut W, error: &QasmSimError) -> fmt::Re
 }
 
 fn humanize<W: Write>(buffer: &mut W, descripition: &HumanDescription) -> fmt::Result {
-    match descripition {
-        HumanDescription {
-            msg,
-            lineno,
-            startpos,
-            endpos,
-            linesrc,
-            help,
-        } => {
-            let lineno_str = format!("{} ", lineno);
-            let lineno_len = lineno_str.len();
-            let linesrc_str: String = linesrc.into();
-            let linesrc_str_trimmed = linesrc_str.trim_end();
-            let help_str = help.clone().unwrap_or_else(|| msg.clone());
-            let indicator_width = if let Some(pos) = endpos {
-                pos - startpos
-            } else {
-                1
-            };
+    let HumanDescription {
+        msg,
+        lineno,
+        startpos,
+        endpos,
+        linesrc,
+        help,
+    } = descripition;
 
-            writeln!(buffer, "error: {}", msg)?;
-            writeln!(buffer, "{:>alignment$}|", "", alignment = lineno_len)?;
-            writeln!(buffer, "{}| {}", lineno_str, linesrc_str_trimmed)?;
-            writeln!(
-                buffer,
-                "{:>alignment$}| {:>padding$}{:^>indicator_width$} help: {}",
-                "",
-                "",
-                "",
-                help_str,
-                alignment = lineno_str.len(),
-                padding = startpos,
-                indicator_width = indicator_width
-            )?;
+    let lineno_str = format!("{} ", lineno);
+    let lineno_len = lineno_str.len();
+    let linesrc_str: String = linesrc.into();
+    let linesrc_str_trimmed = linesrc_str.trim_end();
+    let help_str = help.clone().unwrap_or_else(|| msg.clone());
+    let indicator_width = if let Some(pos) = endpos {
+        pos - startpos
+    } else {
+        1
+    };
 
-            fmt::Result::Ok(())
-        }
-    }
+    writeln!(buffer, "error: {}", msg)?;
+    writeln!(buffer, "{:>alignment$}|", "", alignment = lineno_len)?;
+    writeln!(buffer, "{}| {}", lineno_str, linesrc_str_trimmed)?;
+    writeln!(
+        buffer,
+        "{:>alignment$}| {:>padding$}{:^>indicator_width$} help: {}",
+        "",
+        "",
+        "",
+        help_str,
+        alignment = lineno_str.len(),
+        padding = startpos,
+        indicator_width = indicator_width
+    )?;
+
+    fmt::Result::Ok(())
 }
 
 fn expectation(expected: &[String]) -> String {

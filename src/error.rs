@@ -481,9 +481,9 @@ mod test_into_doc_coords {
       line 1
       line 2
       line 3"
-    ),
-    test_beginning_of_source: 0, None => ("line 1\n", 1, 0, None),
-    test_middle_of_source: 7, None => ("line 2\n", 2, 0, None),
-    test_last_character: 20, None => ("line 3", 3, 6, None)
-  );
+      ),
+      test_beginning_of_source: 0, None => ("line 1\n", 1, 0, None),
+      test_middle_of_source: 7, None => ("line 2\n", 2, 0, None),
+      test_last_character: 20, None => ("line 3", 3, 6, None)
+    );
 }

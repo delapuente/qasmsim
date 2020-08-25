@@ -63,14 +63,12 @@ pub enum SemanticError {
 
 impl fmt::Display for SemanticError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match self {
-            _ => match lazy_humanize!{
-                self,
-                SemanticError::RedefinitionError
-            } {
-                Some(message) => message,
-                None => unreachable!()
-            }
+        let message = match lazy_humanize! {
+            self,
+            SemanticError::RedefinitionError
+        } {
+            Some(message) => message,
+            None => unreachable!(),
         };
         write!(f, "{}", message)
     }
