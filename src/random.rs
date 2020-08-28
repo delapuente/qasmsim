@@ -2,8 +2,11 @@
 //! of Rust `rand::random()` when targeting wasm32-unknown-unknown
 //! architecture.
 //!
-//! For some reason, not using it, although [after enabling WASM features]
-//! causes the module `cryto` not to be found.
+//! For some reason, not using it, even [after enabling WASM features],
+//! causes the module `crypto` not to be found in the browser. It seems the
+//! location it tries to load `crypto` from is `undefined`:
+//!
+//! > can't access property "crypto", getObject(...) is undefined
 //!
 //! [after enabling WASM features]: https://rust-random.github.io/book/crates.html?highlight=wasm#wasm-support
 
