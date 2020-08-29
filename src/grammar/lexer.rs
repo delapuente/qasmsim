@@ -366,9 +366,15 @@ impl<'input> Iterator for Lexer<'input> {
                 continue;
             }
 
-            // #[modes(all)]
-            if let Some(_blank) = self.try_pattern(&BLANK) {
-                continue;
+            // #[modes(Base, Version)]
+            match self.mode.get(0) {
+                Some(Mode::Base) |
+                Some(Mode::Version) => {
+                    if let Some(_blank) = self.try_pattern(&BLANK) {
+                        continue;
+                    }
+                },
+                _ => (),
             }
 
             let start = self.offset;
