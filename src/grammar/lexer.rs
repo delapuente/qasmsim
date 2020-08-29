@@ -359,6 +359,12 @@ impl<'input> Iterator for Lexer<'input> {
             if let Some(_new_line) = self.try_pattern(&NEW_LINE) {
                 self.lineno += 1;
                 self.lineoffset = self.offset;
+                match self.mode.get(0) {
+                    Some(Mode::Comment) => {
+                        self.mode.pop_front();
+                    },
+                    _ => (),
+                }
                 // TODO: Should I force a new loop? It seems consistent with a
                 // line-oriented tokenization. If generalizing the lexer, I should
                 // consider enabling/disabling multiline support and, if disables,
