@@ -198,6 +198,42 @@ pub enum Tok {
         /// The string as it appears in the source code.
         repr: String,
     },
+    /// A string representing the documentation of a gate.
+    DocStr {
+        /// The string as it appears in the source code after stripping the
+        /// comment marks `\\` and including new lines. For instance, consider
+        /// the following definition:
+        ///
+        /// ```qasm
+        /// // The identity gate, matching the matrix:
+        /// // \[
+        /// //   \mathbb{I} =
+        /// //   \begin{bmatrix}
+        /// //     1 & & \\
+        /// //     & \ddots & \\
+        /// //     & & 1
+        /// //   \end{bmatrix}
+        /// // \]
+        /// gate id q {}
+        /// ```
+        ///
+        /// The `DocString` representation looks like:
+        ///
+        /// ```txt
+        ///  The identity gate, matching the matrix:
+        ///  \[
+        ///    \mathbb{I} =
+        ///    \begin{bmatrix}
+        ///      1 & & \\
+        ///      & \ddots & \\
+        ///      & & 1
+        ///    \end{bmatrix}
+        ///  \]
+        /// ```
+        ///
+        /// Notice the space preceding each line.
+        repr: String
+    }
 }
 
 impl fmt::Display for Tok {
@@ -242,6 +278,7 @@ impl fmt::Display for Tok {
             Tok::Int { repr } => format!("integer literal `{}`", &repr),
             Tok::Real { repr } => format!("real literal `{}`", &repr),
             Tok::Str { repr } => format!("string literal `\"{}\"`", &repr),
+            Tok::DocStr { repr } => format!("doc string `\"{}\"`", &repr),
         };
         write!(f, "{}", repr)
     }
@@ -286,6 +323,7 @@ pub(crate) struct Lexer<'input> {
     keywords: HashMap<String, Tok>,
     chars: std::iter::Peekable<CharIndices<'input>>,
     errored: bool,
+    docstring: String,
 }
 
 impl<'input> Lexer<'input> {
@@ -299,7 +337,16 @@ impl<'input> Lexer<'input> {
             keywords: keywords(),
             chars: input.char_indices().peekable(),
             errored: false,
+            docstring: String::from(""),
         }
+    }
+
+    fn flush_docstring(&mut self) {
+        self.docstring.truncate(0);
+    }
+
+    fn add_docstring(&mut self, addendum: &str) {
+        self.docstring.push_str(addendum)
     }
 
     fn try_pattern(&mut self, re: &Regex) -> Option<String> {
