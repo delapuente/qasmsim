@@ -593,7 +593,7 @@ mod tests {
             OpenQasmProgram {
                 version: "2.0".to_string(),
                 program: vec![span!(
-                    54,
+                    41,
                     Statement::GateDecl(
                         String::from("id"),
                         vec![],
