@@ -415,7 +415,8 @@ impl<'input> Iterator for Lexer<'input> {
         lazy_static! {
             static ref NEW_LINE: Regex = Regex::new(r"^\n").unwrap();
             static ref ALL_THE_LINE: Regex = Regex::new(r"^[^\n]*").unwrap();
-            static ref BLANK: Regex = Regex::new(r"^\s+").unwrap();
+            // TODO: Should be \s - \n, this will not match other forms of Unicode blank space.
+            static ref BLANK: Regex = Regex::new(r"^[ \t]+").unwrap();
             static ref GATE: Regex = Regex::new(r"^(CX|U)\b").unwrap();
             static ref OPENQASM: Regex = Regex::new(r"^OPENQASM\b").unwrap();
             static ref VERSION: Regex = Regex::new(r"^([0-9]+\.[0-9]+)").unwrap();
@@ -981,5 +982,25 @@ mod tests {
                 })]
             );
         }
+
+        #[test]
+        fn test_blank_lines_are_considered_empty_lines_and_separate_comments() {
+            let source = "// No docstring\n  \n// Documentation of the\n// id gate\ngate";
+            let lexer = Lexer::new(source);
+            assert_eq!(
+                lexer.collect::<Vec<_>>(),
+                vec![
+                    Ok((
+                        Location(19),
+                        Tok::DocStr {
+                            repr: String::from(" Documentation of the\n id gate\n")
+                        },
+                        Location(54)
+                    )),
+                    Ok((Location(54), Tok::Gate, Location(58)))
+                ]
+            );
+        }
+
     }
 }
