@@ -311,7 +311,7 @@ enum Mode {
     Version,
     Comment,
     Str,
-    EmitDelayedGate,
+    EmitDelayedToken,
 }
 
 #[derive(Debug, Clone)]
@@ -325,7 +325,7 @@ pub(crate) struct Lexer<'input> {
     chars: std::iter::Peekable<CharIndices<'input>>,
     errored: bool,
     docstring: Option<(Location, String, Location)>,
-    delayed_gate: Option<(Location, Tok, Location)>,
+    delayed_token: Option<(Location, Tok, Location)>,
 }
 
 impl<'input> Lexer<'input> {
@@ -340,7 +340,7 @@ impl<'input> Lexer<'input> {
             chars: input.char_indices().peekable(),
             errored: false,
             docstring: None,
-            delayed_gate: None,
+            delayed_token: None,
         }
     }
 
@@ -433,16 +433,16 @@ impl<'input> Iterator for Lexer<'input> {
             // For instance, to emit more than one token at some point as
             // it happens when emitting `DocStr` and `Gate`.
 
-            // #[mode(EmitDelayedGate)]
+            // #[mode(EmitDelayedToken)]
             match self.mode.get(0) {
-                Some(Mode::EmitDelayedGate) => {
-                    if self.delayed_gate.is_none() {
+                Some(Mode::EmitDelayedToken) => {
+                    if self.delayed_token.is_none() {
                         unreachable!("Trying to return a non existend delayed gate.");
                     }
-                    let delayed_gate = self.delayed_gate.as_ref().unwrap().clone();
-                    self.delayed_gate = None;
+                    let delayed_token = self.delayed_token.as_ref().unwrap().clone();
+                    self.delayed_token = None;
                     self.mode.pop_front();
-                    return Some(Ok(delayed_gate));
+                    return Some(Ok(delayed_token));
                 }
                 _ => (),
             }
@@ -570,12 +570,14 @@ impl<'input> Iterator for Lexer<'input> {
                     None => Ok((self.location(start), Tok::Id { repr }, self.location(end))),
                     Some(token) => {
                         let spanned = (self.location(start), (*token).clone(), self.location(end));
-                        let emit_docstring = self.is_building_docstring() && *token == Tok::Gate;
+                        let is_emitting_gate = *token == Tok::Gate || *token == Tok::Opaque;
+                        let emit_docstring = self.is_building_docstring() && is_emitting_gate;
                         if !emit_docstring {
+                            self.flush_docstring();
                             Ok(spanned)
                         } else {
-                            self.mode.push_front(Mode::EmitDelayedGate);
-                            self.delayed_gate = Some(spanned);
+                            self.mode.push_front(Mode::EmitDelayedToken);
+                            self.delayed_token = Some(spanned);
 
                             let (start, content, end) = self.docstring.as_ref().unwrap();
                             let docstring = Tok::DocStr {
@@ -881,6 +883,26 @@ mod tests {
                     Location(35)
                 )),
                 Ok((Location(35), Tok::Gate, Location(39)))
+            ]
+        );
+    }
+
+    #[test]
+    fn test_comments_right_before_opaque_gates_are_docstring() {
+        let source = "// Documentation of the\n// id gate\nopaque gate";
+        let lexer = Lexer::new(source);
+        assert_eq!(
+            lexer.collect::<Vec<_>>(),
+            vec![
+                Ok((
+                    Location(0),
+                    Tok::DocStr {
+                        repr: String::from(" Documentation of the\n id gate\n")
+                    },
+                    Location(35)
+                )),
+                Ok((Location(35), Tok::Opaque, Location(41))),
+                Ok((Location(42), Tok::Gate, Location(46)))
             ]
         );
     }
