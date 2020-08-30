@@ -232,8 +232,8 @@ pub enum Tok {
         /// ```
         ///
         /// Notice the space preceding each line.
-        repr: String
-    }
+        repr: String,
+    },
 }
 
 impl fmt::Display for Tok {
@@ -311,6 +311,7 @@ enum Mode {
     Version,
     Comment,
     Str,
+    EmitDelayedGate,
 }
 
 #[derive(Debug, Clone)]
@@ -323,7 +324,8 @@ pub(crate) struct Lexer<'input> {
     keywords: HashMap<String, Tok>,
     chars: std::iter::Peekable<CharIndices<'input>>,
     errored: bool,
-    docstring: String,
+    docstring: Option<(Location, String, Location)>,
+    delayed_gate: Option<(Location, Tok, Location)>,
 }
 
 impl<'input> Lexer<'input> {
@@ -337,16 +339,42 @@ impl<'input> Lexer<'input> {
             keywords: keywords(),
             chars: input.char_indices().peekable(),
             errored: false,
-            docstring: String::from(""),
+            docstring: None,
+            delayed_gate: None,
         }
     }
 
     fn flush_docstring(&mut self) {
-        self.docstring.truncate(0);
+        self.docstring = None;
     }
 
-    fn add_docstring(&mut self, addendum: &str) {
-        self.docstring.push_str(addendum)
+    fn start_docstring(&mut self, start: Location) {
+        if self.docstring.is_some() {
+            panic!("Use `extend_docstring()` to update the docstring.");
+        }
+        self.docstring = Some((start, String::from(""), start));
+    }
+
+    fn extend_docstring(&mut self, addendum: &str) {
+        if self.docstring.is_none() {
+            panic!("No docstring yet. Use `start_docstring()` to start a new docstring.");
+        }
+        if let Some((_, ref mut content, _)) = self.docstring {
+            content.push_str(addendum);
+        }
+    }
+
+    fn update_docstring_end(&mut self, end: Location) {
+        if self.docstring.is_none() {
+            panic!("No docstring yet. Use `start_docstring()` to start a new docstring.");
+        }
+        if let Some(docstring_span) = self.docstring.as_mut() {
+            docstring_span.2 = end;
+        }
+    }
+
+    fn is_building_docstring(&self) -> bool {
+        self.docstring.is_some()
     }
 
     fn try_pattern(&mut self, re: &Regex) -> Option<String> {
@@ -399,38 +427,64 @@ impl<'input> Iterator for Lexer<'input> {
         }
 
         loop {
+            let start = self.offset;
+
+            // TODO: Should I include delayed actions as a general concept?
+            // For instance, to emit more than one token at some point as
+            // it happens when emitting `DocStr` and `Gate`.
+
+            // #[mode(EmitDelayedGate)]
+            match self.mode.get(0) {
+                Some(Mode::EmitDelayedGate) => {
+                    if self.delayed_gate.is_none() {
+                        unreachable!("Trying to return a non existend delayed gate.");
+                    }
+                    let delayed_gate = self.delayed_gate.as_ref().unwrap().clone();
+                    self.delayed_gate = None;
+                    self.mode.pop_front();
+                    return Some(Ok(delayed_gate));
+                }
+                _ => (),
+            }
+
+            // TODO: After delayed actions should come end of iteration if
+            // error (perhaps this should happen the very first) or if EOF.
+
             if self.errored || self.chars.peek().is_none() {
                 return None;
             }
 
-            if let Some(_new_line) = self.try_pattern(&NEW_LINE) {
+            // TODO: Finally they come the regular lexer actions per active mode.
+
+            // TODO: Should transform this into
+            // `match self.mode.get(0) { ... }` to generalize the stacked lexer
+            // structure and start recognizing syntax patterns to extract into
+            // macros.
+            if let Some(new_line) = self.try_pattern(&NEW_LINE) {
                 self.lineno += 1;
                 self.lineoffset = self.offset;
                 match self.mode.get(0) {
                     Some(Mode::Comment) => {
+                        self.extend_docstring(&new_line);
+                        self.update_docstring_end(self.location(start + new_line.len()));
                         self.mode.pop_front();
-                    },
-                    _ => (),
+                    }
+                    _ => {
+                        self.flush_docstring();
+                    }
                 }
-                // TODO: Should I force a new loop? It seems consistent with a
-                // line-oriented tokenization. If generalizing the lexer, I should
-                // consider enabling/disabling multiline support and, if disables,
-                // treat `\n` as a regular character.
                 continue;
             }
 
             // #[modes(Base, Version)]
             match self.mode.get(0) {
-                Some(Mode::Base) |
-                Some(Mode::Version) => {
+                Some(Mode::Base) | Some(Mode::Version) => {
                     if let Some(_blank) = self.try_pattern(&BLANK) {
                         continue;
                     }
-                },
+                }
                 _ => (),
             }
-
-            let start = self.offset;
 
             // #[modes(Base)]
             match self.mode.get(0) {
@@ -479,8 +533,9 @@ impl<'input> Iterator for Lexer<'input> {
             // #[modes(Comment)]
             match self.mode.get(0) {
                 Some(Mode::Comment) => {
-                    if self.try_pattern(&ALL_THE_LINE).is_some() {
-                        self.mode.pop_front();
+                    if let Some(content) = self.try_pattern(&ALL_THE_LINE) {
+                        self.extend_docstring(&content);
+                        self.update_docstring_end(self.location(start + content.len()));
                         continue;
                     }
                 }
@@ -513,7 +568,24 @@ impl<'input> Iterator for Lexer<'input> {
                 let end = start + repr.len();
                 return Some(match self.keywords.get(&repr) {
                     None => Ok((self.location(start), Tok::Id { repr }, self.location(end))),
-                    Some(token) => Ok((self.location(start), (*token).clone(), self.location(end))),
+                    Some(token) => {
+                        let spanned = (self.location(start), (*token).clone(), self.location(end));
+                        let emit_docstring = self.is_building_docstring() && *token == Tok::Gate;
+                        if !emit_docstring {
+                            Ok(spanned)
+                        } else {
+                            self.mode.push_front(Mode::EmitDelayedGate);
+                            self.delayed_gate = Some(spanned);
+
+                            let (start, content, end) = self.docstring.as_ref().unwrap();
+                            let docstring = Tok::DocStr {
+                                repr: content.clone(),
+                            };
+                            let docstring_span = (*start, docstring, *end);
+                            self.flush_docstring();
+                            Ok(docstring_span)
+                        }
+                    }
                 });
             }
 
@@ -578,6 +650,9 @@ impl<'input> Iterator for Lexer<'input> {
                     "->" => Tok::Arrow,
                     "==" => Tok::Equal,
                     "//" => {
+                        if !self.is_building_docstring() {
+                            self.start_docstring(self.location(start));
+                        }
                         self.mode.push_front(Mode::Comment);
                         continue;
                     }
@@ -787,6 +862,45 @@ mod tests {
                 Err(LexicalError {
                     location: Location(2)
                 })
+            ]
+        );
+    }
+
+    #[test]
+    fn test_comments_right_before_gate_token_are_docstring() {
+        let source = "// Documentation of the\n// id gate\ngate";
+        let lexer = Lexer::new(source);
+        assert_eq!(
+            lexer.collect::<Vec<_>>(),
+            vec![
+                Ok((
+                    Location(0),
+                    Tok::DocStr {
+                        repr: String::from(" Documentation of the\n id gate\n")
+                    },
+                    Location(35)
+                )),
+                Ok((Location(35), Tok::Gate, Location(39)))
+            ]
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_only_comments_right_before_gate_token_are_docstring() {
+        let source = "// No docstring\n  \n// Documentation of the\n// id gate\ngate";
+        let lexer = Lexer::new(source);
+        assert_eq!(
+            lexer.collect::<Vec<_>>(),
+            vec![
+                Ok((
+                    Location(0),
+                    Tok::DocStr {
+                        repr: String::from(" Documentation of the\n id gate\n")
+                    },
+                    Location(35)
+                )),
+                Ok((Location(35), Tok::Gate, Location(39)))
             ]
         );
     }
