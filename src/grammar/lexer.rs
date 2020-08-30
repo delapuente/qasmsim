@@ -908,21 +908,20 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_only_comments_right_before_gate_token_are_docstring() {
-        let source = "// No docstring\n  \n// Documentation of the\n// id gate\ngate";
+        let source = "// No docstring\n\n// Documentation of the\n// id gate\ngate";
         let lexer = Lexer::new(source);
         assert_eq!(
             lexer.collect::<Vec<_>>(),
             vec![
                 Ok((
-                    Location(0),
+                    Location(17),
                     Tok::DocStr {
                         repr: String::from(" Documentation of the\n id gate\n")
                     },
-                    Location(35)
+                    Location(52)
                 )),
-                Ok((Location(35), Tok::Gate, Location(39)))
+                Ok((Location(52), Tok::Gate, Location(56)))
             ]
         );
     }
