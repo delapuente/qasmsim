@@ -145,6 +145,7 @@ interface qasmsim {
   parseExpression: (source: string) => Expression,
   parseProgramBody: (source: string) => Statement[],
   parseStatement: (source: string) => Statement
+  getGateInfo: (source: string, gateName: string) => GateInfo
 }
 
 interface Computation {
@@ -164,6 +165,12 @@ type ExecutionTimes = {
   parsing: number,
   simulation: number,
   serialization: number
+}
+type GateInfo = {
+  docstring: string,
+  name: string,
+  realParameters: Array[string],
+  quantumParameters: Array[string]
 }
 ```
 

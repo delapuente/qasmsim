@@ -6,6 +6,8 @@ mod macros;
 mod computation;
 mod error;
 
+use std::iter::FromIterator;
+
 use console_error_panic_hook;
 use serde_wasm_bindgen;
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
@@ -63,6 +65,23 @@ pub fn simulate(program: JsValue, shots: Option<usize>) -> Result<JsValue, JsVal
         Some(shots) => api::simulate_with_shots(&openqasm_program, shots),
     };
     computation.map(|v| v.into()).map_err(|err| err.into())
+}
+
+#[wasm_bindgen]
+#[allow(non_snake_case)]
+pub fn getGateInfo(input: &str, gate_name: &str) -> Result<JsValue, JsValue> {
+    api::get_gate_info(input, gate_name)
+        .map(|(docstring, (name, real_params, quantum_params))| {
+            let gate_info = js_sys::Object::new();
+            set!(&gate_info,
+                "docstring" => docstring,
+                "name" => name,
+                "realParameters" => js_sys::Array::from_iter(real_params.iter().map(JsValue::from)),
+                "quantumParameters" => js_sys::Array::from_iter(quantum_params.iter().map(JsValue::from))
+            );
+            gate_info.into()
+        })
+        .map_err(|err| err.into())
 }
 
 adapt_parse_functions! {
