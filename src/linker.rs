@@ -136,12 +136,15 @@ mod tests {
                 version: "2.0".to_owned(),
                 program: vec![span!(
                     14,
-                    ast::Statement::GateDecl(
-                        "test".to_owned(),
-                        vec![],
-                        vec!["q".to_string()],
-                        vec![]
-                    ),
+                    ast::Statement::GateDecl {
+                        signature: (
+                            "test".to_owned(),
+                            vec![],
+                            vec!["q".to_string()],
+                            vec![]
+                        ),
+                        docstring: None
+                    },
                     33
                 )]
             }

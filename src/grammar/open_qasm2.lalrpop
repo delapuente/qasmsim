@@ -39,12 +39,21 @@ pub Statement: ast::Statement = {
 };
 
 GateDefinition: ast::Statement = {
-    docstring? <GateDeclaration> "{" "}" =>
-        ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
-    docstring? <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
-        ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops),
-    docstring? "opaque" <GateDeclaration> ";" =>
-        ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2)
+    <docstr:docstring?> <decl:GateDeclaration> "{" "}" =>
+        ast::Statement::GateDecl {
+            signature: (decl.0, decl.1, decl.2, vec![]),
+            docstring: docstr,
+        },
+    <docstr:docstring?> <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
+        ast::Statement::GateDecl {
+            signature: (decl.0, decl.1, decl.2, ops),
+            docstring: docstr,
+        },
+    <docstr:docstring?> "opaque" <decl:GateDeclaration> ";" =>
+        ast::Statement::OpaqueGateDecl {
+            signature: (decl.0, decl.1, decl.2),
+            docstring: docstr,
+        },
 };
 
 Include: ast::Statement = {

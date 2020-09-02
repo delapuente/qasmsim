@@ -49,4 +49,8 @@ pub struct Options {
     /// Specify the number of simulations.
     #[structopt(long)]
     pub shots: Option<usize>,
+
+    /// Show gate-related information.
+    #[structopt(long)]
+    pub info: Option<String>,
 }

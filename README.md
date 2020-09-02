@@ -22,7 +22,8 @@ Planned for future versions is:
    - [ ] In the native lib.
    - [ ] In the WASM version.
  - [ ] Add a semantic checker for checking the correctness of the program before runtime.
- - [ ] Semantic comments for documenting the gates.
+ - [x] Semantic comments for documenting the gates.
+ - [ ] Handling opaque gates. Right now they are ignored and calling an opaque gate results in Error, like trying to call an undefined gate.
 
 A sample QASM program can be found here:
 

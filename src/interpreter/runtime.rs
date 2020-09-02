@@ -109,7 +109,7 @@ impl fmt::Display for RuntimeError {
 
 impl error::Error for RuntimeError {}
 
-type Result<T> = std::result::Result<T, RuntimeError>;
+pub(crate) type Result<T> = std::result::Result<T, RuntimeError>;
 
 impl From<SemanticError> for RuntimeError {
     fn from(semantic_error: SemanticError) -> Self {
