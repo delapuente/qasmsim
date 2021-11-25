@@ -628,9 +628,49 @@ mod tests {
                             vec![String::from("q")],
                             vec![]
                         ),
-                        docstring: None
+                        docstring: Some(" Comment 3\n".to_string())
                     },
                     66
+                ),]
+            }
+        );
+    }
+
+    #[test]
+    fn test_multiline_comments() {
+        let source = indoc!(
+            "
+    // Comment 1
+    OPENQASM 2.0;
+    // Comment 2
+
+    // Comment 3
+    // Comment 4
+    gate id q {
+        // Comment 5
+    }
+    // Comment 6
+    "
+        );
+        let lexer = Lexer::new(source);
+        let parser = open_qasm2::OpenQasmProgramParser::new();
+        let tree = parser.parse(lexer).unwrap();
+        assert_eq!(
+            tree,
+            OpenQasmProgram {
+                version: "2.0".to_string(),
+                program: vec![span!(
+                    41,
+                    Statement::GateDecl {
+                        signature: (
+                            String::from("id"),
+                            vec![],
+                            vec![String::from("q")],
+                            vec![]
+                        ),
+                        docstring: Some(" Comment 3\n Comment 4\n".to_string())
+                    },
+                    97
                 ),]
             }
         );
