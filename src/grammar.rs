@@ -622,12 +622,7 @@ mod tests {
                 program: vec![span!(
                     41,
                     Statement::GateDecl {
-                        signature: (
-                            String::from("id"),
-                            vec![],
-                            vec![String::from("q")],
-                            vec![]
-                        ),
+                        signature: (String::from("id"), vec![], vec![String::from("q")], vec![]),
                         docstring: Some(" Comment 3\n".to_string())
                     },
                     66
@@ -662,12 +657,7 @@ mod tests {
                 program: vec![span!(
                     41,
                     Statement::GateDecl {
-                        signature: (
-                            String::from("id"),
-                            vec![],
-                            vec![String::from("q")],
-                            vec![]
-                        ),
+                        signature: (String::from("id"), vec![], vec![String::from("q")], vec![]),
                         docstring: Some(" Comment 3\n Comment 4\n".to_string())
                     },
                     97

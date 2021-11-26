@@ -11,10 +11,10 @@ use crate::{api, statevector::StateVector};
 use crate::error::QasmSimError;
 use crate::interpreter::{Computation, Histogram};
 
+pub use api::get_gate_info;
 pub use api::parse_and_link;
 pub use api::simulate;
 pub use api::simulate_with_shots;
-pub use api::get_gate_info;
 
 macro_rules! measure {
     ($block:expr) => {{

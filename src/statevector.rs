@@ -147,7 +147,7 @@ impl<'a> Measurement<'a> {
 
     pub fn collapse(&mut self, fate: f64) -> bool {
         assert!(
-            0.0 <= fate && fate < 1.0,
+            (0.0..1.0).contains(&fate),
             "Fate must be a f64 value in [0.0, 1.0)"
         );
         let value = (fate >= self.chances[0]) as usize;

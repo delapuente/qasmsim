@@ -233,7 +233,7 @@ pub enum Statement {
         /// representing the body of the gate.
         signature: (String, Vec<String>, Vec<String>, Vec<GateOperation>),
         /// A string representing documentation related to the gate.
-        docstring: Option<String>
+        docstring: Option<String>,
     },
     /// Include statement for linking with gate libraries.
     Include(String),
@@ -245,7 +245,7 @@ pub enum Statement {
         /// and quantum registers. Opaque declarations have no body.
         signature: (String, Vec<String>, Vec<String>),
         /// A string representing documentation related to the gate.
-        docstring: Option<String>
+        docstring: Option<String>,
     },
     /// A wrapper for a quantum operation.
     QuantumOperation(QuantumOperation),

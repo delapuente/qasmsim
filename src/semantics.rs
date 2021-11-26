@@ -172,7 +172,9 @@ impl SemanticsBuilder {
     }
 
     pub fn update_docstring(&mut self, symbol_name: String, docstring: String) {
-        self.semantics.symbol_docstrings.insert(symbol_name, docstring);
+        self.semantics
+            .symbol_docstrings
+            .insert(symbol_name, docstring);
     }
 
     fn new_register(
@@ -241,13 +243,10 @@ pub fn extract_semantics(tree: &ast::OpenQasmProgram) -> Result<Semantics> {
             }
             ast::Statement::GateDecl {
                 signature: (name, real_args, args, operations),
-                docstring
+                docstring,
             } => {
                 if let Some(docstring_content) = docstring {
-                    builder.update_docstring(
-                        name.clone(),
-                        docstring_content.clone()
-                    );
+                    builder.update_docstring(name.clone(), docstring_content.clone());
                 }
                 builder.new_gate(
                     name.clone(),
@@ -256,12 +255,11 @@ pub fn extract_semantics(tree: &ast::OpenQasmProgram) -> Result<Semantics> {
                     operations.to_vec(),
                     location,
                 )?
-            },
+            }
             // TODO: What to do with opaque gates?
             _ => (),
         }
     }
-    dbg!(&builder.semantics);
     Ok(builder.semantics)
 }
 

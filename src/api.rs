@@ -3,11 +3,11 @@ use std::iter::FromIterator;
 
 use crate::error::QasmSimError;
 use crate::grammar::{ast, parse_program};
-use crate::semantics;
 use crate::interpreter;
 use crate::interpreter::runtime::RuntimeError;
 use crate::linker::Linker;
 use crate::qe;
+use crate::semantics;
 
 pub type Result<'src, T> = std::result::Result<T, QasmSimError<'src>>;
 
@@ -49,7 +49,7 @@ fn default_linker() -> Linker {
 /// ```
 pub fn parse_and_link(input: &str) -> Result<'_, ast::OpenQasmProgram> {
     let linker = default_linker();
-    let program = parse_program(&input)?;
+    let program = parse_program(input)?;
     linker
         .link(program)
         .map_err(|err| QasmSimError::from((input, err)))
@@ -113,35 +113,41 @@ type GateSignature = (String, Vec<String>, Vec<String>);
 /// # Ok::<(), qasmsim::QasmSimError>(())
 pub fn get_gate_info<'src>(
     input: &'src str,
-    gate_name: &str
+    gate_name: &str,
 ) -> Result<'src, (String, GateSignature)> {
     let linked = parse_and_link(input)?;
     // TODO: Implement conversion from SemanticError to QasmSimError directly
     // without converting to RuntimeError first.
     let semantics = semantics::extract_semantics(&linked)
-        .map_err(
-            |err| QasmSimError::from((input, RuntimeError::from(err)))
-        )?;
+        .map_err(|err| QasmSimError::from((input, RuntimeError::from(err))))?;
 
-    let docstring = semantics.symbol_docstrings
-        .get(gate_name)
-        .ok_or(QasmSimError::UndefinedGate {
-            source: "",
-            lineno: 0,
-            symbol_name: String::from(gate_name),
-        })?;
+    let docstring =
+        semantics
+            .symbol_docstrings
+            .get(gate_name)
+            .ok_or(QasmSimError::UndefinedGate {
+                source: "",
+                lineno: 0,
+                symbol_name: String::from(gate_name),
+            })?;
 
-    let macro_def = semantics.macro_definitions
-        .get(gate_name)
-        .ok_or(QasmSimError::UndefinedGate {
-            source: "",
-            lineno: 0,
-            symbol_name: String::from(gate_name),
-        })?;
+    let macro_def =
+        semantics
+            .macro_definitions
+            .get(gate_name)
+            .ok_or(QasmSimError::UndefinedGate {
+                source: "",
+                lineno: 0,
+                symbol_name: String::from(gate_name),
+            })?;
 
     Ok((
         docstring.to_string(),
-        (macro_def.0.clone(), macro_def.1.clone(), macro_def.2.clone())
+        (
+            macro_def.0.clone(),
+            macro_def.1.clone(),
+            macro_def.2.clone(),
+        ),
     ))
 }
 
