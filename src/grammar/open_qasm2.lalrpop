@@ -39,12 +39,21 @@ pub Statement: ast::Statement = {
 };
 
 GateDefinition: ast::Statement = {
-    <GateDeclaration> "{" "}" =>
-        ast::Statement::GateDecl(<>.0, <>.1, <>.2, vec![]),
-    <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
-        ast::Statement::GateDecl(decl.0, decl.1, decl.2, ops),
-    "opaque" <GateDeclaration> ";" =>
-        ast::Statement::OpaqueGateDecl(<>.0, <>.1, <>.2)
+    <docstr:docstring?> <decl:GateDeclaration> "{" "}" =>
+        ast::Statement::GateDecl {
+            signature: (decl.0, decl.1, decl.2, vec![]),
+            docstring: docstr,
+        },
+    <docstr:docstring?> <decl:GateDeclaration> "{" <ops:GateOperationList> "}" =>
+        ast::Statement::GateDecl {
+            signature: (decl.0, decl.1, decl.2, ops),
+            docstring: docstr,
+        },
+    <docstr:docstring?> "opaque" <decl:GateDeclaration> ";" =>
+        ast::Statement::OpaqueGateDecl {
+            signature: (decl.0, decl.1, decl.2),
+            docstring: docstr,
+        },
 };
 
 Include: ast::Statement = {
@@ -232,6 +241,7 @@ extern {
         id => Tok::Id { repr: <String> },
         int => Tok::Int { repr: <String> },
         real => Tok::Real { repr: <String> },
-        string => Tok::Str { repr: <String> }
+        string => Tok::Str { repr: <String> },
+        docstring => Tok::DocStr { repr: <String> },
     }
 }

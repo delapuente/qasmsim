@@ -198,6 +198,42 @@ pub enum Tok {
         /// The string as it appears in the source code.
         repr: String,
     },
+    /// A string representing the documentation of a gate.
+    DocStr {
+        /// The string as it appears in the source code after stripping the
+        /// comment marks `\\` and including new lines. For instance, consider
+        /// the following definition:
+        ///
+        /// ```qasm
+        /// // The identity gate, matching the matrix:
+        /// // \[
+        /// //   \mathbb{I} =
+        /// //   \begin{bmatrix}
+        /// //     1 & & \\
+        /// //     & \ddots & \\
+        /// //     & & 1
+        /// //   \end{bmatrix}
+        /// // \]
+        /// gate id q {}
+        /// ```
+        ///
+        /// The `DocString` representation looks like:
+        ///
+        /// ```txt
+        ///  The identity gate, matching the matrix:
+        ///  \[
+        ///    \mathbb{I} =
+        ///    \begin{bmatrix}
+        ///      1 & & \\
+        ///      & \ddots & \\
+        ///      & & 1
+        ///    \end{bmatrix}
+        ///  \]
+        /// ```
+        ///
+        /// Notice the space preceding each line.
+        repr: String,
+    },
 }
 
 impl fmt::Display for Tok {
@@ -242,6 +278,7 @@ impl fmt::Display for Tok {
             Tok::Int { repr } => format!("integer literal `{}`", &repr),
             Tok::Real { repr } => format!("real literal `{}`", &repr),
             Tok::Str { repr } => format!("string literal `\"{}\"`", &repr),
+            Tok::DocStr { repr } => format!("doc string `\"{}\"`", &repr),
         };
         write!(f, "{}", repr)
     }
@@ -274,6 +311,7 @@ enum Mode {
     Version,
     Comment,
     Str,
+    EmitDelayedToken,
 }
 
 #[derive(Debug, Clone)]
@@ -286,6 +324,8 @@ pub(crate) struct Lexer<'input> {
     keywords: HashMap<String, Tok>,
     chars: std::iter::Peekable<CharIndices<'input>>,
     errored: bool,
+    docstring: Option<(Location, String, Location)>,
+    delayed_token: Option<(Location, Tok, Location)>,
 }
 
 impl<'input> Lexer<'input> {
@@ -299,7 +339,42 @@ impl<'input> Lexer<'input> {
             keywords: keywords(),
             chars: input.char_indices().peekable(),
             errored: false,
+            docstring: None,
+            delayed_token: None,
         }
+    }
+
+    fn flush_docstring(&mut self) {
+        self.docstring = None;
+    }
+
+    fn start_docstring(&mut self, start: Location) {
+        if self.docstring.is_some() {
+            panic!("Use `extend_docstring()` to update the docstring.");
+        }
+        self.docstring = Some((start, String::from(""), start));
+    }
+
+    fn extend_docstring(&mut self, addendum: &str) {
+        if self.docstring.is_none() {
+            panic!("No docstring yet. Use `start_docstring()` to start a new docstring.");
+        }
+        if let Some((_, ref mut content, _)) = self.docstring {
+            content.push_str(addendum);
+        }
+    }
+
+    fn update_docstring_end(&mut self, end: Location) {
+        if self.docstring.is_none() {
+            panic!("No docstring yet. Use `start_docstring()` to start a new docstring.");
+        }
+        if let Some(docstring_span) = self.docstring.as_mut() {
+            docstring_span.2 = end;
+        }
+    }
+
+    fn is_building_docstring(&self) -> bool {
+        self.docstring.is_some()
     }
 
     fn try_pattern(&mut self, re: &Regex) -> Option<String> {
@@ -340,7 +415,8 @@ impl<'input> Iterator for Lexer<'input> {
         lazy_static! {
             static ref NEW_LINE: Regex = Regex::new(r"^\n").unwrap();
             static ref ALL_THE_LINE: Regex = Regex::new(r"^[^\n]*").unwrap();
-            static ref BLANK: Regex = Regex::new(r"^\s+").unwrap();
+            // TODO: Should be \s - \n, this will not match other forms of Unicode blank space.
+            static ref BLANK: Regex = Regex::new(r"^[ \t]+").unwrap();
             static ref GATE: Regex = Regex::new(r"^(CX|U)\b").unwrap();
             static ref OPENQASM: Regex = Regex::new(r"^OPENQASM\b").unwrap();
             static ref VERSION: Regex = Regex::new(r"^([0-9]+\.[0-9]+)").unwrap();
@@ -352,26 +428,64 @@ impl<'input> Iterator for Lexer<'input> {
         }
 
         loop {
+            let start = self.offset;
+
+            // TODO: Should I include delayed actions as a general concept?
+            // For instance, to emit more than one token at some point as
+            // it happens when emitting `DocStr` and `Gate`.
+
+            // #[mode(EmitDelayedToken)]
+            match self.mode.get(0) {
+                Some(Mode::EmitDelayedToken) => {
+                    if self.delayed_token.is_none() {
+                        unreachable!("Trying to return a non existend delayed gate.");
+                    }
+                    let delayed_token = self.delayed_token.as_ref().unwrap().clone();
+                    self.delayed_token = None;
+                    self.mode.pop_front();
+                    return Some(Ok(delayed_token));
+                }
+                _ => (),
+            }
+
+            // TODO: After delayed actions should come end of iteration if
+            // error (perhaps this should happen the very first) or if EOF.
+
             if self.errored || self.chars.peek().is_none() {
                 return None;
             }
 
-            if let Some(_new_line) = self.try_pattern(&NEW_LINE) {
+            // TODO: Finally they come the regular lexer actions per active mode.
+
+            // TODO: Should transform this into
+            // `match self.mode.get(0) { ... }` to generalize the stacked lexer
+            // structure and start recognizing syntax patterns to extract into
+            // macros.
+            if let Some(new_line) = self.try_pattern(&NEW_LINE) {
                 self.lineno += 1;
                 self.lineoffset = self.offset;
-                // TODO: Should I force a new loop? It seems consistent with a
-                // line-oriented tokenization. If generalizing the lexer, I should
-                // consider enabling/disabling multiline support and, if disables,
-                // treat `\n` as a regular character.
+                match self.mode.get(0) {
+                    Some(Mode::Comment) => {
+                        self.extend_docstring(&new_line);
+                        self.update_docstring_end(self.location(start + new_line.len()));
+                        self.mode.pop_front();
+                    }
+                    _ => {
+                        self.flush_docstring();
+                    }
+                }
                 continue;
             }
 
-            // #[modes(all)]
-            if let Some(_blank) = self.try_pattern(&BLANK) {
-                continue;
+            // #[modes(Base, Version)]
+            match self.mode.get(0) {
+                Some(Mode::Base) | Some(Mode::Version) => {
+                    if let Some(_blank) = self.try_pattern(&BLANK) {
+                        continue;
+                    }
+                }
+                _ => (),
             }
-
-            let start = self.offset;
 
             // #[modes(Base)]
             match self.mode.get(0) {
@@ -420,8 +534,9 @@ impl<'input> Iterator for Lexer<'input> {
             // #[modes(Comment)]
             match self.mode.get(0) {
                 Some(Mode::Comment) => {
-                    if self.try_pattern(&ALL_THE_LINE).is_some() {
-                        self.mode.pop_front();
+                    if let Some(content) = self.try_pattern(&ALL_THE_LINE) {
+                        self.extend_docstring(&content);
+                        self.update_docstring_end(self.location(start + content.len()));
                         continue;
                     }
                 }
@@ -454,7 +569,26 @@ impl<'input> Iterator for Lexer<'input> {
                 let end = start + repr.len();
                 return Some(match self.keywords.get(&repr) {
                     None => Ok((self.location(start), Tok::Id { repr }, self.location(end))),
-                    Some(token) => Ok((self.location(start), (*token).clone(), self.location(end))),
+                    Some(token) => {
+                        let spanned = (self.location(start), (*token).clone(), self.location(end));
+                        let is_emitting_gate = *token == Tok::Gate || *token == Tok::Opaque;
+                        let emit_docstring = self.is_building_docstring() && is_emitting_gate;
+                        if !emit_docstring {
+                            self.flush_docstring();
+                            Ok(spanned)
+                        } else {
+                            self.mode.push_front(Mode::EmitDelayedToken);
+                            self.delayed_token = Some(spanned);
+
+                            let (start, content, end) = self.docstring.as_ref().unwrap();
+                            let docstring = Tok::DocStr {
+                                repr: content.clone(),
+                            };
+                            let docstring_span = (*start, docstring, *end);
+                            self.flush_docstring();
+                            Ok(docstring_span)
+                        }
+                    }
                 });
             }
 
@@ -519,6 +653,9 @@ impl<'input> Iterator for Lexer<'input> {
                     "->" => Tok::Arrow,
                     "==" => Tok::Equal,
                     "//" => {
+                        if !self.is_building_docstring() {
+                            self.start_docstring(self.location(start));
+                        }
                         self.mode.push_front(Mode::Comment);
                         continue;
                     }
@@ -732,6 +869,64 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_comments_right_before_gate_token_are_docstring() {
+        let source = "// Documentation of the\n// id gate\ngate";
+        let lexer = Lexer::new(source);
+        assert_eq!(
+            lexer.collect::<Vec<_>>(),
+            vec![
+                Ok((
+                    Location(0),
+                    Tok::DocStr {
+                        repr: String::from(" Documentation of the\n id gate\n")
+                    },
+                    Location(35)
+                )),
+                Ok((Location(35), Tok::Gate, Location(39)))
+            ]
+        );
+    }
+
+    #[test]
+    fn test_comments_right_before_opaque_gates_are_docstring() {
+        let source = "// Documentation of the\n// id gate\nopaque gate";
+        let lexer = Lexer::new(source);
+        assert_eq!(
+            lexer.collect::<Vec<_>>(),
+            vec![
+                Ok((
+                    Location(0),
+                    Tok::DocStr {
+                        repr: String::from(" Documentation of the\n id gate\n")
+                    },
+                    Location(35)
+                )),
+                Ok((Location(35), Tok::Opaque, Location(41))),
+                Ok((Location(42), Tok::Gate, Location(46)))
+            ]
+        );
+    }
+
+    #[test]
+    fn test_only_comments_right_before_gate_token_are_docstring() {
+        let source = "// No docstring\n\n// Documentation of the\n// id gate\ngate";
+        let lexer = Lexer::new(source);
+        assert_eq!(
+            lexer.collect::<Vec<_>>(),
+            vec![
+                Ok((
+                    Location(17),
+                    Tok::DocStr {
+                        repr: String::from(" Documentation of the\n id gate\n")
+                    },
+                    Location(52)
+                )),
+                Ok((Location(52), Tok::Gate, Location(56)))
+            ]
+        );
+    }
+
     mod regressions {
         use super::*;
 
@@ -785,6 +980,25 @@ mod tests {
                 vec![Err(LexicalError {
                     location: Location(0)
                 })]
+            );
+        }
+
+        #[test]
+        fn test_blank_lines_are_considered_empty_lines_and_separate_comments() {
+            let source = "// No docstring\n  \n// Documentation of the\n// id gate\ngate";
+            let lexer = Lexer::new(source);
+            assert_eq!(
+                lexer.collect::<Vec<_>>(),
+                vec![
+                    Ok((
+                        Location(19),
+                        Tok::DocStr {
+                            repr: String::from(" Documentation of the\n id gate\n")
+                        },
+                        Location(54)
+                    )),
+                    Ok((Location(54), Tok::Gate, Location(58)))
+                ]
             );
         }
     }

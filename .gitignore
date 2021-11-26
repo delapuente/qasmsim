@@ -1,4 +1,4 @@
-test.qasm
+**/*.qasm
 /target
 **/*.rs.bk
 Cargo.lock

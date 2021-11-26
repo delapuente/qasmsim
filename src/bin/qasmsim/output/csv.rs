@@ -39,7 +39,7 @@ pub fn print(path: &mut PathBuf, result: &Execution, options: &Options) {
             writer_ref,
             result.statevector(),
             result.probabilities(),
-            &options,
+            options,
         )
         .expect("writes");
     }

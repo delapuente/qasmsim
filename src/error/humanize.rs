@@ -53,14 +53,14 @@ fn human_description(error: &QasmSimError) -> Option<HumanDescription> {
             expected,
             ..
         } => {
-            let expectation = expectation(&expected);
+            let expectation = expectation(expected);
             Some(HumanDescription {
                 msg: format!("{}, found EOF", &expectation),
                 lineno: *lineno,
                 startpos: *startpos,
                 endpos: *endpos,
                 linesrc: (*source).into(),
-                help: Some(format!("{} here", hint(&expected))),
+                help: Some(format!("{} here", hint(expected))),
             })
         }
         QasmSimError::UnexpectedToken {
@@ -76,9 +76,9 @@ fn human_description(error: &QasmSimError) -> Option<HumanDescription> {
 
             let mut msg = format!("unexpected \"{}\" found", &token);
             let help = if !expected.is_empty() {
-                let expectation = expectation(&expected);
+                let expectation = expectation(expected);
                 msg = format!("{}, found \"{}\"", &expectation, &token);
-                Some(format!("{} before this", hint(&expected)))
+                Some(format!("{} before this", hint(expected)))
             } else {
                 None
             };

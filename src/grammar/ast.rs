@@ -119,30 +119,33 @@ pub struct OpenQasmProgram {
 ///
 /// let library = OpenQasmLibrary {
 ///     definitions: vec![
-///         Statement::GateDecl(
-///             "h".to_string(),
-///             vec![],
-///             vec!["q".to_string()],
-///             vec![
-///                 GateOperation::Unitary(
-///                     UnitaryOperation(
-///                        "U".to_string(),
-///                         vec![
-///                             Expression::Op(
-///                                 OpCode::Div,
-///                                 Box::new(Expression::Pi),
-///                                 Box::new(Expression::Int(2))
-///                             ),
-///                             Expression::Int(0),
-///                             Expression::Pi
-///                         ],
-///                         vec![
-///                             Argument::Item("q".to_string(), 0)
-///                         ]
+///         Statement::GateDecl {
+///             signature: (
+///                 "h".to_string(),
+///                 vec![],
+///                 vec!["q".to_string()],
+///                 vec![
+///                     GateOperation::Unitary(
+///                         UnitaryOperation(
+///                            "U".to_string(),
+///                             vec![
+///                                 Expression::Op(
+///                                     OpCode::Div,
+///                                     Box::new(Expression::Pi),
+///                                     Box::new(Expression::Int(2))
+///                                 ),
+///                                 Expression::Int(0),
+///                                 Expression::Pi
+///                             ],
+///                             vec![
+///                                 Argument::Item("q".to_string(), 0)
+///                             ]
+///                         )
 ///                     )
-///                 )
-///             ]
-///         )
+///                 ]
+///             ),
+///             docstring: None
+///         }
 ///     ]
 /// };
 #[derive(Debug, Clone, PartialEq)]
@@ -223,17 +226,27 @@ pub enum Statement {
     QRegDecl(String, usize),
     /// Classical register declaration with name and size.
     CRegDecl(String, usize),
-    /// Quantum gate declaration with name, list of formal real parameters,
-    /// list of formal quantum registers, and a list of [`GateOperation`]
-    /// representing the body of the gate.
-    GateDecl(String, Vec<String>, Vec<String>, Vec<GateOperation>),
+    /// Quantum gate declaration with signature and docstring, if any.
+    GateDecl {
+        /// The signature includes the name, list of formal real parameters,
+        /// list of formal quantum registers, and a list of [`GateOperation`]
+        /// representing the body of the gate.
+        signature: (String, Vec<String>, Vec<String>, Vec<GateOperation>),
+        /// A string representing documentation related to the gate.
+        docstring: Option<String>,
+    },
     /// Include statement for linking with gate libraries.
     Include(String),
     /// A wrapper for the barrier pragma.
     Barrier(BarrierPragma),
-    /// Opaque gate declaration with name and formal lists of real parameters
-    /// and quantum registers. Opaque declarations have no body.
-    OpaqueGateDecl(String, Vec<String>, Vec<String>),
+    /// Opaque gate declaration with signature and docstring, if any.
+    OpaqueGateDecl {
+        /// The signature inlcudes the name and formal lists of real parameters
+        /// and quantum registers. Opaque declarations have no body.
+        signature: (String, Vec<String>, Vec<String>),
+        /// A string representing documentation related to the gate.
+        docstring: Option<String>,
+    },
     /// A wrapper for a quantum operation.
     QuantumOperation(QuantumOperation),
     /// A wrapper for making a quantum operation to simulate just if certain

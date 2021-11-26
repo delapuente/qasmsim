@@ -65,7 +65,7 @@ impl Linker {
         for (index, span) in tree.program.iter().enumerate() {
             if let ast::Statement::Include(libpath) = &*span.node {
                 let source = self
-                    .sources(&libpath)
+                    .sources(libpath)
                     .map_err(|_| LinkerError::LibraryNotFound {
                         location: span.boundaries.0,
                         libpath: libpath.into(),
@@ -128,7 +128,7 @@ mod tests {
             "test.inc".to_owned(),
             "gate test () q {}".to_owned(),
         )]));
-        let tree = parse_program(&source).unwrap();
+        let tree = parse_program(source).unwrap();
         let linked_tree = linker.link(tree).unwrap();
         assert_eq!(
             linked_tree,
@@ -136,12 +136,10 @@ mod tests {
                 version: "2.0".to_owned(),
                 program: vec![span!(
                     14,
-                    ast::Statement::GateDecl(
-                        "test".to_owned(),
-                        vec![],
-                        vec!["q".to_string()],
-                        vec![]
-                    ),
+                    ast::Statement::GateDecl {
+                        signature: ("test".to_owned(), vec![], vec!["q".to_string()], vec![]),
+                        docstring: None
+                    },
                     33
                 )]
             }

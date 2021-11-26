@@ -99,6 +99,7 @@ pub struct MacroDefinition(
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Semantics {
     pub macro_definitions: HashMap<String, MacroDefinition>,
+    pub symbol_docstrings: HashMap<String, String>,
     pub register_table: HashMap<String, RegisterEntry>,
     /// Map quantum registers to a unique unified register while classical
     /// registers map to themselves.
@@ -170,6 +171,12 @@ impl SemanticsBuilder {
         Ok(())
     }
 
+    pub fn update_docstring(&mut self, symbol_name: String, docstring: String) {
+        self.semantics
+            .symbol_docstrings
+            .insert(symbol_name, docstring);
+    }
+
     fn new_register(
         &mut self,
         name: String,
@@ -234,13 +241,22 @@ pub fn extract_semantics(tree: &ast::OpenQasmProgram) -> Result<Semantics> {
             ast::Statement::CRegDecl(name, size) => {
                 builder.new_classical_register(name.clone(), *size, location)?
             }
-            ast::Statement::GateDecl(name, real_args, args, operations) => builder.new_gate(
-                name.clone(),
-                real_args.to_vec(),
-                args.to_vec(),
-                operations.to_vec(),
-                location,
-            )?,
+            ast::Statement::GateDecl {
+                signature: (name, real_args, args, operations),
+                docstring,
+            } => {
+                if let Some(docstring_content) = docstring {
+                    builder.update_docstring(name.clone(), docstring_content.clone());
+                }
+                builder.new_gate(
+                    name.clone(),
+                    real_args.to_vec(),
+                    args.to_vec(),
+                    operations.to_vec(),
+                    location,
+                )?
+            }
+            // TODO: What to do with opaque gates?
             _ => (),
         }
     }

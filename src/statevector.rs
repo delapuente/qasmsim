@@ -147,7 +147,7 @@ impl<'a> Measurement<'a> {
 
     pub fn collapse(&mut self, fate: f64) -> bool {
         assert!(
-            0.0 <= fate && fate < 1.0,
+            (0.0..1.0).contains(&fate),
             "Fate must be a f64 value in [0.0, 1.0)"
         );
         let value = (fate >= self.chances[0]) as usize;
@@ -167,8 +167,7 @@ impl<'a> Measurement<'a> {
 /// the f64 margin for each of the complex components.
 pub fn assert_approx_eq(v1: &StateVector, v2: &StateVector) {
     if !v1.approx_eq(v2, complex::ComplexMargin::default()) {
-        assert!(
-            false,
+        panic!(
             "assertion failed `(left ~= right)`\n  left: `{:?}`\n right: `{:?}`",
             v1, v2
         );

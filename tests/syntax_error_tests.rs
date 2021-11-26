@@ -14,7 +14,7 @@ fn test_missing_semicolon_at_eof() {
     OPENQASM 2.0;
     qreg q[10]"
     );
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::UnexpectedEOF {
@@ -36,7 +36,7 @@ fn test_missing_semicolon_almost_at_eof() {
     qreg q[10]
   "
     );
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::UnexpectedEOF {
@@ -59,7 +59,7 @@ fn test_missing_semicolon_between_two_instructions() {
     qreg r[10];
   "
     );
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::UnexpectedToken {
@@ -81,7 +81,7 @@ fn test_missing_bracket() {
     qreg q[10;
   "
     );
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::UnexpectedToken {
@@ -102,7 +102,7 @@ fn test_missing_openqasm_header() {
     qreg q[10];
   "
     );
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::UnexpectedToken {
@@ -124,7 +124,7 @@ fn test_misspelling_openqasm_header() {
     qreg q[10];
   "
     );
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::InvalidToken {
@@ -146,7 +146,7 @@ fn test_missing_openqasm_version() {
     qreg q[10];
   "
     );
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::UnexpectedToken {
@@ -173,7 +173,7 @@ fn test_missing_arrow() {
     );
     // XXX: I have no idea why lalrpop is expecting something different than an
     // arrow here.
-    let err = qasmsim::run(&source, None).unwrap_err();
+    let err = qasmsim::run(source, None).unwrap_err();
     assert_eq!(
         err,
         QasmSimError::UnexpectedToken {

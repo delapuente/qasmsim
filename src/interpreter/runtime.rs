@@ -109,7 +109,7 @@ impl fmt::Display for RuntimeError {
 
 impl error::Error for RuntimeError {}
 
-type Result<T> = std::result::Result<T, RuntimeError>;
+pub(crate) type Result<T> = std::result::Result<T, RuntimeError>;
 
 impl From<SemanticError> for RuntimeError {
     fn from(semantic_error: SemanticError) -> Self {
@@ -162,7 +162,7 @@ impl<'src, 'program> Runtime<'program> {
             self.location = Some(&span.boundaries.0);
             match &*span.node {
                 ast::Statement::QuantumOperation(operation) => {
-                    self.apply_quantum_operation(&operation)?;
+                    self.apply_quantum_operation(operation)?;
                 }
                 ast::Statement::Conditional(register, test, operation) => {
                     let actual_register = (register).clone();
@@ -177,7 +177,7 @@ impl<'src, 'program> Runtime<'program> {
                         _ => unreachable!("cannot index a register inside the condition"),
                     };
                     if value == test {
-                        self.apply_quantum_operation(&operation)?;
+                        self.apply_quantum_operation(operation)?;
                     }
                 }
                 _ => (),
@@ -264,15 +264,15 @@ impl<'src, 'program> Runtime<'program> {
         let expression_solver = ExpressionSolver::new(real_bindings);
         let mut solved = Vec::new();
         for expression in exprs {
-            let value = expression_solver
-                .solve(&expression)
-                .map_err(|symbol_name| RuntimeError::SymbolNotFound {
+            let value = expression_solver.solve(expression).map_err(|symbol_name| {
+                RuntimeError::SymbolNotFound {
                     location: *self
                         .location
                         .expect("after `apply_gates()`, the location of the statement"),
                     symbol_name,
                     expected: QasmType::RealValue,
-                })?;
+                }
+            })?;
             solved.push(value);
         }
         Ok(solved)
@@ -460,10 +460,7 @@ impl<'src, 'program> Runtime<'program> {
 
         let whole_registers: Vec<&ast::Argument> = args
             .iter()
-            .filter(|arg| match arg {
-                ast::Argument::Id(_) => true,
-                _ => false,
-            })
+            .filter(|arg| matches!(arg, ast::Argument::Id(_)))
             .collect();
 
         // Return a one-iteration range, `specify()` takes care of ignoring Item arugments.

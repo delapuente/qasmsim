@@ -452,10 +452,7 @@ fn extract_line(
     }
 
     let startpos = offset - start;
-    let endpos = match endoffset {
-        None => None,
-        Some(endoffset) => Some(endoffset - start),
-    };
+    let endpos = endoffset.map(|endoffset| endoffset - start);
 
     (&doc[start..end], linecount, startpos, endpos)
 }

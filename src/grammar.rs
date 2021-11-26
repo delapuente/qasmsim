@@ -93,24 +93,27 @@ parse_functions! {
     ///
     /// assert_eq!(library_ast, OpenQasmLibrary{
     ///     definitions: vec![
-    ///         Statement::GateDecl(
-    ///             "idle".to_string(),
-    ///             vec![],
-    ///             vec!["q".to_string()],
-    ///             vec![
-    ///                 GateOperation::Unitary(
-    ///                     UnitaryOperation(
-    ///                         "U".to_string(),
-    ///                         vec![
-    ///                             Expression::Real(0.0),
-    ///                             Expression::Real(0.0),
-    ///                             Expression::Real(0.0)
-    ///                         ],
-    ///                         vec![Argument::Id("q".to_string())]
+    ///         Statement::GateDecl {
+    ///             signature: (
+    ///                 "idle".to_string(),
+    ///                 vec![],
+    ///                 vec!["q".to_string()],
+    ///                 vec![
+    ///                     GateOperation::Unitary(
+    ///                         UnitaryOperation(
+    ///                             "U".to_string(),
+    ///                             vec![
+    ///                                 Expression::Real(0.0),
+    ///                                 Expression::Real(0.0),
+    ///                                 Expression::Real(0.0)
+    ///                             ],
+    ///                             vec![Argument::Id("q".to_string())]
+    ///                         )
     ///                     )
-    ///                 )
-    ///             ]
-    ///         )
+    ///                 ]
+    ///             ),
+    ///             docstring: None
+    ///         }
     ///     ]
     /// });
     /// # Ok::<(), QasmSimError>(())
@@ -156,24 +159,27 @@ parse_functions! {
     ///     version: "2.0".to_string(),
     ///     program: vec![Span{
     ///         boundaries: (Location(15), Location(46)),
-    ///         node: Box::new(Statement::GateDecl(
-    ///             "idle".to_string(),
-    ///             vec![],
-    ///             vec!["q".to_string()],
-    ///             vec![
-    ///                 GateOperation::Unitary(
-    ///                     UnitaryOperation(
-    ///                         "U".to_string(),
-    ///                         vec![
-    ///                             Expression::Real(0.0),
-    ///                             Expression::Real(0.0),
-    ///                             Expression::Real(0.0)
-    ///                         ],
-    ///                         vec![Argument::Id("q".to_string())]
+    ///         node: Box::new(Statement::GateDecl {
+    ///             signature: (
+    ///                 "idle".to_string(),
+    ///                 vec![],
+    ///                 vec!["q".to_string()],
+    ///                 vec![
+    ///                     GateOperation::Unitary(
+    ///                         UnitaryOperation(
+    ///                             "U".to_string(),
+    ///                             vec![
+    ///                                 Expression::Real(0.0),
+    ///                                 Expression::Real(0.0),
+    ///                                 Expression::Real(0.0)
+    ///                             ],
+    ///                             vec![Argument::Id("q".to_string())]
+    ///                         )
     ///                     )
-    ///                 )
-    ///             ]
-    ///         ))
+    ///                 ]
+    ///             ),
+    ///             docstring: None
+    ///         })
     ///     }]
     /// });
     /// # Ok::<(), QasmSimError>(())
@@ -211,24 +217,27 @@ parse_functions! {
     ///
     /// assert_eq!(statement_list, vec![Span{
     ///     boundaries: (Location(0), Location(29)),
-    ///     node: Box::new(Statement::GateDecl(
-    ///         "idle".to_string(),
-    ///         vec![],
-    ///         vec!["q".to_string()],
-    ///         vec![
-    ///             GateOperation::Unitary(
-    ///                 UnitaryOperation(
-    ///                     "U".to_string(),
-    ///                     vec![
-    ///                         Expression::Real(0.0),
-    ///                         Expression::Real(0.0),
-    ///                         Expression::Real(0.0)
-    ///                     ],
-    ///                     vec![Argument::Id("q".to_string())]
+    ///     node: Box::new(Statement::GateDecl {
+    ///         signature: (
+    ///             "idle".to_string(),
+    ///             vec![],
+    ///             vec!["q".to_string()],
+    ///             vec![
+    ///                 GateOperation::Unitary(
+    ///                     UnitaryOperation(
+    ///                         "U".to_string(),
+    ///                         vec![
+    ///                             Expression::Real(0.0),
+    ///                             Expression::Real(0.0),
+    ///                             Expression::Real(0.0)
+    ///                         ],
+    ///                         vec![Argument::Id("q".to_string())]
+    ///                     )
     ///                 )
-    ///             )
-    ///         ]
-    ///     ))
+    ///             ]
+    ///         ),
+    ///         docstring: None
+    ///     })
     /// }]);
     /// # Ok::<(), QasmSimError>(())
     /// ```
@@ -260,24 +269,27 @@ parse_functions! {
     ///
     /// let statement_ast = parse_statement("gate idle q { U(0, 0, 0) q; }")?;
     ///
-    /// assert_eq!(statement_ast, Statement::GateDecl(
-    ///     "idle".to_string(),
-    ///     vec![],
-    ///     vec!["q".to_string()],
-    ///     vec![
-    ///         GateOperation::Unitary(
-    ///             UnitaryOperation(
-    ///                 "U".to_string(),
-    ///                 vec![
-    ///                     Expression::Real(0.0),
-    ///                     Expression::Real(0.0),
-    ///                     Expression::Real(0.0)
-    ///                 ],
-    ///                 vec![Argument::Id("q".to_string())]
+    /// assert_eq!(statement_ast, Statement::GateDecl {
+    ///     signature: (
+    ///         "idle".to_string(),
+    ///         vec![],
+    ///         vec!["q".to_string()],
+    ///         vec![
+    ///             GateOperation::Unitary(
+    ///                 UnitaryOperation(
+    ///                     "U".to_string(),
+    ///                     vec![
+    ///                         Expression::Real(0.0),
+    ///                         Expression::Real(0.0),
+    ///                         Expression::Real(0.0)
+    ///                     ],
+    ///                     vec![Argument::Id("q".to_string())]
+    ///                 )
     ///             )
-    ///         )
-    ///     ]
-    /// ));
+    ///         ]
+    ///     ),
+    ///     docstring: None
+    /// });
     /// # Ok::<(), QasmSimError>(())
     /// ```
     ///
@@ -342,7 +354,10 @@ mod tests {
         let tree = parser.parse(lexer).unwrap();
         assert_eq!(
             tree,
-            Statement::GateDecl("id".to_string(), vec![], vec!["q".to_string()], vec![])
+            Statement::GateDecl {
+                signature: ("id".to_string(), vec![], vec!["q".to_string()], vec![]),
+                docstring: None,
+            }
         );
     }
 
@@ -356,7 +371,10 @@ mod tests {
         let tree = parser.parse(lexer).unwrap();
         assert_eq!(
             tree,
-            Statement::GateDecl("id".to_string(), vec![], vec!["q".to_string()], vec![])
+            Statement::GateDecl {
+                signature: ("id".to_string(), vec![], vec!["q".to_string()], vec![]),
+                docstring: None,
+            }
         );
     }
 
@@ -372,16 +390,19 @@ mod tests {
         let tree = parser.parse(lexer).unwrap();
         assert_eq!(
             tree,
-            Statement::GateDecl(
-                "cx".to_string(),
-                vec![],
-                vec!["c".to_string(), "t".to_string()],
-                vec![GateOperation::Unitary(UnitaryOperation(
-                    "CX".to_owned(),
+            Statement::GateDecl {
+                signature: (
+                    "cx".to_string(),
                     vec![],
-                    vec![Argument::Id("c".to_owned()), Argument::Id("t".to_owned())]
-                ))]
-            )
+                    vec!["c".to_string(), "t".to_string()],
+                    vec![GateOperation::Unitary(UnitaryOperation(
+                        "CX".to_owned(),
+                        vec![],
+                        vec![Argument::Id("c".to_owned()), Argument::Id("t".to_owned())]
+                    ))]
+                ),
+                docstring: None
+            }
         );
     }
 
@@ -397,20 +418,23 @@ mod tests {
         let tree = parser.parse(lexer).unwrap();
         assert_eq!(
             tree,
-            Statement::GateDecl(
-                "u".to_string(),
-                vec!["theta".to_string(), "phi".to_string(), "lambda".to_string()],
-                vec!["q".to_string()],
-                vec![GateOperation::Unitary(UnitaryOperation(
-                    "U".to_owned(),
-                    vec![
-                        Expression::Id("theta".to_owned()),
-                        Expression::Id("phi".to_owned()),
-                        Expression::Id("lambda".to_owned()),
-                    ],
-                    vec![Argument::Id("q".to_owned())]
-                ))]
-            )
+            Statement::GateDecl {
+                signature: (
+                    "u".to_string(),
+                    vec!["theta".to_string(), "phi".to_string(), "lambda".to_string()],
+                    vec!["q".to_string()],
+                    vec![GateOperation::Unitary(UnitaryOperation(
+                        "U".to_owned(),
+                        vec![
+                            Expression::Id("theta".to_owned()),
+                            Expression::Id("phi".to_owned()),
+                            Expression::Id("lambda".to_owned()),
+                        ],
+                        vec![Argument::Id("q".to_owned())]
+                    ))]
+                ),
+                docstring: None
+            }
         );
     }
 
@@ -426,16 +450,19 @@ mod tests {
         let tree = parser.parse(lexer).unwrap();
         assert_eq!(
             tree,
-            Statement::GateDecl(
-                "rz".to_string(),
-                vec!["phi".to_string()],
-                vec!["a".to_string()],
-                vec![GateOperation::Unitary(UnitaryOperation(
-                    "u1".to_string(),
-                    vec![Expression::Id("phi".to_string())],
-                    vec![Argument::Id("a".to_string())]
-                ))]
-            )
+            Statement::GateDecl {
+                signature: (
+                    "rz".to_string(),
+                    vec!["phi".to_string()],
+                    vec!["a".to_string()],
+                    vec![GateOperation::Unitary(UnitaryOperation(
+                        "u1".to_string(),
+                        vec![Expression::Id("phi".to_string())],
+                        vec![Argument::Id("a".to_string())]
+                    ))]
+                ),
+                docstring: None
+            }
         );
     }
 
@@ -593,14 +620,47 @@ mod tests {
             OpenQasmProgram {
                 version: "2.0".to_string(),
                 program: vec![span!(
-                    54,
-                    Statement::GateDecl(
-                        String::from("id"),
-                        vec![],
-                        vec![String::from("q")],
-                        vec![]
-                    ),
+                    41,
+                    Statement::GateDecl {
+                        signature: (String::from("id"), vec![], vec![String::from("q")], vec![]),
+                        docstring: Some(" Comment 3\n".to_string())
+                    },
                     66
+                ),]
+            }
+        );
+    }
+
+    #[test]
+    fn test_multiline_comments() {
+        let source = indoc!(
+            "
+    // Comment 1
+    OPENQASM 2.0;
+    // Comment 2
+
+    // Comment 3
+    // Comment 4
+    gate id q {
+        // Comment 5
+    }
+    // Comment 6
+    "
+        );
+        let lexer = Lexer::new(source);
+        let parser = open_qasm2::OpenQasmProgramParser::new();
+        let tree = parser.parse(lexer).unwrap();
+        assert_eq!(
+            tree,
+            OpenQasmProgram {
+                version: "2.0".to_string(),
+                program: vec![span!(
+                    41,
+                    Statement::GateDecl {
+                        signature: (String::from("id"), vec![], vec![String::from("q")], vec![]),
+                        docstring: Some(" Comment 3\n Comment 4\n".to_string())
+                    },
+                    97
                 ),]
             }
         );
