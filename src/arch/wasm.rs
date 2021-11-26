@@ -25,7 +25,7 @@ macro_rules! adapt_parse_functions {
             $(#[$attr])* $vis fn $funcname(
                 $param: &str
             ) -> Result<JsValue, JsValue> {
-                $parsefunc(source)
+                $parsefunc($param)
                     .map(|v| serde_wasm_bindgen::to_value(&v).unwrap())
                     .map_err(|err| err.into())
             }
