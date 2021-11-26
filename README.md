@@ -22,7 +22,6 @@ Planned for future versions is:
    - [ ] In the native lib.
    - [ ] In the WASM version.
  - [ ] Add a semantic checker for checking the correctness of the program before runtime.
- - [x] Semantic comments for documenting the gates.
  - [ ] Handling opaque gates. Right now they are ignored and calling an opaque gate results in Error, like trying to call an undefined gate.
 
 A sample QASM program can be found here:
@@ -55,7 +54,7 @@ See more options with:
 
 ```
 $ qasmsim --help
-qasmsim 1.0.0
+qasmsim 1.1.0
 A QASM interpreter and quantum simulator in Rust.
 
 USAGE:
@@ -73,6 +72,7 @@ FLAGS:
     -v                     Verbosity of the output
 
 OPTIONS:
+        --info <info>      Show gate-related information
         --out <out>        Output files prefix, print in the stdout if not present. The output format of each file is
                            CSV. At most, three files are created with the names out.memory.csv, out.state.csv and
                            out.times.csv
