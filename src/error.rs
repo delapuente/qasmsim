@@ -63,7 +63,7 @@ pub type SrcAndErr<'src, E> = (&'src str, E);
 /// [`RuntimeError`]: ./enum.RuntimeError.html
 /// [`LinkerError`]: ../linker/enum.LinkerError.html
 /// [`SrcAndErr`]: ./type.SrcAndErr.html
-/// [`simulate]: ../fn.simulate.html
+/// [`simulate()`]: ../fn.simulate.html
 /// [`map_err`]: ../../std/result/enum.Result.html#method.map_err
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

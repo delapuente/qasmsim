@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/qasmsim/1.1.0")]
+#![doc(html_root_url = "https://docs.rs/qasmsim/1.2.0")]
 //! The `qasmsim` library includes a
 //! [OPENQASM 2.0](https://github.com/Qiskit/openqasm/blob/master/spec-human/)
 //! parser and interpreter, along with a statevector simulator. Compiled with
@@ -31,7 +31,7 @@
 //!
 //! ```sh
 //! $ qasmsim --help
-//! qasmsim 1.0.0
+//! qasmsim 1.2.0
 //! A QASM interpreter and quantum simulator in Rust.
 //!
 //! USAGE:
@@ -49,6 +49,7 @@
 //!     -v                     Verbosity of the output
 //!
 //! OPTIONS:
+//!         --info <info>      Show gate-related information
 //!         --out <out>        Output files prefix, print in the stdout if not present. The output format of each file is
 //!                            CSV. At most, three files are created with the names out.memory.csv, out.state.csv and
 //!                            out.times.csv

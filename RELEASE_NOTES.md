@@ -1,5 +1,34 @@
 # Release notes
 
+## Version 1.2.0
+
+This version adds documenting comments to OpenQASM 2.0. The specification
+mentions the comment before a gate definition may document the gate. The
+sepecification does not mention if it is just one comment or all the comments
+that precede the gate definition. This implementation considers all the comments
+immediately before the line of the gate definition as documentation.
+
+```
+// This comment is not documentation.
+
+// This is also
+// not documentation either.
+
+// This comment, and the next one,
+// are the documentation of the following gate.
+gate id q { }
+```
+
+### Features
+- The command line tool has now the `--info` option to extract the gate
+documentation from the source code.
+- The crate has a new function, [`get_gate_info`] to extract the signature of a
+gate, and its documentation.
+- The WASM version has a new function, `getGateInfo`, to extract the signature
+of a gate, and its documentation.
+
+[`get_gate_info`](https://docs.rs/qasmsim/latest/qasmsim/fn.get_gate_info.html)
+
 ## Version 1.1.0
 
 This version makes `qasmsim` dual license: [APACHE] and [MIT] as recommended in
