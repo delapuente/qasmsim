@@ -11,7 +11,6 @@ use std::iter::FromIterator;
 use console_error_panic_hook;
 use serde_wasm_bindgen;
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
-use web_sys;
 
 use crate::api;
 use crate::error::QasmSimError;
