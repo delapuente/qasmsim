@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack --config webpack.config.js",
-    "start": "webpack-dev-server",
+    "start": "webpack serve --config webpack.config.js",
     "publish": "gh-pages -d dist"
   },
   "repository": {
@@ -24,15 +24,13 @@
     "url": "https://github.com/delapuente/qasmsim/issues"
   },
   "homepage": "https://github.com/delapuente/qasmsim#readme",
-  "devDependencies": {
-    "copy-webpack-plugin": "^5.0.0",
-    "gh-pages": "^2.2.0",
+  "dependencies": {
     "qasmsim": "file:../pkg",
-    "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12",
-    "webpack-dev-server": "^3.11.0"
+    "webpack": "^5.76.1",
+    "webpack-cli": "^5.0.1"
   },
-  "engines": {
-    "node": "^16.13.1"
+  "devDependencies": {
+    "gh-pages": "^2.2.0",
+    "webpack-dev-server": "^4.11.1"
   }
 }
