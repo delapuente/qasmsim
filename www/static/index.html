@@ -1,1 +1,25 @@
-<script src="index.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenQASM 2.0 sandbox</title>
+    <script src="index.js"></script>
+  </head>
+  <body>
+    <form>
+      <textarea id="source">
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+h q[0];
+cx q[0], q[1];</textarea
+      >
+      <button id="run" type="button" onclick="SandBox.run()" disabled>
+        Run
+      </button>
+    </form>
+    <pre id="output"></pre>
+  </body>
+</html>

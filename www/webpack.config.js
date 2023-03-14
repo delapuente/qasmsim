@@ -4,6 +4,10 @@ module.exports = {
   mode: 'development',
   entry: './src/index.js',
   output: {
+    library: {
+      type: 'assign-properties',
+      name: 'SandBox',
+    },
     filename: 'index.js',
     path: path.resolve(__dirname, 'static')
   },
