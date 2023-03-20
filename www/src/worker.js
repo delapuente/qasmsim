@@ -1,27 +1,32 @@
-import('qasmsim').then((qasmsim) => {
-  onmessage = (evt) => {
-    console.log(`worker received: ${evt.data}`);
-    const result = qasmsim.run(evt.data);
-    const transferable = makeTransferable(result);
-    postMessage({ type: 'result', result: transferable });
-  };
+// Load QASMSim module asynchronously
+import("qasmsim").then(qasmsim => {
+  // Add message listener to worker
+  self.addEventListener("message", event => {
+    const message = event.data;
 
-  onerror = (evt) => {
-    console.log(evt, 'worker error');
-  };
+    switch (message.type) {
+      case "simulate":
+        try {
+          // Parse and simulate OpenQASM code
+          const result = qasmsim.run(message.code);
 
-  postMessage('ready');
+          // Serialize performance measures to JSON-serializable format
+          const times = {};
+          Object.keys(result.times).forEach(key => {
+            times[key] = result.times[key].toJSON();
+          });
 
-  function makeTransferable(result) {
-    const transferable = {
-      memory: result.memory,
-      statevector: result.statevector,
-      probabilities: result.probabilities,
-      times: Object.entries(result.times).reduce((obj, [key, value]) => {
-        obj[key] = value.toJSON();
-        return obj;
-      }, {}),
-    };
-    return transferable;
-  }
+          // Send result object back to main thread
+          self.postMessage({ type: "simulationComplete", result: { ...result, times } });
+        } catch (error) {
+          // Send error message back to main thread
+          self.postMessage({ type: "simulationError", error: error.message });
+        }
+        break;
+
+      default:
+        console.warn("Unknown message type:", message.type);
+        break;
+    }
+  });
 });
