@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/qasmsim/1.2.0")]
+#![doc(html_root_url = "https://docs.rs/qasmsim/1.3.0")]
 //! The `qasmsim` library includes a
 //! [OPENQASM 2.0](https://github.com/Qiskit/openqasm/blob/master/spec-human/)
 //! parser and interpreter, along with a statevector simulator. Compiled with

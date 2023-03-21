@@ -1,5 +1,15 @@
 # Release notes
 
+## Version 1.3.0
+
+This version adds support for running the WASM version of the simulator inside a
+web worker.
+
+### Features
+- The WASM version of the simulator can now be run inside a web worker. This
+allows to run the simulator in a separate thread, and avoid blocking the main
+thread.
+
 ## Version 1.2.0
 
 This version adds documenting comments to OpenQASM 2.0. The specification
