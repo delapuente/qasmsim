@@ -423,7 +423,7 @@ impl<'input> Iterator for Lexer<'input> {
             static ref ID: Regex = Regex::new(r"^([a-z][A-Za-z0-9_]*)").unwrap();
             static ref INTEGER: Regex = Regex::new(r"^([1-9]+[0-9]*|0)").unwrap();
             static ref REAL: Regex =
-                Regex::new(r"^([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?[0-9])?").unwrap();
+                Regex::new(r"^([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][+-]?([0-9]+))?").unwrap();
             static ref SYMBOL: Regex = Regex::new(r"^(->|==|//|[+\-\*/\^\[\]\{\}\(\);,])").unwrap();
         }
 
