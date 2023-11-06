@@ -1,5 +1,15 @@
 # Release notes
 
+
+## Version 1.3.1
+
+A bugfix by @byeongjee enable scientific notation with an exponent of more than two
+digits.
+
+### Fixes
+- Fixed a bug in the lexer that prevented the interpreter from parsing scientific
+notation numbers where exponents had more than two digits (@byeongjee)
+
 ## Version 1.3.0
 
 This version adds support for running the WASM version of the simulator inside a

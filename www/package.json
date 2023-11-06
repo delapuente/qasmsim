@@ -1,6 +1,6 @@
 {
   "name": "qasmsim",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "A QASM interpreter and quantum simulator in Rust",
   "main": "index.js",
   "scripts": {
